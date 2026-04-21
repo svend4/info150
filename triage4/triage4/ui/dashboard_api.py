@@ -1,13 +1,18 @@
 from __future__ import annotations
 
+import tempfile
+from pathlib import Path
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import FileResponse, HTMLResponse
 
 from triage4.autonomy.human_handoff import HumanHandoffService
 from triage4.autonomy.task_allocator import TaskAllocator
 from triage4.graph.casualty_graph import CasualtyGraph
 from triage4.triage_reasoning.explainability import ExplainabilityBuilder
 from triage4.triage_reasoning.rapid_triage import RapidTriageEngine
+from triage4.ui.html_export import render_html
 from triage4.ui.seed import seed_demo_data
 
 
@@ -118,3 +123,15 @@ def replay_json() -> dict:
 @app.get("/tasks")
 def tasks() -> list[dict]:
     return allocator.recommend(graph.all_nodes())
+
+
+@app.get("/export.html", response_class=HTMLResponse)
+def export_html() -> FileResponse:
+    """Self-contained HTML snapshot of the casualty graph.
+
+    Uses the infom-inspired ``render_html`` so the result is a single file
+    that works offline without the backend.
+    """
+    out_path = Path(tempfile.gettempdir()) / "triage4_export.html"
+    render_html(graph, out_path=out_path)
+    return FileResponse(out_path, media_type="text/html", filename="triage4_export.html")
