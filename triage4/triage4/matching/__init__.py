@@ -7,10 +7,22 @@ Ported from svend4/meta2 ``puzzle_reconstruction/matching``:
 - ``boundary_matcher`` — Hausdorff / Chamfer / Fréchet shape metrics
 - ``candidate_ranker`` — CandidatePair ranking and dedup
 - ``score_normalizer`` — min-max / z-score / rank normalization
+- ``geometric_match`` — area / aspect / Hu-moment shape matching
 
 These primitives back ``triage4.triage_reasoning.score_fusion``.
 """
 
+from .geometric_match import (
+    FragmentGeometry,
+    GeometricMatchResult,
+    area_ratio_similarity,
+    aspect_ratio_similarity,
+    batch_geometry_match,
+    compute_geometry_from_contour,
+    edge_length_similarity,
+    hu_moments_similarity,
+    match_geometry,
+)
 from .boundary_matcher import (
     BoundaryMatch,
     batch_match_boundaries,
@@ -65,11 +77,20 @@ __all__ = [
     "BoundaryMatch",
     "CandidatePair",
     "CombinedScore",
+    "FragmentGeometry",
+    "GeometricMatchResult",
     "MATCHER_REGISTRY",
     "ScoreNormResult",
     "ScoreVector",
     "ShapeMatch",
+    "area_ratio_similarity",
+    "aspect_ratio_similarity",
     "batch_combine",
+    "batch_geometry_match",
+    "compute_geometry_from_contour",
+    "edge_length_similarity",
+    "hu_moments_similarity",
+    "match_geometry",
     "batch_match_boundaries",
     "batch_normalize_scores",
     "batch_rank",

@@ -15,4 +15,5 @@ __all__ = [
     "world_replay",
     "integrations",
     "matching",
+    "scoring",
 ]
