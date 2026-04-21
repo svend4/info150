@@ -86,16 +86,19 @@ here; subsequent work shifts to Phase 7 (multimodal & field) and Phase 8
 
 ## Phase 7 — Multimodal & field-hardening
 
-- `signatures/thermal_signature.py`
-- `signatures/posture_signature.py`
-- `sim/sensor_degradation.py`
-- `triage_reasoning/uncertainty.py`
-- `triage_reasoning/vitals_estimation.py`
-- `evaluation/gate1_find_locate.py`
-- `evaluation/gate2_rapid_triage.py`
-- `evaluation/gate3_trauma.py`
-- `evaluation/gate4_vitals.py`
-- `evaluation/hmt_lane.py`
+Signatures and reasoning (done):
+- [x] `signatures/thermal_signature.py` — hotspot / gradient descriptor
+- [x] `signatures/posture_signature.py` — asymmetry / collapse / instability
+- [x] `sim/sensor_degradation.py` — deterministic noisy-input simulation
+- [x] `triage_reasoning/uncertainty.py` — quality-weighted confidence
+- [x] `triage_reasoning/vitals_estimation.py` — FFT HR / RR estimator
+
+DARPA gate evaluations (next Phase 7 sub-round):
+- [ ] `evaluation/gate1_find_locate.py`
+- [ ] `evaluation/gate2_rapid_triage.py`
+- [ ] `evaluation/gate3_trauma.py`
+- [ ] `evaluation/gate4_vitals.py`
+- [ ] `evaluation/hmt_lane.py`
 
 ## Phase 8 — Platform integration
 
