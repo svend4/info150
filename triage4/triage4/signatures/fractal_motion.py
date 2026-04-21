@@ -1,30 +1,68 @@
 from __future__ import annotations
 
-import math
 from typing import Iterable
+
+import numpy as np
+
+from triage4.signatures.fractal import (
+    BoxCountingFD,
+    RichardsonDivider,
+    css_similarity,
+    css_to_feature_vector,
+    curvature_scale_space,
+    freeman_chain_code,
+    mask_to_contour,
+)
 
 
 class FractalMotionAnalyzer:
-    """Lightweight motion-complexity descriptor.
+    """Motion/shape descriptors backed by vendored ``meta2`` fractal math.
 
-    Adapted in spirit from the fractal logic of the upstream `meta2` project.
-    Instead of a true box-counting fractal dimension, the MVP uses a stable
-    proxy that captures how jagged or smooth a short motion series is.
+    Uses the real Richardson-divider and box-counting implementations from
+    ``svend4/meta2`` (see ``LICENSES/meta2.LICENSE``), with triage-oriented
+    helpers around them.
     """
 
+    def __init__(
+        self,
+        divider: RichardsonDivider | None = None,
+        box_counter: BoxCountingFD | None = None,
+    ) -> None:
+        self._divider = divider or RichardsonDivider()
+        self._box = box_counter or BoxCountingFD()
+
+    # -- motion (1D time series) ------------------------------------------------
+
     def chest_motion_fd(self, series: Iterable[float]) -> float:
-        values = [float(v) for v in series]
-        if len(values) < 3:
+        values = list(series)
+        if len(values) < 4:
             return 0.0
+        dim = self._divider.estimate_1d(values)
+        return round(max(0.0, min(1.0, dim - 1.0)), 3)
 
-        deltas = [abs(values[i + 1] - values[i]) for i in range(len(values) - 1)]
-        total = sum(deltas)
-        if total <= 0.0:
-            return 0.0
+    # -- wound / region (2D contour or mask) ------------------------------------
 
-        mean_d = total / len(deltas)
-        variance = sum((d - mean_d) ** 2 for d in deltas) / len(deltas)
-        jitter = math.sqrt(variance)
+    def wound_boundary_fd(self, contour_or_mask) -> float:
+        arr = np.asarray(contour_or_mask)
+        dim = self._box.estimate(arr)
+        return round(max(0.0, min(1.0, dim - 1.0)), 3)
 
-        raw = (mean_d * 1.8) + (jitter * 2.2)
-        return round(min(1.0, max(0.0, raw)), 3)
+    def wound_shape_vector(self, contour, n_sigmas: int = 7, n_bins: int = 32):
+        """CSS-based shape descriptor of a closed wound/posture contour."""
+        contour_arr = np.asarray(contour, dtype=float)
+        if contour_arr.ndim != 2 or contour_arr.shape[0] < 4:
+            return np.zeros(n_sigmas * n_bins)
+        css = curvature_scale_space(contour_arr, n_sigmas=n_sigmas)
+        return css_to_feature_vector(css, n_bins=n_bins)
+
+    def wound_shape_similarity(self, vec_a, vec_b) -> float:
+        return css_similarity(np.asarray(vec_a), np.asarray(vec_b))
+
+    def wound_shape_hash(self, contour) -> str:
+        return freeman_chain_code(np.asarray(contour))
+
+    # -- utilities --------------------------------------------------------------
+
+    @staticmethod
+    def mask_to_contour(mask):
+        return mask_to_contour(mask)

@@ -14,4 +14,5 @@ __all__ = [
     "mission_coordination",
     "world_replay",
     "integrations",
+    "matching",
 ]
