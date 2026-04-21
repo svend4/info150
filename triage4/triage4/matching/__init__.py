@@ -43,6 +43,14 @@ from .pair_scorer import (
     select_top_pairs,
 )
 from .pair_scorer import score_pair as score_pair_channels
+from .affine_matcher import (
+    AffineMatchResult,
+    affine_reprojection_error,
+    apply_affine_pts,
+    estimate_affine,
+    match_points_affine,
+    score_affine_match,
+)
 from .rotation_dtw import (
     RotationDTWResult,
     batch_rotation_dtw,
@@ -100,6 +108,7 @@ from .score_normalizer import (
 from .shape_match import ShapeMatch, shape_distances, shape_similarity
 
 __all__ = [
+    "AffineMatchResult",
     "BoundaryMatch",
     "CandidatePair",
     "CombinedScore",
@@ -114,7 +123,9 @@ __all__ = [
     "ScoreVector",
     "ScoringWeights",
     "ShapeMatch",
+    "affine_reprojection_error",
     "aggregate_channels",
+    "apply_affine_pts",
     "area_ratio_similarity",
     "aspect_ratio_similarity",
     "batch_combine",
@@ -129,6 +140,7 @@ __all__ = [
     "descriptor_distance",
     "descriptor_similarity",
     "edge_length_similarity",
+    "estimate_affine",
     "find_best_match",
     "hu_moments_similarity",
     "match_geometry",
@@ -152,6 +164,7 @@ __all__ = [
     "hausdorff_distance",
     "list_matchers",
     "match_boundary_pair",
+    "match_points_affine",
     "max_combine",
     "min_combine",
     "normalize_minmax",
@@ -165,6 +178,7 @@ __all__ = [
     "register_fn",
     "rotation_dtw",
     "rotation_dtw_similarity",
+    "score_affine_match",
     "score_boundary_pair",
     "score_pair",
     "shape_distances",

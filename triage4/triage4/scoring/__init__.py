@@ -25,6 +25,19 @@ from .pair_ranker import (
     merge_rank_results,
 )
 from .pair_ranker import rank_pairs as rank_pairs_detailed
+from .pair_filter import (
+    CandidatePair as FilterCandidatePair,
+    FilterConfig,
+    FilterReport,
+    batch_filter,
+    filter_by_inlier_count,
+    filter_pairs,
+    filter_top_k,
+    filter_top_k_per_fragment,
+    merge_filter_results,
+)
+from .pair_filter import deduplicate_pairs as dedup_filter_pairs
+from .pair_filter import filter_by_score as filter_by_score_threshold
 from .consistency_checker import (
     ConsistencyIssue,
     ConsistencyReport,
@@ -61,6 +74,9 @@ __all__ = [
     "ConsistencyReport",
     "EvidenceConfig",
     "EvidenceScore",
+    "FilterCandidatePair",
+    "FilterConfig",
+    "FilterReport",
     "RankConfig",
     "RankResult",
     "RankedPair",
@@ -70,6 +86,7 @@ __all__ = [
     "apply_threshold",
     "batch_aggregate",
     "batch_consistency_check",
+    "batch_filter",
     "batch_select_thresholds",
     "borda_count",
     "build_rank_matrix",
@@ -80,7 +97,14 @@ __all__ = [
     "check_unique_ids",
     "compute_confidence",
     "compute_pair_score",
+    "dedup_filter_pairs",
+    "filter_by_inlier_count",
+    "filter_by_score_threshold",
+    "filter_pairs",
+    "filter_top_k",
+    "filter_top_k_per_fragment",
     "fuse_rankings",
+    "merge_filter_results",
     "merge_rank_results",
     "normalize_scores",
     "rank_by_evidence",
