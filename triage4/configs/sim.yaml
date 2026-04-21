@@ -1,0 +1,10 @@
+scene:
+  casualties: 8
+  immediate_ratio: 0.25
+  delayed_ratio: 0.35
+  minimal_ratio: 0.40
+
+thresholds:
+  bleeding_immediate: 0.80
+  breathing_weak: 0.15
+  perfusion_low: 0.70
