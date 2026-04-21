@@ -189,7 +189,13 @@ def combine_scores(
         if s < 1e-9:
             raise ValueError("sum of weights must be > 0")
         w /= s
-    return sum(float(wi) * a for wi, a in zip(w, arrays))
+
+    # Explicit accumulator keeps the return type as np.ndarray (the builtin
+    # ``sum`` starts at 0 and would type as ``ndarray | int``).
+    out = np.zeros(n, dtype=np.float64)
+    for wi, a in zip(w, arrays):
+        out = out + float(wi) * a
+    return out
 
 
 def normalize_score_matrix(
