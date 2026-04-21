@@ -25,6 +25,17 @@ from .pair_ranker import (
     merge_rank_results,
 )
 from .pair_ranker import rank_pairs as rank_pairs_detailed
+from .consistency_checker import (
+    ConsistencyIssue,
+    ConsistencyReport,
+    batch_consistency_check,
+    check_all_present,
+    check_canvas_bounds,
+    check_gap_uniformity,
+    check_score_threshold,
+    check_unique_ids,
+    run_consistency_check,
+)
 from .rank_fusion import (
     borda_count,
     fuse_rankings,
@@ -46,6 +57,8 @@ from .threshold_selector import (
 )
 
 __all__ = [
+    "ConsistencyIssue",
+    "ConsistencyReport",
     "EvidenceConfig",
     "EvidenceScore",
     "RankConfig",
@@ -56,9 +69,15 @@ __all__ = [
     "aggregate_evidence",
     "apply_threshold",
     "batch_aggregate",
+    "batch_consistency_check",
     "batch_select_thresholds",
     "borda_count",
     "build_rank_matrix",
+    "check_all_present",
+    "check_canvas_bounds",
+    "check_gap_uniformity",
+    "check_score_threshold",
+    "check_unique_ids",
     "compute_confidence",
     "compute_pair_score",
     "fuse_rankings",
@@ -67,6 +86,7 @@ __all__ = [
     "rank_by_evidence",
     "rank_pairs_detailed",
     "reciprocal_rank_fusion",
+    "run_consistency_check",
     "score_fusion",
     "select_adaptive_threshold",
     "select_f1_threshold",

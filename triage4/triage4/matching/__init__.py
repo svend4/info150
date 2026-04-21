@@ -43,6 +43,12 @@ from .pair_scorer import (
     select_top_pairs,
 )
 from .pair_scorer import score_pair as score_pair_channels
+from .rotation_dtw import (
+    RotationDTWResult,
+    batch_rotation_dtw,
+    rotation_dtw,
+    rotation_dtw_similarity,
+)
 from .boundary_matcher import (
     BoundaryMatch,
     batch_match_boundaries,
@@ -103,6 +109,7 @@ __all__ = [
     "GeometricMatchResult",
     "MATCHER_REGISTRY",
     "PairScoreResult",
+    "RotationDTWResult",
     "ScoreNormResult",
     "ScoreVector",
     "ScoringWeights",
@@ -130,6 +137,7 @@ __all__ = [
     "batch_match_boundaries",
     "batch_normalize_scores",
     "batch_rank",
+    "batch_rotation_dtw",
     "calibrate_scores",
     "chamfer_distance",
     "combine_scores",
@@ -155,6 +163,8 @@ __all__ = [
     "rank_pairs",
     "register",
     "register_fn",
+    "rotation_dtw",
+    "rotation_dtw_similarity",
     "score_boundary_pair",
     "score_pair",
     "shape_distances",
