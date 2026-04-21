@@ -93,12 +93,19 @@ Signatures and reasoning (done):
 - [x] `triage_reasoning/uncertainty.py` — quality-weighted confidence
 - [x] `triage_reasoning/vitals_estimation.py` — FFT HR / RR estimator
 
-DARPA gate evaluations (next Phase 7 sub-round):
-- [ ] `evaluation/gate1_find_locate.py`
-- [ ] `evaluation/gate2_rapid_triage.py`
-- [ ] `evaluation/gate3_trauma.py`
-- [ ] `evaluation/gate4_vitals.py`
-- [ ] `evaluation/hmt_lane.py`
+DARPA gate evaluations (done):
+- [x] `evaluation/gate1_find_locate.py` — greedy nearest-first match,
+      precision / recall / F1, localisation error
+- [x] `evaluation/gate2_rapid_triage.py` — classification accuracy,
+      macro F1, critical-miss rate
+- [x] `evaluation/gate3_trauma.py` — multi-label P/R/F1 and Hamming
+      accuracy across trauma kinds
+- [x] `evaluation/gate4_vitals.py` — HR / RR MAE, RMSE, tolerance hit
+      rate, MAPE
+- [x] `evaluation/hmt_lane.py` — mean / max handoff time, agreement
+      and override rates, immediate-timeliness rate
+
+**Phase 7 complete.**
 
 ## Phase 8 — Platform integration
 

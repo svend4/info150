@@ -16,4 +16,5 @@ __all__ = [
     "integrations",
     "matching",
     "scoring",
+    "evaluation",
 ]
