@@ -109,10 +109,24 @@ DARPA gate evaluations (done):
 
 ## Phase 8 — Platform integration
 
-- `integrations/ros2_bridge.py`
-- `integrations/mavlink_bridge.py`
-- `integrations/spot_bridge.py`
-- `integrations/websocket_bridge.py`
+Unified contract (`integrations/platform_bridge.py`) and four loopback
+platform bridges. Every bridge implements the `PlatformBridge` Protocol
+and works in-process without any external SDK, so pipelines remain
+testable by default. A real-backend skeleton is provided for each,
+behind a lazy import that raises `BridgeUnavailable` with install
+instructions.
+
+- [x] `integrations/platform_bridge.py` — unified Protocol +
+      `PlatformTelemetry`.
+- [x] `integrations/websocket_bridge.py` — loopback + FastAPI skeleton.
+- [x] `integrations/mavlink_bridge.py` — loopback UAV simulator +
+      `pymavlink` skeleton.
+- [x] `integrations/ros2_bridge.py` — loopback topic recorder +
+      `rclpy` skeleton.
+- [x] `integrations/spot_bridge.py` — loopback quadruped simulator +
+      `bosdyn` skeleton.
+
+**Phase 8 complete.**
 
 ## Риск-регистр
 
