@@ -1,30 +1,35 @@
 from __future__ import annotations
 
-import math
 from typing import Iterable
+
+from triage4.signatures.fractal import BoxCountingFD, RichardsonDivider
 
 
 class FractalMotionAnalyzer:
-    """Lightweight motion-complexity descriptor.
+    """Motion-complexity descriptors backed by vendored `meta2` fractal math.
 
-    Adapted in spirit from the fractal logic of the upstream `meta2` project.
-    Instead of a true box-counting fractal dimension, the MVP uses a stable
-    proxy that captures how jagged or smooth a short motion series is.
+    Uses Richardson-divider on 1D motion series (chest-motion curve, skin
+    color curve) and box-counting on 2D binary masks (wound/thermal region).
+    Both implementations are vendored in `triage4.signatures.fractal`.
     """
+
+    def __init__(
+        self,
+        divider: RichardsonDivider | None = None,
+        box_counter: BoxCountingFD | None = None,
+    ) -> None:
+        self._divider = divider or RichardsonDivider()
+        self._box = box_counter or BoxCountingFD()
 
     def chest_motion_fd(self, series: Iterable[float]) -> float:
         values = [float(v) for v in series]
-        if len(values) < 3:
+        if len(values) < 4:
             return 0.0
+        dim = self._divider.estimate_1d(values)
+        # Normalize to [0,1] so the downstream rapid-triage rule keeps working.
+        # dim is in [1,2]; closer to 2 = more jagged = more motion complexity.
+        return round(max(0.0, min(1.0, (dim - 1.0))), 3)
 
-        deltas = [abs(values[i + 1] - values[i]) for i in range(len(values) - 1)]
-        total = sum(deltas)
-        if total <= 0.0:
-            return 0.0
-
-        mean_d = total / len(deltas)
-        variance = sum((d - mean_d) ** 2 for d in deltas) / len(deltas)
-        jitter = math.sqrt(variance)
-
-        raw = (mean_d * 1.8) + (jitter * 2.2)
-        return round(min(1.0, max(0.0, raw)), 3)
+    def wound_boundary_fd(self, mask) -> float:
+        dim = self._box.estimate(mask)
+        return round(max(0.0, min(1.0, (dim - 1.0))), 3)
