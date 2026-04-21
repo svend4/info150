@@ -1,12 +1,38 @@
-"""Adapters towards the upstream repositories (`meta2`, `infom`, `in4n`).
+"""Adapters and platform bridges.
 
-These are intentionally minimal stubs. They define the contract the real
-integrations should satisfy so that downstream code can depend on a stable
-interface while the actual upstream code is wired in later.
+Two sets of integrations:
+
+- **Upstream-project adapters** (``meta2_adapter``, ``infom_adapter``,
+  ``in4n_adapter``) — keep triage4 compatible with the three sibling
+  repositories described in ``third_party/ATTRIBUTION.md``.
+
+- **Platform bridges** (Phase 8): unified ``PlatformBridge`` contract
+  with one Loopback simulator per platform. Real ROS2 / MAVLink /
+  bosdyn backends are provided as skeletons behind optional imports.
 """
 
 from .meta2_adapter import Meta2SignatureAdapter
 from .infom_adapter import InfoMGraphAdapter
 from .in4n_adapter import In4nSceneAdapter
+from .platform_bridge import BridgeUnavailable, PlatformBridge, PlatformTelemetry
+from .websocket_bridge import LoopbackWebSocketBridge, build_fastapi_websocket_bridge
+from .mavlink_bridge import LoopbackMAVLinkBridge, build_pymavlink_bridge
+from .ros2_bridge import LoopbackROS2Bridge, build_rclpy_bridge
+from .spot_bridge import LoopbackSpotBridge, build_bosdyn_bridge
 
-__all__ = ["Meta2SignatureAdapter", "InfoMGraphAdapter", "In4nSceneAdapter"]
+__all__ = [
+    "BridgeUnavailable",
+    "InfoMGraphAdapter",
+    "In4nSceneAdapter",
+    "LoopbackMAVLinkBridge",
+    "LoopbackROS2Bridge",
+    "LoopbackSpotBridge",
+    "LoopbackWebSocketBridge",
+    "Meta2SignatureAdapter",
+    "PlatformBridge",
+    "PlatformTelemetry",
+    "build_bosdyn_bridge",
+    "build_fastapi_websocket_bridge",
+    "build_pymavlink_bridge",
+    "build_rclpy_bridge",
+]

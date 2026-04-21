@@ -93,19 +93,40 @@ Signatures and reasoning (done):
 - [x] `triage_reasoning/uncertainty.py` — quality-weighted confidence
 - [x] `triage_reasoning/vitals_estimation.py` — FFT HR / RR estimator
 
-DARPA gate evaluations (next Phase 7 sub-round):
-- [ ] `evaluation/gate1_find_locate.py`
-- [ ] `evaluation/gate2_rapid_triage.py`
-- [ ] `evaluation/gate3_trauma.py`
-- [ ] `evaluation/gate4_vitals.py`
-- [ ] `evaluation/hmt_lane.py`
+DARPA gate evaluations (done):
+- [x] `evaluation/gate1_find_locate.py` — greedy nearest-first match,
+      precision / recall / F1, localisation error
+- [x] `evaluation/gate2_rapid_triage.py` — classification accuracy,
+      macro F1, critical-miss rate
+- [x] `evaluation/gate3_trauma.py` — multi-label P/R/F1 and Hamming
+      accuracy across trauma kinds
+- [x] `evaluation/gate4_vitals.py` — HR / RR MAE, RMSE, tolerance hit
+      rate, MAPE
+- [x] `evaluation/hmt_lane.py` — mean / max handoff time, agreement
+      and override rates, immediate-timeliness rate
+
+**Phase 7 complete.**
 
 ## Phase 8 — Platform integration
 
-- `integrations/ros2_bridge.py`
-- `integrations/mavlink_bridge.py`
-- `integrations/spot_bridge.py`
-- `integrations/websocket_bridge.py`
+Unified contract (`integrations/platform_bridge.py`) and four loopback
+platform bridges. Every bridge implements the `PlatformBridge` Protocol
+and works in-process without any external SDK, so pipelines remain
+testable by default. A real-backend skeleton is provided for each,
+behind a lazy import that raises `BridgeUnavailable` with install
+instructions.
+
+- [x] `integrations/platform_bridge.py` — unified Protocol +
+      `PlatformTelemetry`.
+- [x] `integrations/websocket_bridge.py` — loopback + FastAPI skeleton.
+- [x] `integrations/mavlink_bridge.py` — loopback UAV simulator +
+      `pymavlink` skeleton.
+- [x] `integrations/ros2_bridge.py` — loopback topic recorder +
+      `rclpy` skeleton.
+- [x] `integrations/spot_bridge.py` — loopback quadruped simulator +
+      `bosdyn` skeleton.
+
+**Phase 8 complete.**
 
 ## Риск-регистр
 
