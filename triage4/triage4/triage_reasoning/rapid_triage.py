@@ -1,37 +1,32 @@
 from __future__ import annotations
 
 from triage4.core.models import CasualtySignature, TraumaHypothesis
+from triage4.triage_reasoning.score_fusion import (
+    DEFAULT_WEIGHTS,
+    fuse_triage_score,
+    priority_from_score,
+)
 
 
 class RapidTriageEngine:
-    """Score-fusion rapid triage.
+    """Rapid triage engine backed by explicit score fusion.
 
-    Combines bleeding, chest-motion and perfusion cues into an urgency score.
-    Returns (priority, score, reasons). Intentionally simple: every decision
-    carries an explicit reason list, which is required for decision support.
+    The engine delegates the numeric part to ``score_fusion.fuse_triage_score``
+    (which is built on top of meta2's ``ScoreVector`` / ``weighted_combine``
+    primitives). The engine itself just turns the fused score into a triage
+    priority and a human-readable reason list.
     """
 
-    def infer_priority(self, sig: CasualtySignature) -> tuple[str, float, list[str]]:
-        reasons: list[str] = []
-        score = 0.0
+    def __init__(self, weights: dict[str, float] | None = None) -> None:
+        self.weights = dict(weights or DEFAULT_WEIGHTS)
 
-        if sig.bleeding_visual_score > 0.80:
-            score += 0.45
-            reasons.append("possible severe hemorrhage")
-
-        if sig.chest_motion_fd < 0.15 and len(sig.breathing_curve) >= 4:
-            score += 0.30
-            reasons.append("weak chest motion")
-
-        if sig.perfusion_drop_score > 0.70:
-            score += 0.20
-            reasons.append("poor perfusion pattern")
-
-        if score >= 0.65:
-            return "immediate", score, reasons
-        if score >= 0.35:
-            return "delayed", score, reasons
-        return "minimal", score, reasons
+    def infer_priority(
+        self, sig: CasualtySignature
+    ) -> tuple[str, float, list[str]]:
+        combined = fuse_triage_score(sig, self.weights)
+        priority = priority_from_score(combined.score)
+        reasons = self._reasons(sig, combined.contributions)
+        return priority, round(combined.score, 3), reasons
 
     def build_hypotheses(self, sig: CasualtySignature) -> list[TraumaHypothesis]:
         out: list[TraumaHypothesis] = []
@@ -45,7 +40,6 @@ class RapidTriageEngine:
                     explanation="high-probability bleeding signature",
                 )
             )
-
         if sig.chest_motion_fd < 0.12:
             out.append(
                 TraumaHypothesis(
@@ -55,7 +49,6 @@ class RapidTriageEngine:
                     explanation="very weak chest motion pattern",
                 )
             )
-
         if sig.perfusion_drop_score > 0.70:
             out.append(
                 TraumaHypothesis(
@@ -65,5 +58,23 @@ class RapidTriageEngine:
                     explanation="possible low-perfusion state",
                 )
             )
-
         return out
+
+    @staticmethod
+    def _reasons(
+        sig: CasualtySignature, contributions: dict[str, float]
+    ) -> list[str]:
+        reasons: list[str] = []
+        if contributions.get("bleeding", 0.0) > 0.1 and sig.bleeding_visual_score > 0.80:
+            reasons.append("possible severe hemorrhage")
+        if (
+            contributions.get("chest_motion", 0.0) > 0.05
+            and sig.chest_motion_fd < 0.15
+            and len(sig.breathing_curve) >= 4
+        ):
+            reasons.append("weak chest motion")
+        if contributions.get("perfusion", 0.0) > 0.05 and sig.perfusion_drop_score > 0.70:
+            reasons.append("poor perfusion pattern")
+        if contributions.get("posture", 0.0) > 0.03 and sig.posture_instability_score > 0.70:
+            reasons.append("posture collapse")
+        return reasons
