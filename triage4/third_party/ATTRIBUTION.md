@@ -1,40 +1,53 @@
 # Third-party attribution
 
-`triage4` is self-contained and does not depend on any external
-`svend4/meta2`, `svend4/infom` or `svend4/in4n` package at runtime. However,
-several modules are adapted from ideas and API shapes described in those
-upstream projects. The table below tracks what was adapted, where, and why.
+`triage4` is self-contained. It does **not** depend on `svend4/meta2`,
+`svend4/infom` or `svend4/in4n` at runtime. However, several files contain
+adapted source from those upstream projects, retrieved directly from their
+public GitHub repositories. License status is tracked in `LICENSES/README.md`.
 
-| Upstream | triage4 location | Adaptation |
+## Real code adaptation
+
+| Upstream path | triage4 path | How it was adapted |
 |---|---|---|
-| `meta2.signatures.fractal` (box-counting, divider/Richardson, IFS, CSS, chain-code) | `triage4/signatures/fractal/box_counting.py`, `triage4/signatures/fractal/richardson.py`, `triage4/signatures/fractal_motion.py` | Kept only box-counting and Richardson-divider. Rewritten in pure Python (no NumPy), narrowed to casualty signals (chest-motion curve, wound-boundary mask, thermal-anomaly texture). Renamed classes from `FractalSignature` / `EdgeSignature` vocabulary to motion-/wound-centric names. |
-| `infom` knowledge-graph with memory, GraphRAG, snapshots, causal links | `triage4/state_graph/evidence_memory.py`, `triage4/integrations/infom_adapter.py` | Kept only event log + causal edges + named snapshots. Dropped GraphRAG retrieval and agent memory — triage4 needs audit trail, not retrieval. Narrowed events to triage kinds (detection, signature, assessment, handoff, revisit). |
-| `in4n` force-graph visualization (`react-force-graph`, `three.js`, BFS-traveler, hyperbolic mode) | `triage4/integrations/in4n_adapter.py` | Kept only the JSON export contract (`{nodes, links}` with group/val/color/strength). Dropped the React renderer, BFS-traveler and hyperbolic layout — those stay on the front-end side. Color palette matches triage priority, not knowledge-community. |
+| `svend4/meta2` · `puzzle_reconstruction/algorithms/fractal/box_counting.py` | `triage4/signatures/fractal/box_counting.py` | Copied verbatim, wrapped with an OO facade (`BoxCountingFD`), added `mask_to_contour` helper so triage4 callers can feed binary masks. Upstream Russian docstrings preserved for traceability. |
+| `svend4/meta2` · `puzzle_reconstruction/algorithms/fractal/divider.py` | `triage4/signatures/fractal/divider.py` | Copied verbatim, wrapped with `RichardsonDivider`, added `signal_to_contour` so 1D triage signals (chest-motion curve etc.) become `(i, v)` polylines that the compass algorithm can walk. |
+| `svend4/meta2` · `puzzle_reconstruction/algorithms/fractal/css.py` | `triage4/signatures/fractal/css.py`, `triage4/signatures/fractal/chain_code.py` | Curvature-Scale-Space functions copied verbatim. Freeman chain-code was originally inside `css.py`; split into its own file for triage4. |
 
-## License posture
+IFS (iterated-function-system) fractals from upstream were deliberately left
+out — triage4 does not need fractal code-book reconstruction and skipping
+them keeps the dependency surface smaller.
 
-When a real upstream release becomes available and a direct code drop is
-performed, preserve the upstream LICENSE file and add a `LICENSES/` folder:
+## Idea-level inspiration (no direct code)
 
-```
-LICENSES/
-  meta2.LICENSE
-  infom.LICENSE
-  in4n.LICENSE
-```
+- **`svend4/infom`** — event log with causal edges and named snapshots, as
+  used in `triage4/state_graph/evidence_memory.py`. The upstream indexer
+  (`indexer.py`, `graphrag_query.py`) operates on text via an LLM adapter,
+  which is out of scope for triage. Only the *shape* of the memory model
+  (events + causal links + snapshots) was ported, written from scratch.
+- **`svend4/in4n`** — the force-graph export contract in
+  `triage4/integrations/in4n_adapter.py` is compatible with what the
+  upstream React app expects (`react-force-graph`, `three.js`). The
+  renderer, BFS-traveler and Voronoi terrain overlay stay on the frontend
+  side and are not ported.
 
-Until then, the adaptations above are **clean-room reimplementations** based
-on the architectural descriptions in the project drafts, and are covered by
-triage4's own MIT license.
+## Dependencies pulled in by the adaptation
+
+Porting the real fractal code introduced two mainstream scientific-Python
+dependencies, declared in `pyproject.toml`:
+
+- `numpy` — used by box-counting and divider;
+- `scipy` — used by CSS for `scipy.ndimage.gaussian_filter1d`.
+
+These are **public PyPI packages**, not the three upstream repositories, so
+triage4 remains a single installable project.
 
 ## How to verify independence
 
 ```bash
-grep -R "^import\s\+\(meta2\|infom\|in4n\)" triage4/    # must be empty
-grep -R "^from\s\+\(meta2\|infom\|in4n\)"   triage4/    # must be empty
-python -c "import pkgutil, importlib, triage4; \
+grep -R "^import\s\+\(meta2\|infom\|in4n\)" triage4/   # must be empty
+grep -R "^from\s\+\(meta2\|infom\|in4n\)"   triage4/   # must be empty
+python -c "import pkgutil, importlib, triage4, sys; \
   [importlib.import_module(n) for _, n, _ in pkgutil.walk_packages(triage4.__path__, 'triage4.')]; \
-  import sys; \
   assert not any(m.startswith(('meta2.','infom.','in4n.')) for m in sys.modules)"
 pytest -q
 ```

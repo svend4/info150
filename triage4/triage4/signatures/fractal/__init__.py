@@ -1,19 +1,50 @@
-"""Fractal descriptors (vendored-in from meta2, adapted for triage4).
+"""Fractal and shape descriptors.
 
-The upstream `meta2` project implements a broader `FractalSignature` with
-box-counting, Richardson divider, IFS, CSS and chain-code descriptors for
-torn-document edges. For triage4 we need only the subset that makes sense
-on casualty-oriented signals:
+Adapted from svend4/meta2 ``puzzle_reconstruction/algorithms/fractal``.
+Covers the subset relevant to triage signals:
 
-- `box_counting.BoxCountingFD` — fractal dimension of a binary mask / 2D
-  pattern. Used for wound-boundary complexity and thermal-anomaly texture.
-- `richardson.RichardsonDivider` — coastline-style dimension for a 1D
-  time series (chest-motion curve, skin-color curve).
+- ``box_counting`` — Minkowski-Bouligand FD of a 2D point contour / mask;
+- ``divider`` — Richardson compass FD of a 1D signal or 2D polyline;
+- ``css`` — Curvature Scale Space for wound / posture shape matching;
+- ``chain_code`` — Freeman chain code as a fast shape hash.
 
-See `third_party/META2_ATTRIBUTION.md` for provenance.
+IFS is intentionally not ported — triage4 does not need fractal code-book
+reconstruction and it would drag in extra optimisation code. See
+``LICENSES/meta2.LICENSE`` and ``third_party/ATTRIBUTION.md``.
 """
 
-from .box_counting import BoxCountingFD
-from .richardson import RichardsonDivider
+from .box_counting import (
+    BoxCountingFD,
+    box_counting_curve,
+    box_counting_fd,
+    mask_to_contour,
+)
+from .chain_code import freeman_chain_code
+from .css import (
+    css_similarity,
+    css_similarity_mirror,
+    css_to_feature_vector,
+    curvature_scale_space,
+)
+from .divider import (
+    RichardsonDivider,
+    divider_curve,
+    divider_fd,
+    signal_to_contour,
+)
 
-__all__ = ["BoxCountingFD", "RichardsonDivider"]
+__all__ = [
+    "BoxCountingFD",
+    "RichardsonDivider",
+    "box_counting_curve",
+    "box_counting_fd",
+    "curvature_scale_space",
+    "css_similarity",
+    "css_similarity_mirror",
+    "css_to_feature_vector",
+    "divider_curve",
+    "divider_fd",
+    "freeman_chain_code",
+    "mask_to_contour",
+    "signal_to_contour",
+]

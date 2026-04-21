@@ -1,90 +1,119 @@
 """Box-counting fractal dimension.
 
-Adapted (not copied) from the `meta2.signatures.fractal` module as described
-in the project drafts. The algorithm is the standard Minkowski–Bouligand
-box-counting method restricted to 2D binary masks.
+Adapted from svend4/meta2 — ``puzzle_reconstruction/algorithms/fractal/box_counting.py``.
+Original copyright (c) svend4, MIT-licensed (see ``LICENSES/meta2.LICENSE``).
 
-Implementation is pure-Python (no NumPy) to keep triage4 dependency-light.
-For wound-boundary complexity or thermal-anomaly texture, a binary mask is
-sampled at a sequence of box sizes; the slope of log(N) over log(1/size)
-in a log-log plot approximates the fractal dimension.
+Adaptation notes:
+- Signature is kept (Nx2 contour, not a binary mask) to match the upstream.
+- A small ``mask_to_contour`` helper is provided to convert triage4's
+  wound/thermal masks into the (N, 2) point contour the algorithm expects.
+- Russian docstrings are preserved for traceability against upstream.
 """
 
 from __future__ import annotations
 
-import math
-from typing import Sequence
+import numpy as np
 
 
-Mask = Sequence[Sequence[int]]
+def box_counting_fd(contour: np.ndarray, n_scales: int = 8) -> float:
+    """
+    Вычисляет фрактальную размерность контура методом Box-counting.
+
+    Args:
+        contour:  (N, 2) координаты точек контура.
+        n_scales: Число масштабов (степени 2).
+
+    Returns:
+        FD ∈ [1.0, 2.0] — фрактальная размерность.
+        1.0 = гладкая линия, 2.0 = заполняет плоскость.
+    """
+    pts = np.asarray(contour, dtype=np.float64)
+    if len(pts) < 4:
+        return 1.0
+
+    mins = pts.min(axis=0)
+    maxs = pts.max(axis=0)
+    span = (maxs - mins).max()
+    if span == 0:
+        return 1.0
+    pts_norm = (pts - mins) / span
+
+    log_r_inv: list[float] = []
+    log_N: list[float] = []
+
+    for k in range(1, n_scales + 1):
+        n_bins = 2 ** k
+        ix = np.floor(pts_norm[:, 0] * n_bins).astype(np.int32)
+        iy = np.floor(pts_norm[:, 1] * n_bins).astype(np.int32)
+        ix = np.clip(ix, 0, n_bins - 1)
+        iy = np.clip(iy, 0, n_bins - 1)
+
+        n_occupied = len(set(zip(ix.tolist(), iy.tolist())))
+        if n_occupied <= 0:
+            continue
+        log_r_inv.append(float(np.log2(n_bins)))
+        log_N.append(float(np.log2(n_occupied)))
+
+    if len(log_r_inv) < 2:
+        return 1.0
+
+    fd = float(np.polyfit(log_r_inv, log_N, 1)[0])
+    return float(np.clip(fd, 1.0, 2.0))
+
+
+def box_counting_curve(
+    contour: np.ndarray, n_scales: int = 8
+) -> tuple[np.ndarray, np.ndarray]:
+    """
+    Возвращает полную кривую log(N) vs log(1/r) для визуализации.
+    """
+    pts = np.asarray(contour, dtype=np.float64)
+    mins = pts.min(axis=0)
+    maxs = pts.max(axis=0)
+    span = (maxs - mins).max()
+    if span == 0 or len(pts) < 2:
+        return np.zeros(n_scales), np.zeros(n_scales)
+    pts_norm = (pts - mins) / span
+
+    log_r_inv, log_N = [], []
+    for k in range(1, n_scales + 1):
+        n_bins = 2 ** k
+        ix = np.clip(np.floor(pts_norm[:, 0] * n_bins).astype(np.int32), 0, n_bins - 1)
+        iy = np.clip(np.floor(pts_norm[:, 1] * n_bins).astype(np.int32), 0, n_bins - 1)
+        n_occupied = len(set(zip(ix.tolist(), iy.tolist())))
+        log_r_inv.append(float(np.log2(n_bins)))
+        log_N.append(float(np.log2(max(n_occupied, 1))))
+
+    return np.array(log_r_inv), np.array(log_N)
+
+
+def mask_to_contour(mask) -> np.ndarray:
+    """Convert a 2D binary mask into an (N, 2) array of occupied pixel coords.
+
+    Not part of upstream meta2 — triage4-specific helper so existing callers
+    that have a mask (wound / thermal anomaly region) can feed the contour
+    algorithms.
+    """
+    m = np.asarray(mask)
+    if m.ndim != 2 or m.size == 0:
+        return np.zeros((0, 2), dtype=np.float64)
+    ys, xs = np.nonzero(m)
+    if len(xs) == 0:
+        return np.zeros((0, 2), dtype=np.float64)
+    return np.column_stack([xs, ys]).astype(np.float64)
 
 
 class BoxCountingFD:
-    """Box-counting fractal-dimension estimator.
+    """Object-oriented facade around ``box_counting_fd`` for triage4 internals."""
 
-    Parameters
-    ----------
-    box_sizes:
-        Iterable of box sizes (in pixels) to sample. Must be >= 2.
-    """
+    def __init__(self, n_scales: int = 8) -> None:
+        self.n_scales = int(n_scales)
 
-    def __init__(self, box_sizes: Sequence[int] = (2, 4, 8, 16, 32)) -> None:
-        self.box_sizes = tuple(int(s) for s in box_sizes if int(s) >= 2)
-        if len(self.box_sizes) < 2:
-            raise ValueError("box_sizes must contain at least two values >= 2")
-
-    def estimate(self, mask: Mask) -> float:
-        """Estimate fractal dimension of a 2D binary mask.
-
-        Returns a value in roughly [1.0, 2.0]. Returns 0.0 if the mask is
-        empty or degenerate.
-        """
-        if not mask or not mask[0]:
+    def estimate(self, contour_or_mask) -> float:
+        arr = np.asarray(contour_or_mask)
+        if arr.ndim == 2 and arr.shape[1] == 2:
+            return box_counting_fd(arr, self.n_scales)
+        contour = mask_to_contour(arr)
+        if len(contour) < 4:
             return 0.0
-
-        h = len(mask)
-        w = len(mask[0])
-
-        log_inv_sizes: list[float] = []
-        log_counts: list[float] = []
-
-        for size in self.box_sizes:
-            if size > min(h, w):
-                continue
-            count = 0
-            for y0 in range(0, h, size):
-                for x0 in range(0, w, size):
-                    if self._box_has_pixel(mask, x0, y0, size, w, h):
-                        count += 1
-            if count <= 0:
-                continue
-            log_inv_sizes.append(math.log(1.0 / size))
-            log_counts.append(math.log(count))
-
-        if len(log_counts) < 2:
-            return 0.0
-
-        slope = _linear_slope(log_inv_sizes, log_counts)
-        return round(max(0.0, min(2.0, slope)), 3)
-
-    @staticmethod
-    def _box_has_pixel(mask: Mask, x0: int, y0: int, size: int, w: int, h: int) -> bool:
-        y_end = min(y0 + size, h)
-        x_end = min(x0 + size, w)
-        for y in range(y0, y_end):
-            row = mask[y]
-            for x in range(x0, x_end):
-                if row[x]:
-                    return True
-        return False
-
-
-def _linear_slope(xs: list[float], ys: list[float]) -> float:
-    n = len(xs)
-    mean_x = sum(xs) / n
-    mean_y = sum(ys) / n
-    num = sum((xs[i] - mean_x) * (ys[i] - mean_y) for i in range(n))
-    den = sum((xs[i] - mean_x) ** 2 for i in range(n))
-    if den == 0.0:
-        return 0.0
-    return num / den
+        return box_counting_fd(contour, self.n_scales)
