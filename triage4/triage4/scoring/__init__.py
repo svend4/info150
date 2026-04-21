@@ -16,6 +16,15 @@ from .evidence_aggregator import (
     threshold_evidence,
     weight_evidence,
 )
+from .pair_ranker import (
+    RankConfig,
+    RankResult,
+    RankedPair,
+    build_rank_matrix,
+    compute_pair_score,
+    merge_rank_results,
+)
+from .pair_ranker import rank_pairs as rank_pairs_detailed
 from .rank_fusion import (
     borda_count,
     fuse_rankings,
@@ -39,6 +48,9 @@ from .threshold_selector import (
 __all__ = [
     "EvidenceConfig",
     "EvidenceScore",
+    "RankConfig",
+    "RankResult",
+    "RankedPair",
     "ThresholdConfig",
     "ThresholdResult",
     "aggregate_evidence",
@@ -46,10 +58,14 @@ __all__ = [
     "batch_aggregate",
     "batch_select_thresholds",
     "borda_count",
+    "build_rank_matrix",
     "compute_confidence",
+    "compute_pair_score",
     "fuse_rankings",
+    "merge_rank_results",
     "normalize_scores",
     "rank_by_evidence",
+    "rank_pairs_detailed",
     "reciprocal_rank_fusion",
     "score_fusion",
     "select_adaptive_threshold",

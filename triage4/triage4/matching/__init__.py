@@ -12,6 +12,17 @@ Ported from svend4/meta2 ``puzzle_reconstruction/matching``:
 These primitives back ``triage4.triage_reasoning.score_fusion``.
 """
 
+from .curve_descriptor import (
+    CurveDescriptor,
+    CurveDescriptorConfig,
+    batch_describe_curves,
+    compute_curvature_profile,
+    compute_fourier_descriptor,
+    describe_curve,
+    descriptor_distance,
+    descriptor_similarity,
+    find_best_match,
+)
 from .geometric_match import (
     FragmentGeometry,
     GeometricMatchResult,
@@ -86,6 +97,8 @@ __all__ = [
     "BoundaryMatch",
     "CandidatePair",
     "CombinedScore",
+    "CurveDescriptor",
+    "CurveDescriptorConfig",
     "FragmentGeometry",
     "GeometricMatchResult",
     "MATCHER_REGISTRY",
@@ -98,11 +111,18 @@ __all__ = [
     "area_ratio_similarity",
     "aspect_ratio_similarity",
     "batch_combine",
+    "batch_describe_curves",
     "batch_geometry_match",
     "batch_score_pairs",
     "build_score_matrix",
+    "compute_curvature_profile",
+    "compute_fourier_descriptor",
     "compute_geometry_from_contour",
+    "describe_curve",
+    "descriptor_distance",
+    "descriptor_similarity",
     "edge_length_similarity",
+    "find_best_match",
     "hu_moments_similarity",
     "match_geometry",
     "score_pair_channels",
