@@ -57,6 +57,33 @@
 - [ ] 2.2 conflict_resolver
 - [ ] 3.3 forecast_layer
 
+## Phase 6.5 — Upstream integration (complete)
+
+Systematic mining of `svend4/meta2`, `svend4/infom`, `svend4/in4n` yielded
+~25 directly reusable modules. Ten integration rounds covered:
+
+- **Shape / signature math:** box_counting, divider (Richardson), CSS, chain
+  code, curve_descriptor (Fourier), Hu-moments geometric_match.
+- **Matching:** DTW, rotation_dtw, boundary_matcher (Hausdorff/Chamfer/
+  Fréchet), affine_matcher (pure-numpy RANSAC), orient_matcher.
+- **Scoring:** score_combiner, score_normalizer, threshold_selector,
+  evidence_aggregator, rank_fusion (RRF/Borda), pair_ranker, pair_filter,
+  match_evaluator (precision/recall/F-β), global_ranker,
+  consistency_checker.
+- **Infra:** candidate_ranker, matcher_registry.
+- **Radar signatures:** heptagram, octagram, hexsig (Q6 hypercube).
+- **Graph pattern:** evidence_memory (infom-inspired event log).
+- **UI:** in4n_adapter force-graph export, SemanticZoom / InfoPanel React
+  components, BFS route_planner, html_export.
+- **Triage wrappers:** graph_consistency over upstream machinery.
+
+Remaining upstream modules (~20 items: patch_matcher, feature_match,
+text_flow, seam_score, `meta2/verification/*`, `meta2/algorithms/tangram/`
+(cv2), etc.) are document-specific or cv2-heavy and deliver diminishing
+returns for a triage project. Further upstream mining is officially closed
+here; subsequent work shifts to Phase 7 (multimodal & field) and Phase 8
+(platform integration).
+
 ## Phase 7 — Multimodal & field-hardening
 
 - `signatures/thermal_signature.py`
