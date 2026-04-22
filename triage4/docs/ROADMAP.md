@@ -435,6 +435,31 @@ shipped together on this branch.
 
 **Level C complete.**
 
+## Open self-contained work — 3 remaining K3 cells
+
+These three items are the only technical work left that does not
+depend on external resources (hardware, clinical partners,
+customers). Each is independently scoped and documented in
+`docs/STATUS.md §7`. They are deliberately not assigned to a
+numbered phase — they will land opportunistically as individual
+PRs.
+
+- [ ] **K3-1.3 Dynamic skeletal graph** — time-evolving body
+      graph with wound morphology and limb-asymmetry tracking.
+      Current implementation ships static polygon regions
+      (K3-1.2 only). Target module: `perception/body_graph_3d.py`
+      or `state_graph/skeletal_graph.py`.
+- [ ] **K3-2.2 Conflict resolver** — reconciles contradictory
+      trauma hypotheses via support/conflict edge weighting and
+      rank-order voting. Stub discussed in the source draft;
+      reasoning layer does not yet consume it. Target module:
+      `state_graph/conflict_resolver.py`.
+- [ ] **K3-3.3 Forecast layer** — projects casualty trajectory
+      and mission escalation into the near future. Timeline
+      storage + replay ship in Phase 9c; predictive "what
+      happens in 10 minutes" does not. Target module:
+      `world_replay/forecast_layer.py`.
+
 
 
 ## Риск-регистр (краткий)

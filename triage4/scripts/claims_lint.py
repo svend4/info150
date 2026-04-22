@@ -58,6 +58,8 @@ _ALLOWLIST_FILES = {
     "docs/REGULATORY.md",
     "docs/RISK_REGISTER.md",
     "docs/SAFETY_CASE.md",
+    "docs/STATUS.md",                        # meta-discusses the lint
+    "docs/FURTHER_READING.md",               # cites the standards by name
     "scripts/claims_lint.py",                # the script itself
     "tests/test_claims_lint.py",             # the test for the script
 }
