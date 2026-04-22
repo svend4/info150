@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import tempfile
+from dataclasses import asdict
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
@@ -9,15 +10,23 @@ from fastapi.responses import FileResponse, HTMLResponse, PlainTextResponse
 
 from triage4.autonomy.human_handoff import HumanHandoffService
 from triage4.autonomy.task_allocator import TaskAllocator
+from triage4.core.models import CasualtyNode
+from triage4.evaluation.counterfactual import score_counterfactuals
+from triage4.evaluation.gate2_rapid_triage import evaluate_gate2
 from triage4.graph.casualty_graph import CasualtyGraph
+from triage4.graph.mission_graph import MissionGraph
+from triage4.mission_coordination.mission_triage import triage_mission
+from triage4.triage_reasoning.bayesian_twin import PatientTwinFilter
 from triage4.triage_reasoning.explainability import ExplainabilityBuilder
 from triage4.triage_reasoning.rapid_triage import RapidTriageEngine
+from triage4.triage_reasoning.uncertainty import UncertaintyModel
 from triage4.ui.html_export import render_html
 from triage4.ui.metrics import default_registry, render_metrics
 from triage4.ui.seed import seed_demo_data
+from triage4.world_replay.forecast_layer import ForecastLayer
 
 
-app = FastAPI(title="triage4 API", version="0.2.0")
+app = FastAPI(title="triage4 API", version="0.3.0")
 
 # CORS — permissive for local dev (Vite at :5173 by default) but
 # deliberately NOT using ``allow_credentials=True`` with wildcard
@@ -41,10 +50,47 @@ app.add_middleware(
 )
 
 graph = CasualtyGraph()
+mission_graph = MissionGraph()
 triage_engine = RapidTriageEngine()
 handoff = HumanHandoffService()
 allocator = TaskAllocator()
 explainer = ExplainabilityBuilder()
+uncertainty_model = UncertaintyModel()
+forecast_layer = ForecastLayer()
+
+
+# Per-casualty synthetic severity for counterfactual scoring.
+# Maps the seeded ``priority_hint`` to the severity bucket the
+# counterfactual evaluator expects.
+_SEVERITY_FROM_PRIORITY = {
+    "immediate": "critical",
+    "delayed": "serious",
+    "minimal": "light",
+}
+
+
+def _node_or_404(casualty_id: str) -> CasualtyNode:
+    if casualty_id not in graph.nodes:
+        raise HTTPException(status_code=404, detail="unknown casualty")
+    return graph.nodes[casualty_id]
+
+
+def _synth_history(score: float, steps: int, drift: float) -> list[float]:
+    """Small deterministic score-series seeded on the current score.
+
+    The forecast layer needs ≥ 2 points to have a non-trivial slope;
+    we synthesise ``steps`` equally-spaced samples around ``score``
+    with a light ``drift`` that biases the forecast in the obvious
+    direction (immediate → rising, minimal → flat, delayed → mixed).
+    """
+    if steps < 2:
+        steps = 2
+    base = max(0.0, min(1.0, float(score)))
+    out = []
+    for i in range(steps):
+        x = base + drift * (i - (steps - 1) / 2) / max(1, steps - 1)
+        out.append(max(0.0, min(1.0, x)))
+    return out
 
 
 @app.on_event("startup")
@@ -52,6 +98,20 @@ def on_startup() -> None:
     seed_demo_data(graph, triage_engine)
     for node in graph.all_nodes():
         default_registry.incr_casualty(node.triage_priority)
+    # Seed a minimal mission graph so mission triage has something
+    # to reason over. Matches the simulated 2-medic / UAV setup.
+    if not mission_graph.medic_assignments and graph.nodes:
+        immediate = [
+            n for n in graph.all_nodes() if n.triage_priority == "immediate"
+        ][:2]
+        for i, node in enumerate(immediate):
+            mission_graph.assign_medic(f"medic_{i + 1}", node.id)
+        mission_graph.assign_robot("demo_uav", next(iter(graph.nodes)))
+
+
+# ---------------------------------------------------------------------------
+# Basic
+# ---------------------------------------------------------------------------
 
 
 @app.get("/health")
@@ -65,6 +125,11 @@ def metrics() -> PlainTextResponse:
     return PlainTextResponse(body, media_type=content_type)
 
 
+# ---------------------------------------------------------------------------
+# Casualties
+# ---------------------------------------------------------------------------
+
+
 @app.get("/casualties")
 def casualties() -> list[dict]:
     return [n.to_dict() for n in graph.all_nodes()]
@@ -72,23 +137,222 @@ def casualties() -> list[dict]:
 
 @app.get("/casualties/{casualty_id}")
 def casualty_detail(casualty_id: str) -> dict:
-    if casualty_id not in graph.nodes:
-        raise HTTPException(status_code=404, detail="unknown casualty")
-    return graph.nodes[casualty_id].to_dict()
+    return _node_or_404(casualty_id).to_dict()
 
 
 @app.get("/casualties/{casualty_id}/explain")
 def casualty_explain(casualty_id: str) -> dict:
-    if casualty_id not in graph.nodes:
-        raise HTTPException(status_code=404, detail="unknown casualty")
-    return explainer.summarize(graph.nodes[casualty_id])
+    return explainer.summarize(_node_or_404(casualty_id))
 
 
 @app.get("/casualties/{casualty_id}/handoff")
 def casualty_handoff(casualty_id: str) -> dict:
-    if casualty_id not in graph.nodes:
-        raise HTTPException(status_code=404, detail="unknown casualty")
-    return handoff.package_for_medic(graph.nodes[casualty_id])
+    return handoff.package_for_medic(_node_or_404(casualty_id))
+
+
+@app.get("/casualties/{casualty_id}/twin")
+def casualty_twin(casualty_id: str) -> dict:
+    """Bayesian patient twin — posterior over priority bands."""
+    node = _node_or_404(casualty_id)
+    filt = PatientTwinFilter(seed=42)
+    # Repeat the observation a few times so the filter has something
+    # to condense against (single-sample posterior would be too noisy).
+    posterior = None
+    for _ in range(5):
+        posterior = filt.update(node.signatures, dt_s=1.0)
+    assert posterior is not None
+    return {
+        "casualty_id": casualty_id,
+        "priority_probs": posterior.priority_probs,
+        "most_likely_priority": posterior.most_likely_priority,
+        "most_likely_probability": posterior.most_likely_probability,
+        "deterioration_rate": posterior.deterioration_rate,
+        "effective_sample_size": posterior.effective_sample_size,
+        "is_degenerate": posterior.is_degenerate,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Mission
+# ---------------------------------------------------------------------------
+
+
+@app.get("/mission/status")
+def mission_status() -> dict:
+    """Fractal mission-level triage: escalate / sustain / wind_down."""
+    signature, result = triage_mission(
+        casualty_graph=graph,
+        mission_graph=mission_graph,
+        platform_capacity=10,
+        n_medics=3,
+        elapsed_minutes=30.0,
+        mission_window_minutes=60.0,
+    )
+    return {
+        "signature": asdict(signature),
+        "priority": result.priority,
+        "score": result.score,
+        "contributions": result.contributions,
+        "reasons": result.reasons,
+        "medic_assignments": dict(mission_graph.medic_assignments),
+        "unresolved_regions": sorted(mission_graph.unresolved_regions),
+    }
+
+
+# ---------------------------------------------------------------------------
+# Forecast
+# ---------------------------------------------------------------------------
+
+
+@app.get("/forecast/casualty/{casualty_id}")
+def forecast_casualty(casualty_id: str, minutes: float = 5.0) -> dict:
+    """Project a casualty's urgency ``minutes`` minutes into the future."""
+    node = _node_or_404(casualty_id)
+    drift = {
+        "immediate": 0.05,
+        "delayed": 0.01,
+        "minimal": -0.01,
+        "unknown": 0.0,
+    }.get(node.triage_priority, 0.0)
+    score_history = _synth_history(node.confidence, steps=5, drift=drift)
+    fc = forecast_layer.project_casualty(score_history, minutes_ahead=minutes)
+    return {
+        "casualty_id": casualty_id,
+        "score_history": [round(s, 3) for s in score_history],
+        "projected_score": fc.projected_score,
+        "projected_priority": fc.projected_priority,
+        "slope_per_minute": fc.slope_per_minute,
+        "confidence": fc.confidence,
+        "reasons": fc.reasons,
+        "minutes_ahead": float(minutes),
+    }
+
+
+@app.get("/forecast/mission")
+def forecast_mission(minutes: float = 5.0) -> dict:
+    """Extrapolate the mission signature ``minutes`` into the future."""
+    # Build a tiny history of mission signatures by rerunning triage
+    # with slightly advancing time-budget burn. Enough for the
+    # forecaster to compute a slope.
+    history = []
+    for t in (15.0, 20.0, 25.0, 30.0):
+        sig, _ = triage_mission(
+            casualty_graph=graph,
+            mission_graph=mission_graph,
+            platform_capacity=10,
+            n_medics=3,
+            elapsed_minutes=t,
+            mission_window_minutes=60.0,
+        )
+        history.append(sig)
+
+    fc = forecast_layer.project_mission(history, minutes_ahead=minutes)
+    return {
+        "projected_signature": asdict(fc.projected_signature),
+        "projected_priority": fc.projected_result.priority,
+        "projected_score": fc.projected_result.score,
+        "contributions": fc.projected_result.contributions,
+        "per_channel_slope": fc.per_channel_slope,
+        "reasons": fc.reasons,
+        "minutes_ahead": float(minutes),
+    }
+
+
+# ---------------------------------------------------------------------------
+# Evaluation scorecard (Gate 2 + HMT + counterfactual regret)
+# ---------------------------------------------------------------------------
+
+
+@app.get("/evaluation/scorecard")
+def evaluation_scorecard() -> dict:
+    """Run DARPA-gate-style evaluation against the seeded ground truth.
+
+    Only Gate 2 (rapid-triage classification) is derivable from the
+    in-memory casualty graph — gates 1/3/4 need perception / trauma
+    labels that the dashboard's seed doesn't carry. Counterfactual
+    regret uses the priority-hint → severity mapping from the seed
+    table.
+    """
+    from triage4.ui.seed import DEMO_ROWS
+
+    # Predictions = engine decisions currently in the graph.
+    predictions = [
+        (n.id, n.triage_priority) for n in graph.all_nodes()
+    ]
+    # Truths come from the seed's priority_hint column.
+    truths = [(row[0], row[1]) for row in DEMO_ROWS if row[0] in graph.nodes]
+
+    gate2 = evaluate_gate2(predictions, truths)
+
+    # Counterfactual regret — for each casualty with a known severity
+    # (via the seed), compute actual vs. best-alternative outcome.
+    regrets: list[dict] = []
+    for cid, priority_hint, _x, _y in DEMO_ROWS:
+        if cid not in graph.nodes:
+            continue
+        severity = _SEVERITY_FROM_PRIORITY.get(priority_hint)
+        if severity is None:
+            continue
+        node = graph.nodes[cid]
+        actual_priority = node.triage_priority
+        if actual_priority not in {"immediate", "delayed", "minimal"}:
+            continue
+        # Synthetic outcome proxy: blend confidence with priority
+        # weight. Not clinically meaningful — just enough for the
+        # counterfactual to have non-constant inputs.
+        actual_outcome = min(1.0, max(0.0, 0.5 + 0.4 * node.confidence))
+        case = score_counterfactuals(
+            cid, severity, actual_priority, actual_outcome,
+        )
+        regrets.append({
+            "casualty_id": case.casualty_id,
+            "severity": case.true_severity,
+            "actual_priority": case.actual_priority,
+            "actual_outcome": case.actual_outcome,
+            "counterfactuals": case.counterfactuals,
+            "best_alternative": case.best_alternative,
+            "regret": case.regret,
+        })
+
+    mean_regret = (
+        sum(r["regret"] for r in regrets) / len(regrets) if regrets else 0.0
+    )
+
+    return {
+        "gate2": {
+            "accuracy": gate2.accuracy,
+            "macro_f1": gate2.macro_f1,
+            "critical_miss_rate": gate2.critical_miss_rate,
+            "per_class": {
+                label: {
+                    "precision": round(stats.precision, 3),
+                    "recall": round(stats.recall, 3),
+                    "f1": round(stats.f1, 3),
+                    "tp": stats.tp,
+                    "fp": stats.fp,
+                    "fn": stats.fn,
+                }
+                for label, stats in gate2.per_class.items()
+            },
+            "confusion_matrix": gate2.confusion.tolist(),
+            "class_labels": list(gate2.class_labels),
+        },
+        "counterfactuals": {
+            "cases": regrets,
+            "mean_regret": round(mean_regret, 3),
+            "n": len(regrets),
+        },
+        "summary": {
+            "total_casualties": len(graph.nodes),
+            "critical_miss_rate": gate2.critical_miss_rate,
+            "accuracy": gate2.accuracy,
+        },
+    }
+
+
+# ---------------------------------------------------------------------------
+# Graph / map / replay / tasks / export (existing)
+# ---------------------------------------------------------------------------
 
 
 @app.get("/graph")

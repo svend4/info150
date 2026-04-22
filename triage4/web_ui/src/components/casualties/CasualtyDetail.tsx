@@ -7,12 +7,14 @@ import type { Casualty } from "../../types";
 import CasualtyOverview from "./CasualtyOverview";
 import ExplainPanel from "./ExplainPanel";
 import HandoffPanel from "./HandoffPanel";
+import TwinPanel from "./TwinPanel";
 
-type SubTab = "overview" | "explain" | "handoff";
+type SubTab = "overview" | "explain" | "twin" | "handoff";
 
 const TABS: { key: SubTab; label: string }[] = [
   { key: "overview", label: "Overview" },
   { key: "explain", label: "Explain" },
+  { key: "twin", label: "Twin" },
   { key: "handoff", label: "Handoff" },
 ];
 
@@ -66,6 +68,7 @@ export default function CasualtyDetail({ casualty }: Props) {
       <div style={{ background: "var(--bg-0)" }}>
         {sub === "overview" && <CasualtyOverview casualty={casualty} />}
         {sub === "explain" && <ExplainPanel casualtyId={casualty.id} />}
+        {sub === "twin" && <TwinPanel casualtyId={casualty.id} />}
         {sub === "handoff" && <HandoffPanel casualtyId={casualty.id} />}
       </div>
     </div>

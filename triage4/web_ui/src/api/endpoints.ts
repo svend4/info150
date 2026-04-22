@@ -5,13 +5,18 @@
 
 import type {
   Casualty,
+  CasualtyForecast,
   Explanation,
   GraphData,
   HandoffPayload,
   HealthStatus,
   MapData,
+  MissionForecast,
+  MissionStatus,
   ReplayData,
+  Scorecard,
   TaskRecommendation,
+  TwinPosterior,
 } from "../types";
 import { getJson, getText } from "./client";
 
@@ -53,4 +58,42 @@ export function fetchGraph(signal?: AbortSignal): Promise<GraphData> {
 
 export function fetchMetricsText(signal?: AbortSignal): Promise<string> {
   return getText("/metrics", signal);
+}
+
+// Tier 1 — new endpoints.
+
+export function fetchMissionStatus(signal?: AbortSignal): Promise<MissionStatus> {
+  return getJson<MissionStatus>("/mission/status", signal);
+}
+
+export function fetchCasualtyTwin(
+  id: string,
+  signal?: AbortSignal,
+): Promise<TwinPosterior> {
+  return getJson<TwinPosterior>(
+    `/casualties/${encodeURIComponent(id)}/twin`,
+    signal,
+  );
+}
+
+export function fetchCasualtyForecast(
+  id: string,
+  minutes: number,
+  signal?: AbortSignal,
+): Promise<CasualtyForecast> {
+  return getJson<CasualtyForecast>(
+    `/forecast/casualty/${encodeURIComponent(id)}?minutes=${minutes}`,
+    signal,
+  );
+}
+
+export function fetchMissionForecast(
+  minutes: number,
+  signal?: AbortSignal,
+): Promise<MissionForecast> {
+  return getJson<MissionForecast>(`/forecast/mission?minutes=${minutes}`, signal);
+}
+
+export function fetchScorecard(signal?: AbortSignal): Promise<Scorecard> {
+  return getJson<Scorecard>("/evaluation/scorecard", signal);
 }

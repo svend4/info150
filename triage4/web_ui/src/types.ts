@@ -143,3 +143,104 @@ export type ApiError = {
   message: string;
   url: string;
 };
+
+// --- mission (Tier 1) --------------------------------------------------
+
+export type MissionPriority = "escalate" | "sustain" | "wind_down";
+
+export type MissionSignature = {
+  casualty_density: number;
+  immediate_fraction: number;
+  unresolved_sector_fraction: number;
+  medic_utilisation: number;
+  time_budget_burn: number;
+};
+
+export type MissionStatus = {
+  signature: MissionSignature;
+  priority: MissionPriority | string;
+  score: number;
+  contributions: Record<string, number>;
+  reasons: string[];
+  medic_assignments: Record<string, string>;
+  unresolved_regions: string[];
+};
+
+// --- twin (Tier 1) -----------------------------------------------------
+
+export type TwinPosterior = {
+  casualty_id: string;
+  priority_probs: Record<string, number>;
+  most_likely_priority: string;
+  most_likely_probability: number;
+  deterioration_rate: number;
+  effective_sample_size: number;
+  is_degenerate: boolean;
+};
+
+// --- forecast (Tier 1) -------------------------------------------------
+
+export type CasualtyForecast = {
+  casualty_id: string;
+  score_history: number[];
+  projected_score: number;
+  projected_priority: string;
+  slope_per_minute: number;
+  confidence: number;
+  reasons: string[];
+  minutes_ahead: number;
+};
+
+export type MissionForecast = {
+  projected_signature: MissionSignature;
+  projected_priority: string;
+  projected_score: number;
+  contributions: Record<string, number>;
+  per_channel_slope: Record<string, number>;
+  reasons: string[];
+  minutes_ahead: number;
+};
+
+// --- scorecard (Tier 1) ------------------------------------------------
+
+export type Gate2PerClass = {
+  precision: number;
+  recall: number;
+  f1: number;
+  tp: number;
+  fp: number;
+  fn: number;
+};
+
+export type Gate2Summary = {
+  accuracy: number;
+  macro_f1: number;
+  critical_miss_rate: number;
+  per_class: Record<string, Gate2PerClass>;
+  confusion_matrix: number[][];
+  class_labels: string[];
+};
+
+export type CounterfactualCase = {
+  casualty_id: string;
+  severity: string;
+  actual_priority: string;
+  actual_outcome: number;
+  counterfactuals: Record<string, number>;
+  best_alternative: string;
+  regret: number;
+};
+
+export type Scorecard = {
+  gate2: Gate2Summary;
+  counterfactuals: {
+    cases: CounterfactualCase[];
+    mean_regret: number;
+    n: number;
+  };
+  summary: {
+    total_casualties: number;
+    critical_miss_rate: number;
+    accuracy: number;
+  };
+};
