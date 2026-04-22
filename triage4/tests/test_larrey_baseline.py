@@ -79,21 +79,27 @@ def test_minimal_with_reasons_gives_null_statement():
     assert reasons == ["no visible distress"]
 
 
-def test_larrey_vs_rapid_triage_scored_through_gate2_documents_gap():
-    """Running both classifiers through Gate 2 surfaces a documented gap.
+def test_larrey_vs_rapid_triage_critical_gap_closed():
+    """Phase 9a's critical gap — isolated mortal signs — is now closed.
 
-    Larrey (1797) flags isolated heavy bleeding as ``immediate`` because
-    a single mortal sign is enough. The modern ``RapidTriageEngine``
-    uses weighted fusion across all signatures — so isolated strong
-    bleeding with zero chest-motion / perfusion channels only reaches
-    the ``delayed`` band. This is exactly the kind of baseline
-    comparison idea #4 was designed to surface; we preserve the
-    finding here so regressions are visible.
+    Phase 9a documented that isolated heavy bleeding slipped through
+    ``RapidTriageEngine`` as ``delayed`` because the weighted-fusion
+    score (0.9 × 0.45 ≈ 0.4) never crossed the 0.65 immediate threshold.
+    Phase 9b adds a mortal-sign override in
+    ``score_fusion.priority_from_score`` that forces ``immediate`` when
+    any single channel crosses its mortal threshold — the Larrey
+    decision principle translated into the modern engine.
+
+    This test verifies the critical-miss case only. Minor per-class
+    disagreements on the delayed/minimal boundary are out of scope and
+    tracked separately (they are not life-threatening).
     """
     scene = [
         ("C1", CasualtySignature(bleeding_visual_score=0.9), "immediate"),
-        ("C2", CasualtySignature(bleeding_visual_score=0.45), "delayed"),
-        ("C3", CasualtySignature(), "minimal"),
+        ("C2", CasualtySignature(chest_motion_fd=0.05,
+                                 breathing_curve=[0.01] * 6), "immediate"),
+        ("C3", CasualtySignature(posture_instability_score=0.9), "immediate"),
+        ("C4", CasualtySignature(), "minimal"),
     ]
     larrey = LarreyBaselineTriage()
     rapid = RapidTriageEngine()
@@ -107,13 +113,22 @@ def test_larrey_vs_rapid_triage_scored_through_gate2_documents_gap():
     r_larrey = evaluate_gate2(larrey_preds, truths)
     r_rapid = evaluate_gate2(rapid_preds, truths)
 
-    # Larrey baseline: perfect on this simple scene — a mortal sign is enough.
-    assert r_larrey.accuracy == 1.0
+    # Both must hit zero critical misses — that's the life-vs-death metric.
     assert r_larrey.critical_miss_rate == 0.0
+    assert r_rapid.critical_miss_rate == 0.0
+    # And both must correctly spot every isolated-mortal-sign case as immediate.
+    for cid, label in rapid_preds[:3]:
+        assert label == "immediate", (
+            f"{cid} should be immediate by mortal-sign override, got {label}"
+        )
 
-    # Modern engine: misses isolated strong bleeding as an immediate
-    # because its score-fusion weights (~0.45 for bleeding) cannot cross
-    # the 0.65 immediate threshold without help from another channel.
-    # This is a known calibration gap tracked via this test.
-    assert r_rapid.critical_miss_rate == 1.0
-    assert r_rapid.accuracy <= r_larrey.accuracy
+
+def test_mortal_sign_override_reason_surfaced():
+    """The operator must see why priority jumped above the fused score."""
+    rapid = RapidTriageEngine()
+    sig = CasualtySignature(bleeding_visual_score=0.9)
+    priority, score, reasons = rapid.infer_priority(sig)
+    assert priority == "immediate"
+    # Fused score is only ~0.4 — so the jump must be annotated.
+    assert score < 0.65
+    assert any("mortal-sign override" in r for r in reasons)

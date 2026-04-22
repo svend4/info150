@@ -3,6 +3,8 @@ from __future__ import annotations
 from triage4.core.models import CasualtySignature, TraumaHypothesis
 from triage4.triage_reasoning.score_fusion import (
     DEFAULT_WEIGHTS,
+    MortalThresholds,
+    detect_mortal_signs,
     fuse_triage_score,
     priority_from_score,
 )
@@ -13,19 +15,35 @@ class RapidTriageEngine:
 
     The engine delegates the numeric part to ``score_fusion.fuse_triage_score``
     (which is built on top of meta2's ``ScoreVector`` / ``weighted_combine``
-    primitives). The engine itself just turns the fused score into a triage
-    priority and a human-readable reason list.
+    primitives). The engine turns the fused score into a priority via
+    ``priority_from_score`` — which also applies the mortal-sign override
+    introduced in Phase 9b (the isolated-heavy-bleeding case originally
+    surfaced by the Larrey baseline).
     """
 
-    def __init__(self, weights: dict[str, float] | None = None) -> None:
+    def __init__(
+        self,
+        weights: dict[str, float] | None = None,
+        mortal_thresholds: MortalThresholds | None = None,
+    ) -> None:
         self.weights = dict(weights or DEFAULT_WEIGHTS)
+        self.mortal_thresholds = mortal_thresholds or MortalThresholds()
 
     def infer_priority(
         self, sig: CasualtySignature
     ) -> tuple[str, float, list[str]]:
         combined = fuse_triage_score(sig, self.weights)
-        priority = priority_from_score(combined.score)
+        priority = priority_from_score(
+            combined.score, sig=sig, thresholds=self.mortal_thresholds
+        )
         reasons = self._reasons(sig, combined.contributions)
+        # Mortal-sign override surfaces in the reason list so the operator
+        # can see why the priority jumped above the fused score.
+        mortal = detect_mortal_signs(sig, self.mortal_thresholds)
+        if mortal and priority == "immediate" and combined.score < 0.65:
+            reasons.append(
+                f"mortal-sign override ({', '.join(mortal)})"
+            )
         return priority, round(combined.score, 3), reasons
 
     def build_hypotheses(self, sig: CasualtySignature) -> list[TraumaHypothesis]:

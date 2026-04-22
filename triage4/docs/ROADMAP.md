@@ -152,13 +152,33 @@ existing contracts.
 
 **Phase 9a complete.**
 
-## Phase 9b — Real-data classical calibration (planned)
+## Phase 9b — Real-data classical calibration
 
-- Pick one public dataset per channel (ISIC / PhysioNet / COCO-person).
-- Replace `PersonDetector` stub with a real YOLO-class model.
-- Recalibrate `RapidTriageEngine` thresholds via `select_f1_threshold`.
-- Close the critical gap found in Phase 9a (isolated-bleeding miss).
-- Draft a one-pager using the full pipeline scorecard.
+Prepared triage4 to meet real datasets and hardware without any runtime
+breaking changes. The critical calibration gap from Phase 9a is closed.
+
+- [x] `triage_reasoning/score_fusion.py` — `MortalThresholds` +
+      override in `priority_from_score`. A single channel above its
+      clinical threshold forces ``immediate`` regardless of the fused
+      score. Closes the Larrey-gap identified in Phase 9a.
+- [x] `perception/yolo_detector.py` — `LoopbackYOLODetector` (canned,
+      deterministic) plus `build_ultralytics_detector` lazy factory.
+      Replaces the `PersonDetector` stub without forcing every
+      install to pull in PyTorch.
+- [x] `sim/realistic_dataset.py` — 7 scenarios × N per-scenario
+      labelled cases (default N=10 → 70 examples) with edge cases:
+      isolated mortal signs, ambiguous mid-band, and sensor-degraded
+      variants. The dataset every future calibration feeds on.
+- [x] `triage_reasoning/calibration.py` — grid-search calibrator that
+      optimises fusion weights + priority thresholds to minimise
+      `critical_miss_rate` first and then maximise `macro_f1`.
+- [x] `integrations/physionet_adapter.py` — `PhysioNetRecord` plus
+      `load_dict` (in-memory, always works) and `load_wfdb` (lazy
+      WFDB import). Integrates directly with `VitalsEstimator`.
+- [x] `docs/ONE_PAGER.md` — grant-ready project summary with DARPA
+      gate scorecard, differentiators, honest gaps, and ask.
+
+**Phase 9b complete.**
 
 ## Phase 9c — Innovation pack, part 2 (planned)
 

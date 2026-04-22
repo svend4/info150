@@ -19,6 +19,12 @@ from .websocket_bridge import LoopbackWebSocketBridge, build_fastapi_websocket_b
 from .mavlink_bridge import LoopbackMAVLinkBridge, build_pymavlink_bridge
 from .ros2_bridge import LoopbackROS2Bridge, build_rclpy_bridge
 from .spot_bridge import LoopbackSpotBridge, build_bosdyn_bridge
+from .physionet_adapter import (
+    PhysioNetRecord,
+    PhysioNetUnavailable,
+    load_dict,
+    load_wfdb,
+)
 
 __all__ = [
     "BridgeUnavailable",
@@ -29,10 +35,14 @@ __all__ = [
     "LoopbackSpotBridge",
     "LoopbackWebSocketBridge",
     "Meta2SignatureAdapter",
+    "PhysioNetRecord",
+    "PhysioNetUnavailable",
     "PlatformBridge",
     "PlatformTelemetry",
     "build_bosdyn_bridge",
     "build_fastapi_websocket_bridge",
     "build_pymavlink_bridge",
     "build_rclpy_bridge",
+    "load_dict",
+    "load_wfdb",
 ]
