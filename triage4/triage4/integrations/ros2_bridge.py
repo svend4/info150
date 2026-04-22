@@ -101,24 +101,64 @@ class LoopbackROS2Bridge:
         self._telemetry.connected = False
 
 
-def build_rclpy_bridge(*args, **kwargs):  # pragma: no cover
+def build_rclpy_bridge(  # pragma: no cover
+    platform_id: str = "triage4_node",
+    topics: dict[str, str] | None = None,
+    odom_topic: str = "/odom",
+    battery_topic: str = "/battery_state",
+    domain_id: int | None = None,
+    qos_depth: int = 10,
+):
     """Skeleton real ROS2 backend using ``rclpy``.
 
-    Implementation outline:
-      - ``rclpy.init()``;
-      - create a ``Node``;
-      - declare publishers for each topic in ``LoopbackROS2Bridge.DEFAULT_TOPICS``;
-      - declare a subscription to platform odometry / battery topics that
-        updates the telemetry snapshot.
+    Not wired up to a live ROS2 domain — raises ``NotImplementedError``
+    on purpose so this skeleton cannot silently ship. The call sites
+    and SDK-specific wiring below are verified against the rclpy API
+    and can be turned into a working node by replacing each pseudocode
+    block with the concrete rclpy calls.
+
+    Implementation outline (rclpy ≥ Humble)::
+
+        import rclpy
+        from rclpy.node import Node
+        from std_msgs.msg import String
+        from nav_msgs.msg import Odometry
+        from sensor_msgs.msg import BatteryState
+
+        rclpy.init(domain_id=domain_id)
+        node = Node(platform_id)
+
+        publishers = {
+            kind: node.create_publisher(String, topic, qos_depth)
+            for kind, topic in (topics or LoopbackROS2Bridge.DEFAULT_TOPICS).items()
+        }
+
+        def on_odom(msg: Odometry) -> None:
+            # Update the PlatformTelemetry pose from msg.pose.pose.
+            ...
+
+        def on_battery(msg: BatteryState) -> None:
+            # Update telemetry.battery_pct from msg.percentage * 100.
+            ...
+
+        node.create_subscription(Odometry, odom_topic, on_odom, qos_depth)
+        node.create_subscription(BatteryState, battery_topic, on_battery, qos_depth)
+
+    The returned bridge exposes the same ``publish_casualty`` /
+    ``publish_mission_graph`` / ``publish_handoff`` / ``send_waypoint``
+    surface as ``LoopbackROS2Bridge`` so ``PlatformBridge`` conformance
+    holds. Use ``tests/test_bridges_contract.py`` as the acceptance
+    criterion before wiring this against real hardware.
     """
     try:
         import rclpy  # noqa: F401
-    except ImportError as exc:  # pragma: no cover
+    except ImportError as exc:
         raise BridgeUnavailable(
             "rclpy is not installed. Install ROS2 Python bindings or use "
             "LoopbackROS2Bridge in tests."
         ) from exc
     raise NotImplementedError(
         "Real rclpy backend is a skeleton — wire up Node/publishers against "
-        "a running ROS2 domain."
+        "a running ROS2 domain. See docs/HARDWARE_INTEGRATION.md for the "
+        "per-call outline."
     )

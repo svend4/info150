@@ -84,17 +84,58 @@ class LoopbackWebSocketBridge:
         self._telemetry.connected = False
 
 
-def build_fastapi_websocket_bridge(*args, **kwargs):  # pragma: no cover
+def build_fastapi_websocket_bridge(  # pragma: no cover
+    app=None,
+    path: str = "/ws/triage4",
+    platform_id: str = "dashboard",
+    max_history: int = 512,
+):
     """Skeleton real-backend factory using FastAPI websockets.
 
-    The real implementation would keep a set of active ``WebSocket``
-    connections and broadcast JSON-serialised payloads to each. Left as
-    a skeleton here because instantiating live websocket connections
-    requires an async FastAPI server context which is out of scope for
-    the triage4 unit-test layer.
+    Not wired up — raises ``NotImplementedError``. The implementation
+    outline below is aligned with FastAPI's websocket API and can be
+    dropped into any FastAPI app.
+
+    Implementation outline::
+
+        from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+
+        bridge = LoopbackWebSocketBridge(
+            platform_id=platform_id, max_history=max_history,
+        )
+        clients: set[WebSocket] = set()
+
+        @app.websocket(path)
+        async def _endpoint(ws: WebSocket) -> None:
+            await ws.accept()
+            # Authenticate here — token or mTLS. See RISK_REGISTER SEC-002.
+            clients.add(ws)
+            # Replay recent history on connect so a late client doesn't
+            # miss the last few mission events.
+            for item in bridge.history:
+                await ws.send_json(item)
+            try:
+                while True:
+                    await ws.receive_text()
+            except WebSocketDisconnect:
+                clients.discard(ws)
+
+        # Override the loopback _emit to also broadcast.
+        original_emit = bridge._emit
+        def _broadcast(kind: str, payload: dict) -> None:
+            original_emit(kind, payload)
+            for ws in list(clients):
+                asyncio.create_task(
+                    ws.send_json({"kind": kind, "payload": payload})
+                )
+        bridge._emit = _broadcast  # type: ignore[assignment]
+        return bridge
+
+    Deployment notes: terminate TLS outside the app (reverse proxy),
+    require a bearer token in the first inbound frame, and rate-limit
+    per-client. See docs/HARDWARE_INTEGRATION.md.
     """
     raise NotImplementedError(
-        "Real FastAPI websocket backend is a skeleton. "
-        "Wire up in the FastAPI app via @app.websocket(...) and forward "
-        "to LoopbackWebSocketBridge-compatible publish_* methods."
+        "Real FastAPI websocket backend is a skeleton. See "
+        "docs/HARDWARE_INTEGRATION.md for the outline."
     )

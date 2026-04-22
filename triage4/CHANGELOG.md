@@ -10,6 +10,18 @@ is implemented by one or several commits on the feature branch.
 
 ## Unreleased / 0.1.0 — branch `claude/analyze-documents-structure-Ik1KX`
 
+### Phase 10-prep — Hardware integration scaffold
+
+- `integrations/bridge_health.py` — `BridgeHealth`,
+  `check_bridge_health`, `check_telemetry`, `safe_to_dispatch`.
+- Real-backend factory skeletons in `ros2_bridge`, `mavlink_bridge`,
+  `spot_bridge`, `websocket_bridge` now carry concrete SDK call
+  outlines. Still raise `NotImplementedError`.
+- `tests/test_bridges_contract.py` — 29 Protocol-conformance + health-
+  check tests plus real-backend factory failure-mode tests.
+- `docs/HARDWARE_INTEGRATION.md` — per-platform wiring guide,
+  first-flight checklist, BridgeHealth usage, non-goals.
+
 ### Phase 12 — Regulatory awareness docs
 
 - `docs/REGULATORY.md` — IMDRF / IEC 62304 / FDA / EU MDR / AI-ML

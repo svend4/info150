@@ -269,6 +269,42 @@ before any clinical pilot, not to claim compliance.
 
 **Phase 12 complete.** (Docs only — no code changes.)
 
+## Phase 10-prep — Hardware integration scaffold
+
+Preparatory work for Phase 10 proper (live UAV / quadruped / camera
+integration). Phase 10 itself needs physical hardware and external
+SDKs; this sub-phase ships the scaffold so that when hardware lands,
+wiring is a 1-day task per platform rather than a from-scratch
+investigation.
+
+- [x] `triage4/integrations/bridge_health.py` — `BridgeHealth`
+      dataclass + `check_bridge_health(bridge)` / `check_telemetry(tm)`
+      / `safe_to_dispatch(health)`. Uniform failure-mode surface for
+      any `PlatformBridge`: empty platform_id, disconnected,
+      non-finite pose, out-of-range or low battery, stale telemetry,
+      platform_id mismatch between bridge and snapshot.
+- [x] Real-backend factory skeletons fleshed out in
+      `ros2_bridge.build_rclpy_bridge`,
+      `mavlink_bridge.build_pymavlink_bridge`,
+      `spot_bridge.build_bosdyn_bridge`,
+      `websocket_bridge.build_fastapi_websocket_bridge`. Each carries
+      concrete SDK call outlines matching the current vendor APIs;
+      still raises `NotImplementedError` to prevent silent shipping.
+- [x] `tests/test_bridges_contract.py` — 29 Protocol-conformance +
+      health-check tests. Every Loopback bridge satisfies
+      `isinstance(bridge, PlatformBridge)`, roundtrips every publish
+      method, and respects `close()`. Real-backend factories must
+      raise `BridgeUnavailable` or `NotImplementedError`, never
+      silently succeed.
+- [x] `docs/HARDWARE_INTEGRATION.md` — per-platform wiring guide
+      (ROS2 topics, MAVLink frame-swap note, bosdyn lease lifecycle,
+      WebSocket security), BridgeHealth usage, first-flight
+      checklist, optional-dep layout, non-goals, open questions.
+
+**Phase 10-prep complete.** Phase 10 proper still needs real HW.
+
+
+
 ## Риск-регистр (краткий)
 
 См. `docs/RISK_REGISTER.md` для полного реестра. Краткая сводка

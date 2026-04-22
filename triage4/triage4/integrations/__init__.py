@@ -15,6 +15,12 @@ from .meta2_adapter import Meta2SignatureAdapter
 from .infom_adapter import InfoMGraphAdapter
 from .in4n_adapter import In4nSceneAdapter
 from .platform_bridge import BridgeUnavailable, PlatformBridge, PlatformTelemetry
+from .bridge_health import (
+    BridgeHealth,
+    check_bridge_health,
+    check_telemetry,
+    safe_to_dispatch,
+)
 from .websocket_bridge import LoopbackWebSocketBridge, build_fastapi_websocket_bridge
 from .mavlink_bridge import LoopbackMAVLinkBridge, build_pymavlink_bridge
 from .ros2_bridge import LoopbackROS2Bridge, build_rclpy_bridge
@@ -36,6 +42,7 @@ from .marker_codec import (
 )
 
 __all__ = [
+    "BridgeHealth",
     "BridgeUnavailable",
     "InfoMGraphAdapter",
     "In4nSceneAdapter",
@@ -54,11 +61,14 @@ __all__ = [
     "build_fastapi_websocket_bridge",
     "build_pymavlink_bridge",
     "build_rclpy_bridge",
+    "check_bridge_health",
+    "check_telemetry",
     "decode_marker",
     "encode_marker",
     "from_qr_string",
     "load_dict",
     "load_wfdb",
     "marker_to_node",
+    "safe_to_dispatch",
     "to_qr_string",
 ]
