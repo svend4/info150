@@ -53,9 +53,9 @@
 - [x] `tactical_scene/map_projection.py`
 - [x] `world_replay/timeline_store.py`
 - [x] `world_replay/replay_engine.py`
-- [ ] 1.3 dynamic skeletal graph
-- [ ] 2.2 conflict_resolver
-- [ ] 3.3 forecast_layer
+- [x] 1.3 dynamic skeletal graph — `state_graph/skeletal_graph.py`
+- [x] 2.2 conflict_resolver — `state_graph/conflict_resolver.py`
+- [x] 3.3 forecast_layer — `world_replay/forecast_layer.py`
 
 ## Phase 6.5 — Upstream integration (complete)
 
@@ -435,30 +435,36 @@ shipped together on this branch.
 
 **Level C complete.**
 
-## Open self-contained work — 3 remaining K3 cells
+## K3 matrix closure — 3 remaining cells shipped
 
-These three items are the only technical work left that does not
-depend on external resources (hardware, clinical partners,
-customers). Each is independently scoped and documented in
-`docs/STATUS.md §7`. They are deliberately not assigned to a
-numbered phase — they will land opportunistically as individual
-PRs.
+All 9 cells of the K3 matrix now have concrete implementations.
+These three were the only technical work left that did not depend
+on external resources.
 
-- [ ] **K3-1.3 Dynamic skeletal graph** — time-evolving body
-      graph with wound morphology and limb-asymmetry tracking.
-      Current implementation ships static polygon regions
-      (K3-1.2 only). Target module: `perception/body_graph_3d.py`
-      or `state_graph/skeletal_graph.py`.
-- [ ] **K3-2.2 Conflict resolver** — reconciles contradictory
-      trauma hypotheses via support/conflict edge weighting and
-      rank-order voting. Stub discussed in the source draft;
-      reasoning layer does not yet consume it. Target module:
-      `state_graph/conflict_resolver.py`.
-- [ ] **K3-3.3 Forecast layer** — projects casualty trajectory
-      and mission escalation into the near future. Timeline
-      storage + replay ship in Phase 9c; predictive "what
-      happens in 10 minutes" does not. Target module:
-      `world_replay/forecast_layer.py`.
+- [x] **K3-1.3 Dynamic skeletal graph** —
+      `state_graph/skeletal_graph.py`. 13-joint humanoid skeleton
+      with time-stamped observations, per-joint wound intensity,
+      motion score (path length per second, clipped to [0, 1]),
+      wound slope (least-squares trend), and left-vs-right
+      asymmetry reports across 5 mirror pairs. 26 tests.
+- [x] **K3-2.2 Conflict resolver** —
+      `state_graph/conflict_resolver.py`. `ConflictResolver` takes
+      raw hypothesis scores + a support / conflict knowledge
+      base, applies single-pass support boosts and conflict
+      penalties, and groups mutually-exclusive hypotheses into
+      conflict cliques with a declared winner per group. Ships
+      with a default knowledge base covering hemorrhage / shock
+      / respiratory / posture hypotheses. 17 tests.
+- [x] **K3-3.3 Forecast layer** —
+      `world_replay/forecast_layer.py`. `ForecastLayer` projects
+      casualty urgency (blending linear extrapolation + the
+      existing `DeteriorationModel` trend; returns a
+      `CasualtyForecast` with priority band + confidence) and
+      mission state (extrapolates the 5 channels of
+      `MissionSignature`, feeds result back through
+      `classify_mission`; returns a `MissionForecast`). 21 tests.
+
+Combined: 64 new tests, 0 new runtime deps, pure stdlib math.
 
 
 
