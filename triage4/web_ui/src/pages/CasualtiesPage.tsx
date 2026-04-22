@@ -1,7 +1,6 @@
 // Casualties tab: filter / sort sidebar + selected detail pane.
-// Lives-view polls /casualties every 10 s so edits on the backend
-// (via a seed refresh or an external graph update) appear without
-// a manual refresh.
+// Adds compare mode (side-by-side two casualties) + export buttons.
+// Polls /casualties every 10 s.
 
 import { useEffect, useMemo, useState } from "react";
 
@@ -11,6 +10,7 @@ import CasualtyFilters from "../components/casualties/CasualtyFilters";
 import CasualtyList from "../components/casualties/CasualtyList";
 import { usePolling } from "../hooks/usePolling";
 import type { Casualty } from "../types";
+import { downloadCsv, downloadJson } from "../util/export";
 import {
   defaultFilters,
   filterCasualties,
@@ -29,6 +29,8 @@ export default function CasualtiesPage() {
   const [sort, setSort] = useState<SortKey>("priority");
   const [direction, setDirection] = useState<SortDirection>("asc");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [compareMode, setCompareMode] = useState(false);
+  const [compareId, setCompareId] = useState<string | null>(null);
 
   const all: Casualty[] = data ?? [];
   const shown = useMemo(() => {
@@ -36,12 +38,10 @@ export default function CasualtiesPage() {
     return sortCasualties(filtered, sort, direction);
   }, [all, filters, sort, direction]);
 
-  // Auto-select the first item once data lands.
   useEffect(() => {
     if (selectedId === null && shown.length > 0) {
       setSelectedId(shown[0].id);
     }
-    // If the selected id disappears after a filter change, clear selection.
     if (selectedId !== null && !shown.some((c) => c.id === selectedId)) {
       setSelectedId(shown[0]?.id ?? null);
     }
@@ -50,6 +50,19 @@ export default function CasualtiesPage() {
   const selected = selectedId
     ? all.find((c) => c.id === selectedId) ?? null
     : null;
+  const compared = compareId
+    ? all.find((c) => c.id === compareId) ?? null
+    : null;
+
+  const onSelect = (c: Casualty) => {
+    if (compareMode && selectedId !== null && selectedId !== c.id) {
+      // second click in compare mode → set as compared casualty.
+      setCompareId(c.id);
+    } else {
+      setSelectedId(c.id);
+      setCompareId(null);
+    }
+  };
 
   return (
     <div
@@ -73,6 +86,82 @@ export default function CasualtiesPage() {
           total={all.length}
           shown={shown.length}
         />
+        <div
+          style={{
+            display: "flex",
+            gap: 6,
+            marginBottom: 10,
+            flexWrap: "wrap",
+          }}
+        >
+          <button
+            aria-pressed={compareMode}
+            onClick={() => {
+              setCompareMode((v) => !v);
+              setCompareId(null);
+            }}
+            style={{ fontSize: 11, padding: "4px 8px" }}
+          >
+            {compareMode ? "✓ compare" : "compare"}
+          </button>
+          <button
+            onClick={() =>
+              downloadCsv(
+                shown.map((c) => ({
+                  id: c.id,
+                  priority: c.triage_priority,
+                  confidence: c.confidence,
+                  x: c.location.x,
+                  y: c.location.y,
+                  status: c.status,
+                  platform_source: c.platform_source,
+                })),
+                "triage4_casualties.csv",
+              )
+            }
+            disabled={shown.length === 0}
+            style={{ fontSize: 11, padding: "4px 8px" }}
+          >
+            ↓ CSV
+          </button>
+          <button
+            onClick={() =>
+              downloadJson(shown, "triage4_casualties.json")
+            }
+            disabled={shown.length === 0}
+            style={{ fontSize: 11, padding: "4px 8px" }}
+          >
+            ↓ JSON
+          </button>
+        </div>
+        {compareMode && (
+          <div
+            style={{
+              padding: 8,
+              marginBottom: 10,
+              background: "var(--bg-2)",
+              border: "1px solid var(--accent-dim)",
+              borderRadius: "var(--r1)",
+              fontSize: 11,
+              color: "var(--text-1)",
+            }}
+          >
+            compare mode: click two casualties to view side-by-side
+            {selectedId && (
+              <div
+                style={{ marginTop: 4, fontFamily: "var(--font-mono)" }}
+              >
+                A: <span style={{ color: "var(--accent)" }}>{selectedId}</span>
+                {compareId && (
+                  <>
+                    {" · "}B:{" "}
+                    <span style={{ color: "var(--accent)" }}>{compareId}</span>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
+        )}
         {loading && all.length === 0 && (
           <div
             style={{
@@ -110,7 +199,7 @@ export default function CasualtiesPage() {
         <CasualtyList
           items={shown}
           selectedId={selectedId}
-          onSelect={(c) => setSelectedId(c.id)}
+          onSelect={onSelect}
         />
         <div
           style={{
@@ -124,8 +213,20 @@ export default function CasualtiesPage() {
           last fetch: {lastFetch ? new Date(lastFetch).toLocaleTimeString() : "—"}
         </div>
       </aside>
-      <section>
+      <section
+        style={
+          compareMode && compared
+            ? {
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: 16,
+                alignItems: "start",
+              }
+            : undefined
+        }
+      >
         <CasualtyDetail casualty={selected} />
+        {compareMode && compared && <CasualtyDetail casualty={compared} />}
       </section>
     </div>
   );

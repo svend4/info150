@@ -1,5 +1,8 @@
+import { useEffect, useRef } from "react";
+
 import { usePolling } from "../../hooks/usePolling";
 import { fetchHealth } from "../../api/endpoints";
+import { useToast } from "../../state/ToastContext";
 import { formatAge } from "../../util/format";
 
 const STYLE_DOT = (color: string): React.CSSProperties => ({
@@ -10,13 +13,45 @@ const STYLE_DOT = (color: string): React.CSSProperties => ({
   display: "inline-block",
 });
 
+type HealthState = "ok" | "degraded" | "offline";
+
+function classify(
+  data: { ok: boolean } | null,
+  error: unknown | null,
+): HealthState {
+  if (error) return "offline";
+  if (data && data.ok) return "ok";
+  return "degraded";
+}
+
 export default function HealthBadge() {
   const { data, error, lastFetch } = usePolling(fetchHealth, 5000);
+  const state = classify(data, error);
+  const toast = useToast();
+  const prevRef = useRef<HealthState | null>(null);
+
+  useEffect(() => {
+    if (prevRef.current !== null && prevRef.current !== state) {
+      if (state === "offline") {
+        toast.push("Backend went offline", "error", 5000);
+      } else if (state === "degraded") {
+        toast.push("Backend degraded", "warn", 4000);
+      } else {
+        toast.push("Backend back online", "success", 2500);
+      }
+    }
+    prevRef.current = state;
+  }, [state, toast]);
+
   const colour =
-    error !== null ? "var(--err)" : data?.ok ? "var(--ok)" : "var(--warn)";
+    state === "offline"
+      ? "var(--err)"
+      : state === "ok"
+        ? "var(--ok)"
+        : "var(--warn)";
   const text =
-    error !== null
-      ? `offline (${error.status || "—"})`
+    state === "offline"
+      ? `offline${error && typeof error === "object" && "status" in error ? ` (${(error as { status: number }).status || "—"})` : ""}`
       : data
         ? `backend OK · ${data.nodes} nodes`
         : "connecting…";

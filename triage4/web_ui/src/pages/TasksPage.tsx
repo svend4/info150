@@ -4,6 +4,7 @@
 import { fetchTasks } from "../api/endpoints";
 import { usePolling } from "../hooks/usePolling";
 import { priorityColor } from "../util/priority";
+import { downloadCsv, downloadJson } from "../util/export";
 import { formatConfidence, formatCoord } from "../util/format";
 
 export default function TasksPage() {
@@ -31,9 +32,36 @@ export default function TasksPage() {
             then freshness.
           </div>
         </div>
-        <button onClick={refresh} disabled={loading}>
-          refresh
-        </button>
+        <div style={{ display: "flex", gap: 8 }}>
+          <button
+            onClick={() =>
+              data &&
+              downloadCsv(
+                data.map((t, idx) => ({
+                  rank: idx + 1,
+                  casualty_id: t.casualty_id,
+                  priority: t.priority,
+                  confidence: t.confidence,
+                  x: t.location.x,
+                  y: t.location.y,
+                })),
+                "triage4_tasks.csv",
+              )
+            }
+            disabled={!data || data.length === 0}
+          >
+            export CSV
+          </button>
+          <button
+            onClick={() => data && downloadJson(data, "triage4_tasks.json")}
+            disabled={!data || data.length === 0}
+          >
+            export JSON
+          </button>
+          <button onClick={refresh} disabled={loading}>
+            refresh
+          </button>
+        </div>
       </header>
 
       {loading && !data && (

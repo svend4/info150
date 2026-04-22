@@ -143,3 +143,228 @@ export type ApiError = {
   message: string;
   url: string;
 };
+
+// --- mission (Tier 1) --------------------------------------------------
+
+export type MissionPriority = "escalate" | "sustain" | "wind_down";
+
+export type MissionSignature = {
+  casualty_density: number;
+  immediate_fraction: number;
+  unresolved_sector_fraction: number;
+  medic_utilisation: number;
+  time_budget_burn: number;
+};
+
+export type MissionStatus = {
+  signature: MissionSignature;
+  priority: MissionPriority | string;
+  score: number;
+  contributions: Record<string, number>;
+  reasons: string[];
+  medic_assignments: Record<string, string>;
+  unresolved_regions: string[];
+};
+
+// --- twin (Tier 1) -----------------------------------------------------
+
+export type TwinPosterior = {
+  casualty_id: string;
+  priority_probs: Record<string, number>;
+  most_likely_priority: string;
+  most_likely_probability: number;
+  deterioration_rate: number;
+  effective_sample_size: number;
+  is_degenerate: boolean;
+};
+
+// --- forecast (Tier 1) -------------------------------------------------
+
+export type CasualtyForecast = {
+  casualty_id: string;
+  score_history: number[];
+  projected_score: number;
+  projected_priority: string;
+  slope_per_minute: number;
+  confidence: number;
+  reasons: string[];
+  minutes_ahead: number;
+};
+
+export type MissionForecast = {
+  projected_signature: MissionSignature;
+  projected_priority: string;
+  projected_score: number;
+  contributions: Record<string, number>;
+  per_channel_slope: Record<string, number>;
+  reasons: string[];
+  minutes_ahead: number;
+};
+
+// --- scorecard (Tier 1) ------------------------------------------------
+
+export type Gate2PerClass = {
+  precision: number;
+  recall: number;
+  f1: number;
+  tp: number;
+  fp: number;
+  fn: number;
+};
+
+export type Gate2Summary = {
+  accuracy: number;
+  macro_f1: number;
+  critical_miss_rate: number;
+  per_class: Record<string, Gate2PerClass>;
+  confusion_matrix: number[][];
+  class_labels: string[];
+};
+
+export type CounterfactualCase = {
+  casualty_id: string;
+  severity: string;
+  actual_priority: string;
+  actual_outcome: number;
+  counterfactuals: Record<string, number>;
+  best_alternative: string;
+  regret: number;
+};
+
+export type Scorecard = {
+  gate2: Gate2Summary;
+  counterfactuals: {
+    cases: CounterfactualCase[];
+    mean_regret: number;
+    n: number;
+  };
+  summary: {
+    total_casualties: number;
+    critical_miss_rate: number;
+    accuracy: number;
+  };
+};
+
+// --- Tier 2 ------------------------------------------------------------
+
+export type ClassifierResult = {
+  name: string;
+  description: string;
+  priority: string;
+  score: number | null;
+  reasons: string[];
+};
+
+export type SecondOpinion = {
+  casualty_id: string;
+  classifiers: ClassifierResult[];
+  agreement: boolean;
+  distinct_priorities: string[];
+};
+
+export type UncertaintyReport = {
+  casualty_id: string;
+  base_score: number;
+  overall_confidence: number;
+  overall_uncertainty: number;
+  adjusted_score: number;
+  per_channel_confidence: Record<string, number>;
+};
+
+export type EvidenceToken = {
+  name: string;
+  strength: number;
+  source: string;
+  note: string;
+};
+
+export type ResolvedHypothesis = {
+  name: string;
+  raw_score: number;
+  adjusted_score: number;
+  suppressed: boolean;
+  reasons: string[];
+};
+
+export type ConflictGroup = {
+  members: string[];
+  winner: string | null;
+  winner_score: number;
+};
+
+export type ConflictReport = {
+  casualty_id: string;
+  evidence_tokens: EvidenceToken[];
+  raw_scores: Record<string, number>;
+  ranked: ResolvedHypothesis[];
+  groups: ConflictGroup[];
+};
+
+// --- Tier 3 ------------------------------------------------------------
+
+export type Overview = {
+  total_casualties: number;
+  by_priority: Record<string, number>;
+  avg_confidence: number;
+  oldest_unresponded_immediate: string | null;
+  mission_priority: string;
+  mission_score: number;
+  mission_reasons: string[];
+  n_medic_assignments: number;
+  n_unresolved_regions: number;
+};
+
+export type MarkerInfo = {
+  casualty_id: string;
+  qr_payload: string;
+  envelope_bytes: number;
+  qr_chars: number;
+};
+
+// --- Skeletal graph (K3-1.3) ------------------------------------------
+
+export type JointTrend = {
+  joint: string;
+  n_observations: number;
+  motion_score: number;
+  wound_slope: number;
+  wound_mean: number;
+};
+
+export type AsymmetryReport = {
+  pair: [string, string];
+  motion_asymmetry: number;
+  wound_asymmetry: number;
+};
+
+export type SkeletalSnapshot = {
+  casualty_id: string;
+  joints: string[];
+  bones: [string, string][];
+  mirror_pairs: [string, string][];
+  latest: {
+    t: number;
+    joints: Record<string, [number, number]>;
+    wounds: Record<string, number>;
+  } | null;
+  trends: Record<string, JointTrend>;
+  asymmetries: AsymmetryReport[];
+};
+
+// --- Active sensing ---------------------------------------------------
+
+export type SensingRecommendation = {
+  casualty_id: string;
+  expected_info_gain: number;
+  uncertainty: number;
+  priority_weight: number;
+  novelty: number;
+  n_prior_observations: number;
+  reasons: string[];
+};
+
+export type SensingResult = {
+  recommendations: SensingRecommendation[];
+  top_recommendation: SensingRecommendation | null;
+  total: number;
+};

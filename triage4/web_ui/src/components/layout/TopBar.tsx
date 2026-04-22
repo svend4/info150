@@ -1,16 +1,26 @@
 import HealthBadge from "./HealthBadge";
 
 export type TabKey =
+  | "home"
   | "casualties"
+  | "mission"
+  | "forecast"
+  | "scorecard"
   | "tasks"
+  | "sensing"
   | "map"
   | "replay"
   | "graph"
   | "metrics";
 
 const TABS: { key: TabKey; label: string }[] = [
+  { key: "home", label: "Home" },
   { key: "casualties", label: "Casualties" },
+  { key: "mission", label: "Mission" },
+  { key: "forecast", label: "Forecast" },
+  { key: "scorecard", label: "Scorecard" },
   { key: "tasks", label: "Tasks" },
+  { key: "sensing", label: "Sensing" },
   { key: "map", label: "Map" },
   { key: "replay", label: "Replay" },
   { key: "graph", label: "Graph" },
