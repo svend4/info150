@@ -5,7 +5,7 @@ from pathlib import Path
 
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import FileResponse, HTMLResponse
+from fastapi.responses import FileResponse, HTMLResponse, PlainTextResponse
 
 from triage4.autonomy.human_handoff import HumanHandoffService
 from triage4.autonomy.task_allocator import TaskAllocator
@@ -13,6 +13,7 @@ from triage4.graph.casualty_graph import CasualtyGraph
 from triage4.triage_reasoning.explainability import ExplainabilityBuilder
 from triage4.triage_reasoning.rapid_triage import RapidTriageEngine
 from triage4.ui.html_export import render_html
+from triage4.ui.metrics import default_registry, render_metrics
 from triage4.ui.seed import seed_demo_data
 
 
@@ -36,11 +37,19 @@ explainer = ExplainabilityBuilder()
 @app.on_event("startup")
 def on_startup() -> None:
     seed_demo_data(graph, triage_engine)
+    for node in graph.all_nodes():
+        default_registry.incr_casualty(node.triage_priority)
 
 
 @app.get("/health")
 def health() -> dict:
     return {"ok": True, "nodes": len(graph.nodes)}
+
+
+@app.get("/metrics", response_class=PlainTextResponse)
+def metrics() -> PlainTextResponse:
+    body, content_type = render_metrics()
+    return PlainTextResponse(body, media_type=content_type)
 
 
 @app.get("/casualties")

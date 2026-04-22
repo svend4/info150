@@ -8,11 +8,14 @@ venv/
 .env
 .pytest_cache/
 .mypy_cache/
+.ruff_cache/
+.mutmut-cache
 .coverage
 htmlcov/
 dist/
 build/
 *.egg-info/
+benchmark.json
 
 # Node
 web_ui/node_modules/

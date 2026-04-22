@@ -10,6 +10,96 @@ is implemented by one or several commits on the feature branch.
 
 ## Unreleased / 0.1.0 — branch `claude/analyze-documents-structure-Ik1KX`
 
+### Level B — Developer experience polish
+
+- `Makefile` — 24 targets covering install / QA / benchmark / demos /
+  mutation / SBOM / Docker / housekeeping. `make help` self-documents.
+- `CONTRIBUTING.md` — scope, workflow, test rules (fixed seeds, no
+  sleeps, contracts-over-numbers), claims discipline, safety-critical
+  change protocol, do-nots.
+- `README.md` refresh — status block now lists Phases 1–9e + Level A,
+  595→609 tests, Makefile quickstart, expanded docs index with
+  regulatory / integration / process groupings.
+- `scripts/generate_sbom.py` + `tests/test_generate_sbom.py` —
+  CycloneDX JSON SBOM generator with cyclonedx-py CLI path and
+  stdlib `importlib.metadata` fallback. 5 tests lock the
+  fallback format.
+- `tests/test_properties.py` — 9 hypothesis property-based tests
+  for CRDT merge algebra (commutative / idempotent / associative),
+  marker codec (roundtrip, QR roundtrip, any-single-byte-flip
+  rejection, wrong-secret rejection), and score fusion (bleeding-
+  monotonicity, unit-interval invariant).
+- `integrations/marker_codec.py` — hardened against malformed
+  base64 signatures and invalid-range payloads surfaced by the
+  property test. Any tampered envelope now raises `InvalidMarker`
+  rather than letting `binascii.Error` / `ValueError` escape.
+- `pyproject.toml` — adds `hypothesis>=6.100` to `[dev]`.
+
+### Level A — Gap closures (claims-lint, mutation, multi-platform, metrics)
+
+Four discrete items that close tracked gaps from `RISK_REGISTER.md`
+and the Phase 10-prep / 13-prep open questions. No new runtime deps.
+
+- `scripts/claims_lint.py` + `tests/test_claims_lint.py` — product-
+  claim linter with allowlist and inline opt-out marker. Wired into
+  CI (`.github/workflows/ci.yml`). Closes CLAIM-001 gate.
+- `pyproject.toml [tool.mutmut]` + `scripts/run_mutation.sh` +
+  `docs/MUTATION_TESTING.md` + `tests/test_mutation_config.py` —
+  mutation testing scoped to 7 triage-critical modules. Opt-in
+  runtime. Closes CI-002 gate.
+- `integrations/multi_platform.py` + `tests/test_multi_platform.py`
+  — `MultiPlatformManager` orchestrator satisfying `PlatformBridge`,
+  with broadcast / targeted publish and health-gated dispatch.
+  Addresses HARDWARE_INTEGRATION §7 open question.
+- `ui/metrics.py` + `tests/test_metrics.py` + `GET /metrics` on
+  dashboard — stdlib-only Prometheus text-format exposition:
+  `triage4_casualties_total`, `triage4_handoff_latency_seconds`,
+  `triage4_bridge_health`, uptime. Addresses DEPLOYMENT §9 open
+  question.
+
+RISK_REGISTER.md:
+- CLAIM-001 residual: 4×2=8 → 4×1=4 (no longer a gate).
+- CI-002 residual: 3×3=9 → 3×2=6 (no longer a gate).
+
+### Phase 13-prep — Deployment patterns
+
+- `Dockerfile` + `.dockerignore` — slim multi-stage image, runs as
+  unprivileged user, includes HEALTHCHECK. Size < 200 MB.
+- `docker-compose.yml` — read-only FS, dropped capabilities,
+  no-new-privileges, localhost-only port binding, optional nginx
+  reverse-proxy profile.
+- `deploy/triage4.service` — systemd unit with full sandboxing
+  (NoNewPrivileges, ProtectSystem=strict, MemoryDenyWriteExecute,
+  SystemCallFilter).
+- `configs/production.yaml`, `configs/edge.yaml`, `configs/nginx.conf`
+  — three reference deployment profiles with env-var secret slots.
+- `docs/DEPLOYMENT.md` — container / systemd / edge profiles, secret
+  handling, upgrade / rollback, pre-deployment checklist.
+- `tests/test_deployment_artifacts.py` — 19 smoke tests that lock
+  the security-relevant flags of every deployment artefact.
+
+### Phase 10-prep — Hardware integration scaffold
+
+- `integrations/bridge_health.py` — `BridgeHealth`,
+  `check_bridge_health`, `check_telemetry`, `safe_to_dispatch`.
+- Real-backend factory skeletons in `ros2_bridge`, `mavlink_bridge`,
+  `spot_bridge`, `websocket_bridge` now carry concrete SDK call
+  outlines. Still raise `NotImplementedError`.
+- `tests/test_bridges_contract.py` — 29 Protocol-conformance + health-
+  check tests plus real-backend factory failure-mode tests.
+- `docs/HARDWARE_INTEGRATION.md` — per-platform wiring guide,
+  first-flight checklist, BridgeHealth usage, non-goals.
+
+### Phase 12 — Regulatory awareness docs
+
+- `docs/REGULATORY.md` — IMDRF / IEC 62304 / FDA / EU MDR / AI-ML
+  landscape, claims discipline, pre-pilot checklist. Non-binding.
+- `docs/SAFETY_CASE.md` — GSN-style safety argument linking each
+  claim to specific tests / modules.
+- `docs/RISK_REGISTER.md` — ISO 14971-style hazard register across
+  nine categories with pre- and post-mitigation scoring.
+- `docs/ROADMAP.md` — Phase 12 entry added.
+
 ### Phase 9e — Speculative trio
 
 - `integrations/marker_codec.py` — HMAC-signed QR-safe marker codec

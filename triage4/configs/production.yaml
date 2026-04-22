@@ -1,0 +1,44 @@
+# triage4 — production deployment config (example, not wired)
+#
+# Overlay on top of sim.yaml. Selects conservative thresholds and
+# turns on operator-gate defaults. Kept deliberately small; complex
+# configuration is an anti-pattern for decision-support systems.
+
+scene:
+  casualties: 0           # live mode — no seeded demo scene
+  immediate_ratio: 0.0
+  delayed_ratio: 0.0
+  minimal_ratio: 0.0
+
+thresholds:
+  # Mortal-sign overrides: tuned by Phase 9b calibration.
+  bleeding_immediate: 0.80
+  breathing_weak: 0.05
+  perfusion_low: 0.80
+  posture_collapse: 0.80
+
+operator:
+  require_confirmation_on_immediate: true
+  allow_autonomous_waypoint_dispatch: false
+  handoff_timeout_s: 30
+
+bridges:
+  # All bridges default to loopback in production until a specific
+  # platform is provisioned. Real-backend factories must raise
+  # BridgeUnavailable or NotImplementedError unless a deployment
+  # profile explicitly enables them.
+  preferred: "loopback"
+  max_staleness_s: 5.0
+  low_battery_warning_pct: 20.0
+
+security:
+  # All three MUST be set at deploy time — blank here so an
+  # unconfigured deployment fails loud instead of shipping insecure.
+  marker_secret_env: "TRIAGE4_MARKER_SECRET"
+  dashboard_token_env: "TRIAGE4_DASHBOARD_TOKEN"
+  tls_cert_env: "TRIAGE4_TLS_CERT_PATH"
+
+telemetry:
+  log_level: "info"
+  structured_json: true
+  retention_days: 7

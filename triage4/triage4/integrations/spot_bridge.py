@@ -120,24 +120,69 @@ class LoopbackSpotBridge:
         self._telemetry.connected = False
 
 
-def build_bosdyn_bridge(*args, **kwargs):  # pragma: no cover
+def build_bosdyn_bridge(  # pragma: no cover
+    hostname: str = "192.168.80.3",
+    username: str = "user",
+    password: str = "",
+    platform_id: str = "spot",
+    lease_timeout_s: float = 30.0,
+):
     """Skeleton real Spot backend using Boston Dynamics ``bosdyn`` SDK.
 
-    Implementation outline:
-      - ``bosdyn.client.create_standard_sdk('triage4')``;
-      - ``robot = sdk.create_robot(host)`` + authenticate;
-      - ``bosdyn.client.robot_command.RobotCommandClient`` for gait / walk;
-      - ``bosdyn.client.frame_helpers`` to convert triage4 GeoPose into
-        the robot's body / vision / odom frames before dispatching.
+    Not wired to a real Spot — raises ``NotImplementedError`` on
+    purpose. The outline below matches ``bosdyn-client`` ≥ 3.x and
+    each numbered block is a concrete set of SDK calls a future
+    engineer can fill in.
+
+    Implementation outline::
+
+        import bosdyn.client
+        from bosdyn.client.robot_command import (
+            RobotCommandClient, RobotCommandBuilder, blocking_stand,
+        )
+        from bosdyn.client.robot_state import RobotStateClient
+        from bosdyn.client.lease import LeaseClient, LeaseKeepAlive
+
+        # 1. Authenticate + lease.
+        sdk = bosdyn.client.create_standard_sdk("triage4")
+        robot = sdk.create_robot(hostname)
+        robot.authenticate(username, password)
+        robot.time_sync.wait_for_sync()
+        lease_client = robot.ensure_client(LeaseClient.default_service_name)
+        lease_client.take()
+        keep_alive = LeaseKeepAlive(lease_client)
+
+        # 2. Gait / motion commands.
+        cmd = robot.ensure_client(RobotCommandClient.default_service_name)
+        blocking_stand(cmd)
+        def walk_to(pose: GeoPose) -> None:
+            walk = RobotCommandBuilder.synchro_se2_trajectory_point_command(
+                goal_x=pose.x, goal_y=pose.y, goal_heading=pose.yaw,
+                frame_name="odom",
+            )
+            cmd.robot_command_async(walk)
+
+        # 3. Telemetry loop.
+        state = robot.ensure_client(RobotStateClient.default_service_name)
+        def _tick() -> None:
+            rs = state.get_robot_state()
+            telemetry.battery_pct = rs.battery_states[0].charge_percentage.value
+            # Convert BodyState.vision_tform_body into GeoPose(x, y, yaw)
+            # via bosdyn.client.frame_helpers.
+
+    Safety note: always call ``keep_alive.shutdown()`` and release the
+    lease in ``close()`` — a stuck lease leaves the robot uncommandable
+    by anybody else. See docs/HARDWARE_INTEGRATION.md for the full
+    checklist.
     """
     try:
         import bosdyn  # noqa: F401
-    except ImportError as exc:  # pragma: no cover
+    except ImportError as exc:
         raise BridgeUnavailable(
             "bosdyn-client is not installed. Install with "
             "'pip install bosdyn-client' or use LoopbackSpotBridge in tests."
         ) from exc
     raise NotImplementedError(
-        "Real bosdyn backend is a skeleton — wire up standard SDK + "
-        "RobotCommandClient against a physical robot."
+        "Real bosdyn backend is a skeleton — wire up the three numbered "
+        "blocks above. See docs/HARDWARE_INTEGRATION.md."
     )

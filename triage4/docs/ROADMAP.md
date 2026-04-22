@@ -245,7 +245,169 @@ Supporting work:
 
 **Phase 9e complete.**
 
-## Риск-регистр
+## Phase 12 — Regulatory awareness
+
+Pre-clinical documentation that anticipates the regulatory framework
+*if* triage4 ever moves toward a medical product. Non-binding; not
+legal advice. Written to surface known gaps so they can be closed
+before any clinical pilot, not to claim compliance.
+
+- [x] `docs/REGULATORY.md` — IMDRF SaMD classification (target
+      Class III), IEC 62304 safety-class analysis (Class C),
+      FDA De Novo / 510(k) pathway notes, EU MDR notes, AI/ML
+      considerations (GMLP, PCCP), HIPAA / GDPR overlay, claims
+      discipline, pre-pilot checklist.
+- [x] `docs/SAFETY_CASE.md` — GSN-style top goal + four sub-goals
+      (output correctness, failure-mode safety, operator-in-the-loop,
+      data integrity) + assurance continuity, each backed by specific
+      test / module evidence.
+- [x] `docs/RISK_REGISTER.md` — ISO 14971-style register covering
+      calibration, safety-critical classification, operator-in-the-
+      loop, data integrity, platform bridges, cybersecurity, build /
+      CI, claims / regulatory, and UI hazards. Each row scored
+      pre- and post-mitigation, with gate flags on residuals ≥ 6.
+
+**Phase 12 complete.** (Docs only — no code changes.)
+
+## Phase 10-prep — Hardware integration scaffold
+
+Preparatory work for Phase 10 proper (live UAV / quadruped / camera
+integration). Phase 10 itself needs physical hardware and external
+SDKs; this sub-phase ships the scaffold so that when hardware lands,
+wiring is a 1-day task per platform rather than a from-scratch
+investigation.
+
+- [x] `triage4/integrations/bridge_health.py` — `BridgeHealth`
+      dataclass + `check_bridge_health(bridge)` / `check_telemetry(tm)`
+      / `safe_to_dispatch(health)`. Uniform failure-mode surface for
+      any `PlatformBridge`: empty platform_id, disconnected,
+      non-finite pose, out-of-range or low battery, stale telemetry,
+      platform_id mismatch between bridge and snapshot.
+- [x] Real-backend factory skeletons fleshed out in
+      `ros2_bridge.build_rclpy_bridge`,
+      `mavlink_bridge.build_pymavlink_bridge`,
+      `spot_bridge.build_bosdyn_bridge`,
+      `websocket_bridge.build_fastapi_websocket_bridge`. Each carries
+      concrete SDK call outlines matching the current vendor APIs;
+      still raises `NotImplementedError` to prevent silent shipping.
+- [x] `tests/test_bridges_contract.py` — 29 Protocol-conformance +
+      health-check tests. Every Loopback bridge satisfies
+      `isinstance(bridge, PlatformBridge)`, roundtrips every publish
+      method, and respects `close()`. Real-backend factories must
+      raise `BridgeUnavailable` or `NotImplementedError`, never
+      silently succeed.
+- [x] `docs/HARDWARE_INTEGRATION.md` — per-platform wiring guide
+      (ROS2 topics, MAVLink frame-swap note, bosdyn lease lifecycle,
+      WebSocket security), BridgeHealth usage, first-flight
+      checklist, optional-dep layout, non-goals, open questions.
+
+**Phase 10-prep complete.** Phase 10 proper still needs real HW.
+
+## Phase 13-prep — Deployment patterns
+
+Preparatory work for Phase 13 proper (production deployment). No
+customer is targeted yet; this sub-phase ships reference artefacts
+and a test suite that locks the security-relevant flags so a future
+deployment can ship in a day rather than a week.
+
+- [x] `Dockerfile` — multi-stage `python:3.12-slim` build, runs as
+      unprivileged `triage` user, includes a `HEALTHCHECK`, image
+      size < 200 MB (no SDKs, only numpy + scipy + fastapi + triage4).
+- [x] `.dockerignore` — keeps `tests/`, `docs/`, `web_ui/`, `.git/`,
+      and caches out of the image.
+- [x] `docker-compose.yml` — `read_only: true`, `cap_drop: ALL`,
+      `no-new-privileges`, healthcheck, 127.0.0.1:8000 binding only,
+      optional `edge` profile that adds an nginx reverse proxy.
+- [x] `deploy/triage4.service` — systemd unit with
+      `NoNewPrivileges`, `ProtectSystem=strict`,
+      `MemoryDenyWriteExecute`, `SystemCallFilter=@system-service`,
+      1 GB memory cap, runs as user `triage`.
+- [x] `configs/production.yaml` — conservative thresholds, operator
+      confirmation on every `immediate`, autonomous waypoint
+      dispatch disabled by default, three security env-var slots
+      (blank so unconfigured deployments fail loud).
+- [x] `configs/edge.yaml` — denied-comms overlay: CRDT + marker
+      codec enabled, tighter power warning, reduced retention.
+- [x] `configs/nginx.conf` — reverse-proxy template with TLS 1.2+,
+      security headers, rate-limit zone, commented-out bearer-token
+      check.
+- [x] `docs/DEPLOYMENT.md` — footprint numbers, three profiles
+      (container / systemd / edge), config pattern, secret handling,
+      networking, observability, upgrade / rollback, 10-item
+      pre-deployment checklist, non-goals, open questions for
+      Phase 13 proper.
+- [x] `tests/test_deployment_artifacts.py` — 19 smoke tests that
+      parse each deployment artefact and assert the security-
+      relevant flags (unprivileged user, read-only FS, no blank
+      secrets, TLS enforced).
+
+**Phase 13-prep complete.** Phase 13 proper still needs a customer.
+
+## Level A follow-ups — Closing documented gaps
+
+Four discrete items that close explicitly-tracked gaps from
+`RISK_REGISTER.md` and the open questions in the Phase 10-prep /
+13-prep docs. All four are pure-Python, no new runtime deps, and
+shipped together on this branch.
+
+- [x] `scripts/claims_lint.py` + `tests/test_claims_lint.py` —
+      scans user-facing `.md` + Python docstrings for framing
+      claims ("diagnose", "FDA-cleared", "medical device",  [claims-lint: allow]
+      "product can treat", ...). Allowlists `REGULATORY.md`,
+      `RISK_REGISTER.md`, `SAFETY_CASE.md`. Supports inline
+      `[claims-lint: allow]` markers. Wired into CI. Closes
+      **CLAIM-001** gate.
+- [x] `pyproject.toml [tool.mutmut]` + `scripts/run_mutation.sh`
+      + `docs/MUTATION_TESTING.md` + `tests/test_mutation_config.py`
+      — mutmut scoped to the 7 triage-critical modules. Opt-in
+      (not CI-gated yet due to runtime). Closes **CI-002** gate.
+- [x] `triage4/integrations/multi_platform.py` +
+      `tests/test_multi_platform.py` — `MultiPlatformManager`
+      orchestrator. Satisfies `PlatformBridge` protocol, supports
+      broadcast + targeted publish, health-gated waypoint dispatch,
+      auto-picks healthiest platform. Addresses HARDWARE_INTEGRATION
+      §7 open question.
+- [x] `triage4/ui/metrics.py` + `tests/test_metrics.py` —
+      stdlib-only Prometheus text-format exposition. Three metric
+      families: `triage4_casualties_total` (counter per priority),
+      `triage4_handoff_latency_seconds` (histogram), and
+      `triage4_bridge_health` (gauge per platform/state) plus
+      uptime. Wired into `dashboard_api` as `GET /metrics`.
+      Addresses DEPLOYMENT §9 open question.
+
+**Level A complete.**
+
+## Level B — Developer experience polish
+
+- [x] `Makefile` — 24 targets, self-documenting `make help`. Covers
+      install / QA / benchmark / demos / mutation / SBOM / Docker.
+- [x] `CONTRIBUTING.md` — scope, workflow, test conventions, claims
+      discipline, safety-critical change protocol, do-nots.
+- [x] `README.md` — refreshed status table (Phases 1–9e + Level A),
+      test count, `make` quickstart, expanded docs index.
+- [x] `scripts/generate_sbom.py` + `tests/test_generate_sbom.py` —
+      CycloneDX 1.5 SBOM generator with `cyclonedx-py` CLI path and
+      stdlib fallback. Referenced by `make sbom` and the
+      `DEPLOYMENT.md` pre-deploy checklist.
+- [x] `tests/test_properties.py` — 9 hypothesis property-based
+      tests. Proved CRDT merge is commutative / idempotent /
+      associative across randomised event histories; verified
+      marker encode/decode roundtrip, QR roundtrip, single-byte-
+      flip rejection, wrong-secret rejection; score-fusion
+      bleeding-monotonicity and unit-interval invariant.
+- [x] `integrations/marker_codec.py` — hardened: malformed base64
+      signature and out-of-range payload fields now raise
+      `InvalidMarker` instead of letting the underlying exceptions
+      escape. Bug surfaced by the property test.
+
+**Level B complete.**
+
+
+
+## Риск-регистр (краткий)
+
+См. `docs/RISK_REGISTER.md` для полного реестра. Краткая сводка
+основных категорий:
 
 - **overexpansion** — не выходить за MVP без exit-criteria каждой фазы;
 - **weak explainability** — каждый triage-вывод обязан иметь reasons;

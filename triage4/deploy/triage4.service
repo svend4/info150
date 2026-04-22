@@ -1,0 +1,70 @@
+# triage4 — systemd unit (example, not installed by pip)
+#
+# Install:
+#   sudo cp deploy/triage4.service /etc/systemd/system/
+#   sudo systemctl daemon-reload
+#   sudo systemctl enable --now triage4
+#
+# Uninstall:
+#   sudo systemctl disable --now triage4
+#   sudo rm /etc/systemd/system/triage4.service
+#   sudo systemctl daemon-reload
+#
+# Logs:
+#   journalctl -u triage4 -f
+#
+# Assumes:
+#   - /opt/triage4/venv is a Python ≥ 3.11 virtualenv with
+#     `pip install triage4[dev]` done;
+#   - /etc/triage4/production.yaml holds the deployment config;
+#   - Secrets come from /etc/triage4/env (chmod 600, root only).
+
+[Unit]
+Description=triage4 decision-support API
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=triage
+Group=triage
+WorkingDirectory=/opt/triage4
+
+Environment=TRIAGE4_CONFIG=/etc/triage4/production.yaml
+Environment=PYTHONUNBUFFERED=1
+EnvironmentFile=-/etc/triage4/env
+
+ExecStart=/opt/triage4/venv/bin/uvicorn \
+    triage4.ui.dashboard_api:app \
+    --host 127.0.0.1 \
+    --port 8000 \
+    --workers 1 \
+    --log-level info
+
+Restart=on-failure
+RestartSec=5
+
+# Sandboxing — triage4 never needs elevated permissions.
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictNamespaces=true
+LockPersonality=true
+MemoryDenyWriteExecute=true
+SystemCallFilter=@system-service
+SystemCallArchitectures=native
+ReadWritePaths=/var/log/triage4
+
+# Resource caps — keep triage4 a well-behaved citizen.
+LimitNOFILE=4096
+MemoryMax=1G
+TasksMax=128
+
+[Install]
+WantedBy=multi-user.target
