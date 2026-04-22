@@ -1,42 +1,90 @@
-import type { MapData } from "../types";
-import { priorityColor, scaleCoord } from "../util/priority";
+// Map tab: fetches /map and renders a pannable / zoomable tactical
+// view with a legend and per-casualty selection.
 
-export default function MapPage({ data }: { data: MapData | null }) {
-  if (!data) return <div>Loading map…</div>;
+import { useState } from "react";
+
+import { fetchMap } from "../api/endpoints";
+import MapLegend from "../components/map/MapLegend";
+import TacticalMap from "../components/map/TacticalMap";
+import { useResource } from "../hooks/useResource";
+
+export default function MapPage() {
+  const { data, error, loading, refresh } = useResource(fetchMap);
+  const [selected, setSelected] = useState<string | null>(null);
 
   return (
-    <div style={{ background: "#0e1528", borderRadius: 12, padding: 16 }}>
-      <h3 style={{ marginTop: 0 }}>Tactical Map</h3>
+    <section style={{ maxWidth: 1100, margin: "0 auto" }}>
+      <header
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "baseline",
+          marginBottom: 16,
+        }}
+      >
+        <div>
+          <h1 style={{ margin: 0, fontSize: 22 }}>Tactical map</h1>
+          <div
+            style={{ color: "var(--text-2)", fontSize: 12, marginTop: 4 }}
+          >
+            Platforms (triangles) and casualties (circles) in map-frame
+            coordinates.
+          </div>
+        </div>
+        <button onClick={refresh} disabled={loading}>
+          refresh
+        </button>
+      </header>
 
-      <svg width="100%" viewBox="0 0 520 520" style={{ background: "#0a1020", borderRadius: 10 }}>
-        <rect x="0" y="0" width="520" height="520" fill="#0a1020" />
+      {error && (
+        <div
+          style={{
+            padding: 12,
+            border: "1px solid var(--err)",
+            borderRadius: "var(--r2)",
+            color: "var(--err)",
+            marginBottom: 16,
+          }}
+        >
+          {error.message}
+        </div>
+      )}
 
-        {[...Array(11)].map((_, i) => (
-          <g key={i}>
-            <line x1={i * 52} y1={0} x2={i * 52} y2={520} stroke="#1b2945" strokeWidth="1" />
-            <line x1={0} y1={i * 52} x2={520} y2={i * 52} stroke="#1b2945" strokeWidth="1" />
-          </g>
-        ))}
+      <div style={{ marginBottom: 12 }}>
+        <MapLegend />
+      </div>
 
-        {data.casualties.map((c) => (
-          <g key={c.id}>
-            <circle cx={scaleCoord(c.x)} cy={scaleCoord(c.y)} r={18} fill={priorityColor(c.priority)} opacity={0.15} />
-            <circle cx={scaleCoord(c.x)} cy={scaleCoord(c.y)} r={7} fill={priorityColor(c.priority)} />
-            <text x={scaleCoord(c.x) + 10} y={scaleCoord(c.y) - 8} fill="#e5ecff" fontSize="12">
-              {c.id}
-            </text>
-          </g>
-        ))}
-
-        {data.platforms.map((p) => (
-          <g key={p.id}>
-            <rect x={scaleCoord(p.x) - 7} y={scaleCoord(p.y) - 7} width={14} height={14} fill="#4fc3f7" rx={3} />
-            <text x={scaleCoord(p.x) + 10} y={scaleCoord(p.y) + 4} fill="#9cc7ff" fontSize="12">
-              {p.id}
-            </text>
-          </g>
-        ))}
-      </svg>
-    </div>
+      {data ? (
+        <>
+          <TacticalMap
+            platforms={data.platforms}
+            casualties={data.casualties}
+            selectedCasualtyId={selected}
+            onCasualtyClick={(id) =>
+              setSelected((cur) => (cur === id ? null : id))
+            }
+          />
+          {selected && (
+            <div
+              style={{
+                marginTop: 10,
+                padding: 10,
+                background: "var(--bg-1)",
+                border: "1px solid var(--border-1)",
+                borderRadius: "var(--r2)",
+                fontSize: 12,
+                fontFamily: "var(--font-mono)",
+              }}
+            >
+              selected casualty: <strong>{selected}</strong>
+            </div>
+          )}
+        </>
+      ) : (
+        <div style={{ color: "var(--text-2)", fontStyle: "italic" }}>
+          loading map…
+        </div>
+      )}
+    </section>
   );
 }

@@ -1,0 +1,56 @@
+/* Design tokens. Dark theme, consistent with the original. */
+
+:root {
+  /* Background */
+  --bg-0: #0a0f1c;
+  --bg-1: #0e1528;
+  --bg-2: #121a30;
+  --bg-3: #1a2340;
+
+  /* Border */
+  --border-1: #1e2a44;
+  --border-2: #2a3a5c;
+
+  /* Text */
+  --text-0: #f0f3fa;
+  --text-1: #a8b2c7;
+  --text-2: #6b7590;
+
+  /* Accent */
+  --accent: #5b8dfd;
+  --accent-dim: #2b3d6b;
+
+  /* Priority (keep in sync with util/priority.ts) */
+  --prio-immediate: #ff5c5c;
+  --prio-delayed: #ffb84d;
+  --prio-minimal: #63d471;
+  --prio-expectant: #c678dd;
+  --prio-unknown: #a0aec0;
+
+  /* Status */
+  --ok: #63d471;
+  --warn: #ffb84d;
+  --err: #ff5c5c;
+
+  /* Spacing (4-pt grid) */
+  --s1: 4px;
+  --s2: 8px;
+  --s3: 12px;
+  --s4: 16px;
+  --s5: 20px;
+  --s6: 24px;
+  --s8: 32px;
+  --s10: 40px;
+
+  /* Radius */
+  --r1: 4px;
+  --r2: 8px;
+  --r3: 12px;
+
+  /* Typography */
+  --font-mono: ui-monospace, SFMono-Regular, "JetBrains Mono", Consolas, monospace;
+
+  /* Z */
+  --z-topbar: 10;
+  --z-modal: 100;
+}
