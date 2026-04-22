@@ -4,9 +4,17 @@ Reuses ``triage4.matching.score_combiner`` (ported from meta2) so that every
 triage priority carries explicit per-signal contributions instead of opaque
 hard-coded thresholds. This is what the K3-matrix calls the 2.3 Temporal
 Triage Reasoning Layer — score-based, explainable, replayable.
+
+Mortal-sign override (added in Phase 9b): pure score fusion cannot cross
+the immediate-threshold from a single channel alone even when that channel
+is catastrophic (this was the Larrey-gap surfaced by Phase 9a's baseline
+test). If any individual signal exceeds its mortal threshold we force the
+priority to ``immediate`` regardless of the fused score.
 """
 
 from __future__ import annotations
+
+from dataclasses import dataclass
 
 from triage4.core.models import CasualtySignature
 from triage4.matching.score_combiner import (
@@ -22,6 +30,22 @@ DEFAULT_WEIGHTS: dict[str, float] = {
     "perfusion": 0.20,
     "posture": 0.05,
 }
+
+
+@dataclass
+class MortalThresholds:
+    """Per-channel thresholds above which a single signal is by itself
+    sufficient to force an ``immediate`` priority.
+
+    Tuned against the Larrey-baseline decision tree: any one of these
+    signs is enough for a Napoleonic field surgeon to classify the
+    casualty as dangerously wounded.
+    """
+
+    bleeding: float = 0.80
+    chest_motion_absence: float = 0.05   # chest_motion_fd BELOW this
+    perfusion: float = 0.80
+    posture: float = 0.80
 
 
 def signature_to_score_vector(
@@ -58,8 +82,42 @@ def fuse_triage_score(
     return weighted_combine(sv, weights or DEFAULT_WEIGHTS)
 
 
-def priority_from_score(score: float) -> str:
-    """Project a [0, 1] urgency score onto triage priority bands."""
+def detect_mortal_signs(
+    sig: CasualtySignature,
+    thresholds: MortalThresholds | None = None,
+) -> list[str]:
+    """Return the list of mortal-sign channel names currently triggered."""
+    t = thresholds or MortalThresholds()
+    signs: list[str] = []
+
+    if sig.bleeding_visual_score >= t.bleeding:
+        signs.append("bleeding")
+    if (
+        sig.chest_motion_fd <= t.chest_motion_absence
+        and len(sig.breathing_curve) >= 4
+    ):
+        signs.append("chest_motion_absence")
+    if sig.perfusion_drop_score >= t.perfusion:
+        signs.append("perfusion")
+    if sig.posture_instability_score >= t.posture:
+        signs.append("posture")
+    return signs
+
+
+def priority_from_score(
+    score: float,
+    sig: CasualtySignature | None = None,
+    thresholds: MortalThresholds | None = None,
+) -> str:
+    """Project a [0, 1] urgency score onto triage priority bands.
+
+    When ``sig`` is supplied, a mortal-sign override kicks in: any single
+    channel above its mortal threshold forces ``immediate`` regardless of
+    the fused score. This is the Phase 9b fix for the Larrey-gap that was
+    documented in ``tests/test_larrey_baseline.py``.
+    """
+    if sig is not None and detect_mortal_signs(sig, thresholds):
+        return "immediate"
     if score >= 0.65:
         return "immediate"
     if score >= 0.35:
