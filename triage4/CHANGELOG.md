@@ -10,6 +10,23 @@ is implemented by one or several commits on the feature branch.
 
 ## Unreleased / 0.1.0 — branch `claude/analyze-documents-structure-Ik1KX`
 
+### Phase 13-prep — Deployment patterns
+
+- `Dockerfile` + `.dockerignore` — slim multi-stage image, runs as
+  unprivileged user, includes HEALTHCHECK. Size < 200 MB.
+- `docker-compose.yml` — read-only FS, dropped capabilities,
+  no-new-privileges, localhost-only port binding, optional nginx
+  reverse-proxy profile.
+- `deploy/triage4.service` — systemd unit with full sandboxing
+  (NoNewPrivileges, ProtectSystem=strict, MemoryDenyWriteExecute,
+  SystemCallFilter).
+- `configs/production.yaml`, `configs/edge.yaml`, `configs/nginx.conf`
+  — three reference deployment profiles with env-var secret slots.
+- `docs/DEPLOYMENT.md` — container / systemd / edge profiles, secret
+  handling, upgrade / rollback, pre-deployment checklist.
+- `tests/test_deployment_artifacts.py` — 19 smoke tests that lock
+  the security-relevant flags of every deployment artefact.
+
 ### Phase 10-prep — Hardware integration scaffold
 
 - `integrations/bridge_health.py` — `BridgeHealth`,

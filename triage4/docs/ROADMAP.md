@@ -303,6 +303,46 @@ investigation.
 
 **Phase 10-prep complete.** Phase 10 proper still needs real HW.
 
+## Phase 13-prep — Deployment patterns
+
+Preparatory work for Phase 13 proper (production deployment). No
+customer is targeted yet; this sub-phase ships reference artefacts
+and a test suite that locks the security-relevant flags so a future
+deployment can ship in a day rather than a week.
+
+- [x] `Dockerfile` — multi-stage `python:3.12-slim` build, runs as
+      unprivileged `triage` user, includes a `HEALTHCHECK`, image
+      size < 200 MB (no SDKs, only numpy + scipy + fastapi + triage4).
+- [x] `.dockerignore` — keeps `tests/`, `docs/`, `web_ui/`, `.git/`,
+      and caches out of the image.
+- [x] `docker-compose.yml` — `read_only: true`, `cap_drop: ALL`,
+      `no-new-privileges`, healthcheck, 127.0.0.1:8000 binding only,
+      optional `edge` profile that adds an nginx reverse proxy.
+- [x] `deploy/triage4.service` — systemd unit with
+      `NoNewPrivileges`, `ProtectSystem=strict`,
+      `MemoryDenyWriteExecute`, `SystemCallFilter=@system-service`,
+      1 GB memory cap, runs as user `triage`.
+- [x] `configs/production.yaml` — conservative thresholds, operator
+      confirmation on every `immediate`, autonomous waypoint
+      dispatch disabled by default, three security env-var slots
+      (blank so unconfigured deployments fail loud).
+- [x] `configs/edge.yaml` — denied-comms overlay: CRDT + marker
+      codec enabled, tighter power warning, reduced retention.
+- [x] `configs/nginx.conf` — reverse-proxy template with TLS 1.2+,
+      security headers, rate-limit zone, commented-out bearer-token
+      check.
+- [x] `docs/DEPLOYMENT.md` — footprint numbers, three profiles
+      (container / systemd / edge), config pattern, secret handling,
+      networking, observability, upgrade / rollback, 10-item
+      pre-deployment checklist, non-goals, open questions for
+      Phase 13 proper.
+- [x] `tests/test_deployment_artifacts.py` — 19 smoke tests that
+      parse each deployment artefact and assert the security-
+      relevant flags (unprivileged user, read-only FS, no blank
+      secrets, TLS enforced).
+
+**Phase 13-prep complete.** Phase 13 proper still needs a customer.
+
 
 
 ## Риск-регистр (краткий)
