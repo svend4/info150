@@ -105,73 +105,72 @@ class LoopbackMAVLinkBridge:
         self._telemetry.connected = False
 
 
-def build_pymavlink_bridge(  # pragma: no cover
+def build_pymavlink_bridge(
     connection_url: str = "udp:127.0.0.1:14550",
     platform_id: str = "uav",
+    *,
     source_system: int = 255,
     source_component: int = 0,
-    timeout_s: float = 5.0,
+    heartbeat_timeout_s: float = 10.0,
+    start_telemetry: bool = True,
 ):
-    """Skeleton real MAVLink backend. Requires ``pymavlink`` (optional extra).
+    """Build a real ``PyMAVLinkBridge`` against an autopilot / SITL.
 
-    Not wired to a real autopilot — raises ``NotImplementedError`` so
-    the skeleton cannot silently ship. The pseudocode below is aligned
-    with the pymavlink 2.x API and can be turned into a working bridge
-    by replacing the numbered blocks.
+    Steps the factory performs:
 
-    Implementation outline::
+    1. Lazy-import ``pymavlink.mavutil``. Raises ``BridgeUnavailable``
+       if the SDK is absent — the loopback path is always available
+       as a fallback.
+    2. ``mavutil.mavlink_connection(connection_url, ...)`` — builds
+       the socket / serial connection to the autopilot.
+    3. ``conn.wait_heartbeat(timeout=heartbeat_timeout_s)`` —
+       negotiates ``target_system`` / ``target_component``. Raises
+       ``BridgeUnavailable`` if nothing responds.
+    4. Hand the connection to ``PyMAVLinkBridge`` and, optionally,
+       start the telemetry thread.
 
-        from pymavlink import mavutil
+    For local dev against ArduPilot SITL::
 
-        # 1. Connect to the autopilot.
-        conn = mavutil.mavlink_connection(
-            connection_url,
-            source_system=source_system,
-            source_component=source_component,
-        )
-        conn.wait_heartbeat(timeout=timeout_s)
+        python -c "
+        from triage4.integrations import build_pymavlink_bridge
+        bridge = build_pymavlink_bridge('udp:127.0.0.1:14550')
+        bridge.send_waypoint(GeoPose(x=-122.084, y=37.422, z=30.0))
+        "
 
-        # 2. Telemetry subscription loop (run in a background thread).
-        def _rx_loop() -> None:
-            while not closed:
-                msg = conn.recv_match(
-                    type=["GLOBAL_POSITION_INT", "SYS_STATUS"],
-                    blocking=True, timeout=1.0,
-                )
-                if msg is None:
-                    continue
-                if msg.get_type() == "GLOBAL_POSITION_INT":
-                    telemetry.pose = GeoPose(
-                        x=msg.lon * 1e-7, y=msg.lat * 1e-7, z=msg.alt * 1e-3,
-                        frame="WGS84",
-                    )
-                elif msg.get_type() == "SYS_STATUS":
-                    telemetry.battery_pct = float(msg.battery_remaining)
-
-        # 3. send_waypoint translates GeoPose → mission_item_int_send.
-        def send_waypoint(pose: GeoPose) -> None:
-            conn.mav.mission_item_int_send(
-                conn.target_system, conn.target_component,
-                seq=0,
-                frame=mavutil.mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT_INT,
-                command=mavutil.mavlink.MAV_CMD_NAV_WAYPOINT,
-                current=2, autocontinue=1,
-                param1=0, param2=0, param3=0, param4=0,
-                x=int(pose.y * 1e7), y=int(pose.x * 1e7), z=pose.z,
-            )
-
-    Coordinate-frame note: triage4 uses ``GeoPose(x=lon, y=lat)``;
-    MAVLink's ``mission_item_int`` uses ``(x=lat*1e7, y=lon*1e7)``.
-    Swap the fields carefully — see docs/HARDWARE_INTEGRATION.md.
+    See ``docs/PHASE_10_SITL.md`` for the full SITL setup.
     """
     try:
-        import pymavlink  # noqa: F401
+        from pymavlink import mavutil
     except ImportError as exc:
         raise BridgeUnavailable(
             "pymavlink is not installed. Install with 'pip install pymavlink' "
             "or pick LoopbackMAVLinkBridge for a simulator."
         ) from exc
-    raise NotImplementedError(
-        "Real pymavlink backend is a skeleton — implement the three "
-        "numbered blocks above. See docs/HARDWARE_INTEGRATION.md."
+
+    from triage4.integrations.pymavlink_bridge import PyMAVLinkBridge
+
+    conn = mavutil.mavlink_connection(
+        connection_url,
+        source_system=source_system,
+        source_component=source_component,
     )
+    try:
+        conn.wait_heartbeat(timeout=heartbeat_timeout_s)
+    except Exception as exc:
+        try:
+            conn.close()
+        except Exception:
+            pass
+        raise BridgeUnavailable(
+            f"no MAVLink heartbeat on {connection_url!r} within "
+            f"{heartbeat_timeout_s}s — is the autopilot / SITL running?"
+        ) from exc
+
+    bridge = PyMAVLinkBridge(
+        connection=conn,
+        platform_id=platform_id,
+        mavlink_module=mavutil.mavlink,
+    )
+    if start_telemetry:
+        bridge.start_telemetry_thread()
+    return bridge

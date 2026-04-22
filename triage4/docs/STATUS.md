@@ -8,7 +8,7 @@ it is.
 
 ## 1. What was built (scope)
 
-- 126 Python modules, 673 tests, CI green on Python 3.11 + 3.12.
+- 130 Python modules, 759 tests, CI green on Python 3.11 + 3.12.
 - All 9 K3-matrix cells have concrete implementations (the last
   three — skeletal graph / conflict resolver / forecast layer —
   shipped in the current commit).
@@ -76,10 +76,11 @@ it is.
   loopback; the `build_ultralytics_detector` factory exists but
   is not CI-tested — there is no real image → detection → pose
   chain on real data. Tagged RISK CAL-002.
-- **Platform bridges are loopback-only.** Real rclpy / pymavlink
-  / bosdyn paths raise `NotImplementedError`. The wiring is
-  well-documented in HARDWARE_INTEGRATION.md; the field-test
-  loop is missing.
+- **Platform bridges now have real implementations**
+  (`PyMAVLinkBridge`, `ROS2Bridge`, `TelloBridge`), tested via
+  dependency-injected SDK mocks. Field validation against real
+  SITL / ROS2 / Tello still requires the user's setup — the code
+  path is ready to run.
 - **No clinical data yet.** Calibration runs on a 70-case
   synthetic dataset. PhysioNet adapter is in place but no real
   archive has been ingested. Tagged RISK CAL-001. This is the

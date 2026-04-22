@@ -31,6 +31,7 @@ from .websocket_bridge import LoopbackWebSocketBridge, build_fastapi_websocket_b
 from .mavlink_bridge import LoopbackMAVLinkBridge, build_pymavlink_bridge
 from .ros2_bridge import LoopbackROS2Bridge, build_rclpy_bridge
 from .spot_bridge import LoopbackSpotBridge, build_bosdyn_bridge
+from .tello_bridge import LoopbackTelloBridge, TelloBridge, build_tello_bridge
 from .physionet_adapter import (
     PhysioNetRecord,
     PhysioNetUnavailable,
@@ -57,6 +58,7 @@ __all__ = [
     "LoopbackMAVLinkBridge",
     "LoopbackROS2Bridge",
     "LoopbackSpotBridge",
+    "LoopbackTelloBridge",
     "LoopbackWebSocketBridge",
     "MarkerPayload",
     "Meta2SignatureAdapter",
@@ -67,10 +69,12 @@ __all__ = [
     "PlatformBridge",
     "PlatformNotFound",
     "PlatformTelemetry",
+    "TelloBridge",
     "build_bosdyn_bridge",
     "build_fastapi_websocket_bridge",
     "build_pymavlink_bridge",
     "build_rclpy_bridge",
+    "build_tello_bridge",
     "check_bridge_health",
     "check_telemetry",
     "decode_marker",
