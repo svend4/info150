@@ -5,6 +5,7 @@ import { fetchCasualtyTwin } from "../../api/endpoints";
 import { useResource } from "../../hooks/useResource";
 import { priorityColor } from "../../util/priority";
 import { formatPercent } from "../../util/format";
+import Tooltip from "../common/Tooltip";
 import ConfidenceBar from "./ConfidenceBar";
 
 type Props = { casualtyId: string };
@@ -142,7 +143,9 @@ export default function TwinPanel({ casualtyId }: Props) {
               textTransform: "uppercase",
             }}
           >
-            effective sample size
+            <Tooltip text="Effective sample size: the number of particles still meaningfully contributing to the posterior estimate. When ESS drops below ~5 the particle cloud has collapsed onto a single hypothesis and further updates are unreliable.">
+              effective sample size
+            </Tooltip>
           </div>
           <div
             style={{

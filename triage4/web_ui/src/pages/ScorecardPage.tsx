@@ -1,6 +1,7 @@
 // Scorecard tab: DARPA-gate KPI view + counterfactual regret.
 
 import { fetchScorecard } from "../api/endpoints";
+import Tooltip from "../components/common/Tooltip";
 import { useResource } from "../hooks/useResource";
 import { priorityColor } from "../util/priority";
 import { formatPercent } from "../util/format";
@@ -67,12 +68,20 @@ export default function ScorecardPage() {
               good={data.gate2.accuracy >= 0.9}
             />
             <Kpi
-              label="macro F1"
+              label={
+                <Tooltip text="Macro-F1: the unweighted average of per-class F1 scores. Better than accuracy for imbalanced priority distributions — a 'high-accuracy' engine that only ever predicts the most common class gets a low macro-F1.">
+                  macro F1
+                </Tooltip>
+              }
               value={data.gate2.macro_f1.toFixed(3)}
               good={data.gate2.macro_f1 >= 0.7}
             />
             <Kpi
-              label="critical miss rate"
+              label={
+                <Tooltip text="Critical miss rate: the fraction of truly-immediate casualties that the engine classified as delayed or minimal. In a triage context this is the headline safety metric — every other accuracy number is secondary.">
+                  critical miss rate
+                </Tooltip>
+              }
               value={formatPercent(data.gate2.critical_miss_rate, 1)}
               good={data.gate2.critical_miss_rate === 0}
               invert
@@ -266,7 +275,7 @@ function Kpi({
   good,
   invert = false,
 }: {
-  label: string;
+  label: React.ReactNode;
   value: string;
   good: boolean;
   invert?: boolean;
