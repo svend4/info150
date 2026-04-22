@@ -535,6 +535,72 @@ def tasks() -> list[dict]:
     return allocator.recommend(graph.all_nodes())
 
 
+@app.get("/overview")
+def overview() -> dict:
+    """Executive summary — landing-page stats."""
+    nodes = graph.all_nodes()
+    by_priority: dict[str, int] = {}
+    confidences = []
+    oldest_unresponded: str | None = None
+    oldest_ts: float | None = None
+    for n in nodes:
+        by_priority[n.triage_priority] = by_priority.get(n.triage_priority, 0) + 1
+        confidences.append(n.confidence)
+        if n.assigned_medic is None and n.triage_priority == "immediate":
+            ts = n.first_seen_ts
+            if oldest_ts is None or ts < oldest_ts:
+                oldest_ts = ts
+                oldest_unresponded = n.id
+
+    avg_confidence = sum(confidences) / len(confidences) if confidences else 0.0
+
+    # Mission status — cheap, reuses the mission triage pipeline.
+    mission_sig, mission_result = triage_mission(
+        casualty_graph=graph,
+        mission_graph=mission_graph,
+        platform_capacity=10,
+        n_medics=3,
+        elapsed_minutes=30.0,
+        mission_window_minutes=60.0,
+    )
+
+    return {
+        "total_casualties": len(nodes),
+        "by_priority": by_priority,
+        "avg_confidence": round(avg_confidence, 3),
+        "oldest_unresponded_immediate": oldest_unresponded,
+        "mission_priority": mission_result.priority,
+        "mission_score": mission_result.score,
+        "mission_reasons": mission_result.reasons,
+        "n_medic_assignments": len(mission_graph.medic_assignments),
+        "n_unresolved_regions": len(mission_graph.unresolved_regions),
+    }
+
+
+@app.get("/casualties/{casualty_id}/marker")
+def casualty_marker(casualty_id: str) -> dict:
+    """HMAC-signed offline handoff marker + QR-safe string.
+
+    Uses a fixed demo secret for dashboard purposes. In a real
+    deployment the secret MUST come from TRIAGE4_MARKER_SECRET.
+    """
+    from triage4.integrations.marker_codec import (
+        encode_marker,
+        to_qr_string,
+    )
+
+    node = _node_or_404(casualty_id)
+    secret = b"demo-dashboard-secret-not-for-production"
+    envelope = encode_marker(node, secret=secret, medic="dashboard")
+    qr = to_qr_string(envelope)
+    return {
+        "casualty_id": casualty_id,
+        "qr_payload": qr,
+        "envelope_bytes": len(envelope),
+        "qr_chars": len(qr),
+    }
+
+
 @app.get("/export.html", response_class=HTMLResponse)
 def export_html() -> FileResponse:
     """Self-contained HTML snapshot of the casualty graph.

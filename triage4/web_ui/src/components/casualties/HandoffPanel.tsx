@@ -7,6 +7,7 @@ import { useResource } from "../../hooks/useResource";
 import { fetchHandoff } from "../../api/endpoints";
 import { priorityColor } from "../../util/priority";
 import { formatConfidence, formatCoord } from "../../util/format";
+import MarkerSection from "./MarkerSection";
 
 type Props = { casualtyId: string };
 
@@ -170,6 +171,8 @@ export default function HandoffPanel({ casualtyId }: Props) {
         </button>
       </div>
       <pre style={{ fontSize: 11, maxHeight: 300 }}>{jsonText}</pre>
+
+      <MarkerSection casualtyId={casualtyId} />
     </section>
   );
 }

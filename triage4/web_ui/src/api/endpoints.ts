@@ -12,8 +12,10 @@ import type {
   HandoffPayload,
   HealthStatus,
   MapData,
+  MarkerInfo,
   MissionForecast,
   MissionStatus,
+  Overview,
   ReplayData,
   Scorecard,
   SecondOpinion,
@@ -129,6 +131,22 @@ export function fetchConflict(
 ): Promise<ConflictReport> {
   return getJson<ConflictReport>(
     `/casualties/${encodeURIComponent(id)}/conflict`,
+    signal,
+  );
+}
+
+// Tier 3 — overview + marker.
+
+export function fetchOverview(signal?: AbortSignal): Promise<Overview> {
+  return getJson<Overview>("/overview", signal);
+}
+
+export function fetchMarker(
+  id: string,
+  signal?: AbortSignal,
+): Promise<MarkerInfo> {
+  return getJson<MarkerInfo>(
+    `/casualties/${encodeURIComponent(id)}/marker`,
     signal,
   );
 }

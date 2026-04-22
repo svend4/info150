@@ -299,3 +299,24 @@ export type ConflictReport = {
   ranked: ResolvedHypothesis[];
   groups: ConflictGroup[];
 };
+
+// --- Tier 3 ------------------------------------------------------------
+
+export type Overview = {
+  total_casualties: number;
+  by_priority: Record<string, number>;
+  avg_confidence: number;
+  oldest_unresponded_immediate: string | null;
+  mission_priority: string;
+  mission_score: number;
+  mission_reasons: string[];
+  n_medic_assignments: number;
+  n_unresolved_regions: number;
+};
+
+export type MarkerInfo = {
+  casualty_id: string;
+  qr_payload: string;
+  envelope_bytes: number;
+  qr_chars: number;
+};

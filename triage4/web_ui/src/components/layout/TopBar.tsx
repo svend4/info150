@@ -1,6 +1,7 @@
 import HealthBadge from "./HealthBadge";
 
 export type TabKey =
+  | "home"
   | "casualties"
   | "mission"
   | "forecast"
@@ -12,6 +13,7 @@ export type TabKey =
   | "metrics";
 
 const TABS: { key: TabKey; label: string }[] = [
+  { key: "home", label: "Home" },
   { key: "casualties", label: "Casualties" },
   { key: "mission", label: "Mission" },
   { key: "forecast", label: "Forecast" },
