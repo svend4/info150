@@ -183,7 +183,12 @@ it is.
 The source chat log (`/home/user/info150/Branch · Branch · Branch
 · Обзор проекта svend4_meta2.md`, ~12,500 lines) contains several
 methodological ideas that went into the K3 design but have **not
-yet landed as code**. Most valuable leads:
+yet landed as code**. See the repo-root
+[`ARCHIVES.md`](../../ARCHIVES.md) for a structural description of
+both the conversation log and the `triage4_repo_v13.zip`
+SaaS-direction variant (kept for provenance, not integrated).
+
+Most valuable leads:
 
 - **K3-1.3 Dynamic Skeletal Graph** — **shipped**
   (`state_graph/skeletal_graph.py`, 26 tests).
