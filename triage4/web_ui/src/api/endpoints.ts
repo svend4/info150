@@ -19,6 +19,8 @@ import type {
   ReplayData,
   Scorecard,
   SecondOpinion,
+  SensingResult,
+  SkeletalSnapshot,
   TaskRecommendation,
   TwinPosterior,
   UncertaintyReport,
@@ -149,4 +151,24 @@ export function fetchMarker(
     `/casualties/${encodeURIComponent(id)}/marker`,
     signal,
   );
+}
+
+// Final — skeletal graph + active sensing.
+
+export function fetchSkeletal(
+  id: string,
+  signal?: AbortSignal,
+): Promise<SkeletalSnapshot> {
+  return getJson<SkeletalSnapshot>(
+    `/casualties/${encodeURIComponent(id)}/skeletal`,
+    signal,
+  );
+}
+
+export function fetchSensingRanked(
+  topK?: number,
+  signal?: AbortSignal,
+): Promise<SensingResult> {
+  const qs = topK !== undefined ? `?top_k=${topK}` : "";
+  return getJson<SensingResult>(`/sensing/ranked${qs}`, signal);
 }

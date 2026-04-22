@@ -320,3 +320,51 @@ export type MarkerInfo = {
   envelope_bytes: number;
   qr_chars: number;
 };
+
+// --- Skeletal graph (K3-1.3) ------------------------------------------
+
+export type JointTrend = {
+  joint: string;
+  n_observations: number;
+  motion_score: number;
+  wound_slope: number;
+  wound_mean: number;
+};
+
+export type AsymmetryReport = {
+  pair: [string, string];
+  motion_asymmetry: number;
+  wound_asymmetry: number;
+};
+
+export type SkeletalSnapshot = {
+  casualty_id: string;
+  joints: string[];
+  bones: [string, string][];
+  mirror_pairs: [string, string][];
+  latest: {
+    t: number;
+    joints: Record<string, [number, number]>;
+    wounds: Record<string, number>;
+  } | null;
+  trends: Record<string, JointTrend>;
+  asymmetries: AsymmetryReport[];
+};
+
+// --- Active sensing ---------------------------------------------------
+
+export type SensingRecommendation = {
+  casualty_id: string;
+  expected_info_gain: number;
+  uncertainty: number;
+  priority_weight: number;
+  novelty: number;
+  n_prior_observations: number;
+  reasons: string[];
+};
+
+export type SensingResult = {
+  recommendations: SensingRecommendation[];
+  top_recommendation: SensingRecommendation | null;
+  total: number;
+};

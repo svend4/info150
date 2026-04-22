@@ -9,6 +9,7 @@ import ConflictPanel from "./ConflictPanel";
 import ExplainPanel from "./ExplainPanel";
 import HandoffPanel from "./HandoffPanel";
 import SecondOpinionPanel from "./SecondOpinionPanel";
+import SkeletalPanel from "./SkeletalPanel";
 import TwinPanel from "./TwinPanel";
 import UncertaintyPanel from "./UncertaintyPanel";
 
@@ -19,6 +20,7 @@ type SubTab =
   | "review"
   | "uncertainty"
   | "conflict"
+  | "skeletal"
   | "handoff";
 
 const TABS: { key: SubTab; label: string }[] = [
@@ -28,6 +30,7 @@ const TABS: { key: SubTab; label: string }[] = [
   { key: "review", label: "Review" },
   { key: "uncertainty", label: "Uncertainty" },
   { key: "conflict", label: "Conflict" },
+  { key: "skeletal", label: "Skeletal" },
   { key: "handoff", label: "Handoff" },
 ];
 
@@ -85,6 +88,7 @@ export default function CasualtyDetail({ casualty }: Props) {
         {sub === "review" && <SecondOpinionPanel casualtyId={casualty.id} />}
         {sub === "uncertainty" && <UncertaintyPanel casualtyId={casualty.id} />}
         {sub === "conflict" && <ConflictPanel casualtyId={casualty.id} />}
+        {sub === "skeletal" && <SkeletalPanel casualtyId={casualty.id} />}
         {sub === "handoff" && <HandoffPanel casualtyId={casualty.id} />}
       </div>
     </div>

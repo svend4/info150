@@ -8,6 +8,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, PlainTextResponse
 
+from triage4.autonomy.active_sensing import ActiveSensingPlanner
 from triage4.autonomy.human_handoff import HumanHandoffService
 from triage4.autonomy.task_allocator import TaskAllocator
 from triage4.core.models import CasualtyNode
@@ -18,6 +19,8 @@ from triage4.graph.mission_graph import MissionGraph
 from triage4.mission_coordination.mission_triage import triage_mission
 from triage4.state_graph.body_state_graph import BodyStateGraph
 from triage4.state_graph.conflict_resolver import ConflictResolver
+from triage4.state_graph.evidence_memory import EvidenceMemory
+from triage4.state_graph.skeletal_graph import SkeletalGraph
 from triage4.semantic.evidence_tokens import build_evidence_tokens
 from triage4.triage_reasoning.bayesian_twin import PatientTwinFilter
 from triage4.triage_reasoning.celegans_net import CelegansTriageNet
@@ -65,6 +68,11 @@ forecast_layer = ForecastLayer()
 larrey_classifier = LarreyBaselineTriage()
 celegans_classifier = CelegansTriageNet()
 conflict_resolver = ConflictResolver()
+active_sensing = ActiveSensingPlanner()
+evidence_memory = EvidenceMemory()
+# One skeletal graph per casualty — seeded in on_startup with synthetic
+# joint observations so the UI has something to render.
+skeletal_graphs: dict[str, SkeletalGraph] = {}
 
 
 # Per-casualty synthetic severity for counterfactual scoring.
@@ -101,11 +109,74 @@ def _synth_history(score: float, steps: int, drift: float) -> list[float]:
     return out
 
 
+def _seed_skeletal_graph(node: CasualtyNode) -> SkeletalGraph:
+    """Synthesise 6 frames of joint + wound data per casualty.
+
+    Priority drives the patterns:
+      - immediate: asymmetric motion (one wrist still, one moving),
+        high torso / hip wound intensity.
+      - delayed: uniform low motion, moderate wound on one side.
+      - minimal: all joints ambulating, zero wounds.
+    """
+    sg = SkeletalGraph()
+    priority = node.triage_priority
+    x0, y0 = float(node.location.x), float(node.location.y)
+
+    # Base positions (roughly humanoid, in map frame units).
+    base = {
+        "head": (x0, y0 - 1.6),
+        "neck": (x0, y0 - 1.3),
+        "shoulder_l": (x0 - 0.2, y0 - 1.2),
+        "shoulder_r": (x0 + 0.2, y0 - 1.2),
+        "elbow_l": (x0 - 0.35, y0 - 0.8),
+        "elbow_r": (x0 + 0.35, y0 - 0.8),
+        "wrist_l": (x0 - 0.45, y0 - 0.4),
+        "wrist_r": (x0 + 0.45, y0 - 0.4),
+        "pelvis": (x0, y0 - 0.6),
+        "hip_l": (x0 - 0.15, y0 - 0.5),
+        "hip_r": (x0 + 0.15, y0 - 0.5),
+        "knee_l": (x0 - 0.2, y0 - 0.2),
+        "knee_r": (x0 + 0.2, y0 - 0.2),
+    }
+
+    if priority == "immediate":
+        wounds = {
+            "pelvis": 0.80,
+            "hip_r": 0.65,
+            "shoulder_l": 0.40,
+        }
+    elif priority == "delayed":
+        wounds = {"hip_l": 0.55, "knee_l": 0.45}
+    else:
+        wounds = {}
+
+    for t in range(6):
+        joints: dict[str, tuple[float, float]] = {}
+        for j, (bx, by) in base.items():
+            # Motion pattern — minimal casualties move more; immediate
+            # casualties have one side nearly still (to surface L/R
+            # asymmetry). Period ≈ 6 frames.
+            phase = t * 0.6
+            amp = 0.0
+            if priority == "minimal":
+                amp = 0.08
+            elif priority == "delayed":
+                amp = 0.04
+            else:  # immediate
+                amp = 0.06 if j.endswith("_r") else 0.0
+            dx = amp * ((-1 if t % 2 else 1))
+            dy = amp * 0.5 * (1 if phase < 3 else -1)
+            joints[j] = (bx + dx, by + dy)
+        sg.record(float(t), joints, wounds=wounds)
+    return sg
+
+
 @app.on_event("startup")
 def on_startup() -> None:
     seed_demo_data(graph, triage_engine)
     for node in graph.all_nodes():
         default_registry.incr_casualty(node.triage_priority)
+        skeletal_graphs[node.id] = _seed_skeletal_graph(node)
     # Seed a minimal mission graph so mission triage has something
     # to reason over. Matches the simulated 2-medic / UAV setup.
     if not mission_graph.medic_assignments and graph.nodes:
@@ -293,6 +364,62 @@ def casualty_conflict(casualty_id: str) -> dict:
             }
             for g in resolved.groups
         ],
+    }
+
+
+@app.get("/casualties/{casualty_id}/skeletal")
+def casualty_skeletal(casualty_id: str) -> dict:
+    """K3-1.3 skeletal graph — joint topology + per-joint trends +
+    left-vs-right asymmetry across 5 mirror pairs.
+    """
+    if casualty_id not in skeletal_graphs:
+        raise HTTPException(status_code=404, detail="unknown casualty")
+    sg = skeletal_graphs[casualty_id]
+    latest = sg.latest()
+    trends = {
+        joint: asdict(sg.joint_trend(joint))
+        for joint in SkeletalGraph.JOINTS
+    }
+    asymmetries = [asdict(r) for r in sg.asymmetry()]
+
+    return {
+        "casualty_id": casualty_id,
+        "joints": list(SkeletalGraph.JOINTS),
+        "bones": [list(b) for b in SkeletalGraph.BONES],
+        "mirror_pairs": [list(p) for p in SkeletalGraph.MIRROR_PAIRS],
+        "latest": None if latest is None else {
+            "t": latest.t,
+            "joints": latest.joints,
+            "wounds": latest.wounds,
+        },
+        "trends": trends,
+        "asymmetries": asymmetries,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Active sensing
+# ---------------------------------------------------------------------------
+
+
+@app.get("/sensing/ranked")
+def sensing_ranked(top_k: int | None = None) -> dict:
+    """Active-sensing planner recommendations — ranked by expected
+    information gain.
+
+    Each entry is uncertainty × priority_weight × novelty, where
+    novelty = 1 / (1 + prior_observations) from the evidence memory.
+    """
+    nodes = graph.all_nodes()
+    ranked = active_sensing.rank(nodes, memory=evidence_memory)
+    if top_k is not None and top_k > 0:
+        ranked = ranked[: int(top_k)]
+    return {
+        "recommendations": [asdict(r) for r in ranked],
+        "top_recommendation": (
+            asdict(ranked[0]) if ranked else None
+        ),
+        "total": len(ranked),
     }
 
 

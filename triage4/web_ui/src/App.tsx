@@ -13,6 +13,7 @@ import MetricsPage from "./pages/MetricsPage";
 import MissionPage from "./pages/MissionPage";
 import ReplayPage from "./pages/ReplayPage";
 import ScorecardPage from "./pages/ScorecardPage";
+import SensingPage from "./pages/SensingPage";
 import TasksPage from "./pages/TasksPage";
 import { useToast } from "./state/ToastContext";
 
@@ -23,12 +24,16 @@ const TAB_KEYS: readonly TabKey[] = [
   "forecast",
   "scorecard",
   "tasks",
+  "sensing",
   "map",
   "replay",
   "graph",
   "metrics",
 ];
 
+// 1-9 cover 9 primary tabs; Map / Replay / Graph / Metrics share
+// hotkeys 7-0 (since most workflows keep those as rare "navigate
+// away from core triage" destinations). Sensing gets 7.
 const HOTKEY_TAB_MAP: Record<string, TabKey> = {
   "1": "home",
   "2": "casualties",
@@ -36,9 +41,9 @@ const HOTKEY_TAB_MAP: Record<string, TabKey> = {
   "4": "forecast",
   "5": "scorecard",
   "6": "tasks",
-  "7": "map",
-  "8": "replay",
-  "9": "graph",
+  "7": "sensing",
+  "8": "map",
+  "9": "replay",
   "0": "metrics",
 };
 
@@ -90,6 +95,7 @@ export default function App() {
       {tab === "forecast" && <ForecastPage />}
       {tab === "scorecard" && <ScorecardPage />}
       {tab === "tasks" && <TasksPage />}
+      {tab === "sensing" && <SensingPage />}
       {tab === "map" && <MapPage />}
       {tab === "replay" && <ReplayPage />}
       {tab === "graph" && <GraphPage />}
@@ -153,9 +159,9 @@ function HelpOverlay({ onClose }: { onClose: () => void }) {
               ["4", "Forecast"],
               ["5", "Scorecard"],
               ["6", "Tasks"],
-              ["7", "Map"],
-              ["8", "Replay"],
-              ["9", "Graph"],
+              ["7", "Sensing"],
+              ["8", "Map"],
+              ["9", "Replay"],
               ["0", "Metrics"],
               ["?", "Show / hide this help"],
               ["Esc", "Close overlay"],

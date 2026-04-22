@@ -7,6 +7,7 @@ export type TabKey =
   | "forecast"
   | "scorecard"
   | "tasks"
+  | "sensing"
   | "map"
   | "replay"
   | "graph"
@@ -19,6 +20,7 @@ const TABS: { key: TabKey; label: string }[] = [
   { key: "forecast", label: "Forecast" },
   { key: "scorecard", label: "Scorecard" },
   { key: "tasks", label: "Tasks" },
+  { key: "sensing", label: "Sensing" },
   { key: "map", label: "Map" },
   { key: "replay", label: "Replay" },
   { key: "graph", label: "Graph" },
