@@ -5,16 +5,29 @@ import { useState } from "react";
 
 import type { Casualty } from "../../types";
 import CasualtyOverview from "./CasualtyOverview";
+import ConflictPanel from "./ConflictPanel";
 import ExplainPanel from "./ExplainPanel";
 import HandoffPanel from "./HandoffPanel";
+import SecondOpinionPanel from "./SecondOpinionPanel";
 import TwinPanel from "./TwinPanel";
+import UncertaintyPanel from "./UncertaintyPanel";
 
-type SubTab = "overview" | "explain" | "twin" | "handoff";
+type SubTab =
+  | "overview"
+  | "explain"
+  | "twin"
+  | "review"
+  | "uncertainty"
+  | "conflict"
+  | "handoff";
 
 const TABS: { key: SubTab; label: string }[] = [
   { key: "overview", label: "Overview" },
   { key: "explain", label: "Explain" },
   { key: "twin", label: "Twin" },
+  { key: "review", label: "Review" },
+  { key: "uncertainty", label: "Uncertainty" },
+  { key: "conflict", label: "Conflict" },
   { key: "handoff", label: "Handoff" },
 ];
 
@@ -69,6 +82,9 @@ export default function CasualtyDetail({ casualty }: Props) {
         {sub === "overview" && <CasualtyOverview casualty={casualty} />}
         {sub === "explain" && <ExplainPanel casualtyId={casualty.id} />}
         {sub === "twin" && <TwinPanel casualtyId={casualty.id} />}
+        {sub === "review" && <SecondOpinionPanel casualtyId={casualty.id} />}
+        {sub === "uncertainty" && <UncertaintyPanel casualtyId={casualty.id} />}
+        {sub === "conflict" && <ConflictPanel casualtyId={casualty.id} />}
         {sub === "handoff" && <HandoffPanel casualtyId={casualty.id} />}
       </div>
     </div>

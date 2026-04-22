@@ -16,8 +16,13 @@ from triage4.evaluation.gate2_rapid_triage import evaluate_gate2
 from triage4.graph.casualty_graph import CasualtyGraph
 from triage4.graph.mission_graph import MissionGraph
 from triage4.mission_coordination.mission_triage import triage_mission
+from triage4.state_graph.body_state_graph import BodyStateGraph
+from triage4.state_graph.conflict_resolver import ConflictResolver
+from triage4.semantic.evidence_tokens import build_evidence_tokens
 from triage4.triage_reasoning.bayesian_twin import PatientTwinFilter
+from triage4.triage_reasoning.celegans_net import CelegansTriageNet
 from triage4.triage_reasoning.explainability import ExplainabilityBuilder
+from triage4.triage_reasoning.larrey_baseline import LarreyBaselineTriage
 from triage4.triage_reasoning.rapid_triage import RapidTriageEngine
 from triage4.triage_reasoning.uncertainty import UncertaintyModel
 from triage4.ui.html_export import render_html
@@ -57,6 +62,9 @@ allocator = TaskAllocator()
 explainer = ExplainabilityBuilder()
 uncertainty_model = UncertaintyModel()
 forecast_layer = ForecastLayer()
+larrey_classifier = LarreyBaselineTriage()
+celegans_classifier = CelegansTriageNet()
+conflict_resolver = ConflictResolver()
 
 
 # Per-casualty synthetic severity for counterfactual scoring.
@@ -169,6 +177,122 @@ def casualty_twin(casualty_id: str) -> dict:
         "deterioration_rate": posterior.deterioration_rate,
         "effective_sample_size": posterior.effective_sample_size,
         "is_degenerate": posterior.is_degenerate,
+    }
+
+
+@app.get("/casualties/{casualty_id}/second-opinion")
+def casualty_second_opinion(casualty_id: str) -> dict:
+    """Three independent classifiers run against the same signature.
+
+    Lets the operator see whether the primary RapidTriageEngine
+    agrees with the Larrey 1797 baseline and the 45-weight C.elegans
+    network. Disagreement is itself a decision-support signal.
+    """
+    node = _node_or_404(casualty_id)
+
+    primary_priority, primary_score, primary_reasons = (
+        triage_engine.infer_priority(node.signatures)
+    )
+    larrey_priority, larrey_reasons = larrey_classifier.classify_with_reasons(
+        node.signatures,
+    )
+    celegans_activation = celegans_classifier.activate(node.signatures)
+    celegans_priority = celegans_activation.priority
+
+    results: list[dict[str, object]] = [
+        {
+            "name": "RapidTriageEngine",
+            "description": "Default weighted-fusion engine with mortal-sign override.",
+            "priority": primary_priority,
+            "score": round(primary_score, 3),
+            "reasons": primary_reasons,
+        },
+        {
+            "name": "LarreyBaselineTriage",
+            "description": "1797 Napoleonic battlefield-medicine rules.",
+            "priority": larrey_priority,
+            "score": None,
+            "reasons": larrey_reasons,
+        },
+        {
+            "name": "CelegansTriageNet",
+            "description": "45-weight hand-wired fixed-topology network.",
+            "priority": celegans_priority,
+            "score": round(celegans_activation.motor[celegans_priority], 3),
+            "reasons": [
+                f"motor.{k} = {v:.2f}"
+                for k, v in celegans_activation.motor.items()
+            ],
+        },
+    ]
+
+    priorities: list[str] = [str(r["priority"]) for r in results]
+    all_agree = len(set(priorities)) == 1
+
+    return {
+        "casualty_id": casualty_id,
+        "classifiers": results,
+        "agreement": all_agree,
+        "distinct_priorities": sorted(set(priorities)),
+    }
+
+
+@app.get("/casualties/{casualty_id}/uncertainty")
+def casualty_uncertainty(casualty_id: str) -> dict:
+    """Per-channel confidence + adjusted score."""
+    node = _node_or_404(casualty_id)
+    _, base_score, _ = triage_engine.infer_priority(node.signatures)
+    report = uncertainty_model.from_signature(
+        node.signatures, base_score=base_score,
+    )
+    return {
+        "casualty_id": casualty_id,
+        "base_score": report.base_score,
+        "overall_confidence": report.overall_confidence,
+        "overall_uncertainty": report.overall_uncertainty,
+        "adjusted_score": report.adjusted_score,
+        "per_channel_confidence": dict(report.per_channel_confidence),
+    }
+
+
+@app.get("/casualties/{casualty_id}/conflict")
+def casualty_conflict(casualty_id: str) -> dict:
+    """Reconcile raw hypothesis scores through the conflict resolver.
+
+    Builds a ``BodyStateGraph`` from the casualty's evidence tokens,
+    grabs its raw hypothesis map, and runs ``ConflictResolver`` so the
+    UI can show support boosts, conflict suppressions, and the winning
+    hypothesis in each conflict clique.
+    """
+    node = _node_or_404(casualty_id)
+    tokens = build_evidence_tokens(node.signatures)
+    bsg = BodyStateGraph()
+    bsg.ingest(tokens)
+    raw = bsg.hypothesis_scores
+    resolved = conflict_resolver.resolve(raw)
+
+    return {
+        "casualty_id": casualty_id,
+        "evidence_tokens": [t.to_dict() for t in tokens],
+        "raw_scores": raw,
+        "ranked": [
+            {
+                "name": r.name,
+                "raw_score": r.raw_score,
+                "adjusted_score": r.adjusted_score,
+                "suppressed": r.suppressed,
+                "reasons": r.reasons,
+            }
+            for r in resolved.ranked
+        ],
+        "groups": [
+            {
+                "members": g.members,
+                "winner": g.winner,
+                "winner_score": g.winner_score,
+            }
+            for g in resolved.groups
+        ],
     }
 
 

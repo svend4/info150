@@ -244,3 +244,58 @@ export type Scorecard = {
     accuracy: number;
   };
 };
+
+// --- Tier 2 ------------------------------------------------------------
+
+export type ClassifierResult = {
+  name: string;
+  description: string;
+  priority: string;
+  score: number | null;
+  reasons: string[];
+};
+
+export type SecondOpinion = {
+  casualty_id: string;
+  classifiers: ClassifierResult[];
+  agreement: boolean;
+  distinct_priorities: string[];
+};
+
+export type UncertaintyReport = {
+  casualty_id: string;
+  base_score: number;
+  overall_confidence: number;
+  overall_uncertainty: number;
+  adjusted_score: number;
+  per_channel_confidence: Record<string, number>;
+};
+
+export type EvidenceToken = {
+  name: string;
+  strength: number;
+  source: string;
+  note: string;
+};
+
+export type ResolvedHypothesis = {
+  name: string;
+  raw_score: number;
+  adjusted_score: number;
+  suppressed: boolean;
+  reasons: string[];
+};
+
+export type ConflictGroup = {
+  members: string[];
+  winner: string | null;
+  winner_score: number;
+};
+
+export type ConflictReport = {
+  casualty_id: string;
+  evidence_tokens: EvidenceToken[];
+  raw_scores: Record<string, number>;
+  ranked: ResolvedHypothesis[];
+  groups: ConflictGroup[];
+};
