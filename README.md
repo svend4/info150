@@ -23,11 +23,11 @@ info150/
 - **What:** decision-support pipeline for DARPA Triage Challenge
   Event 3–class scenarios. Takes stand-off sensor observations →
   signatures → triage priority → graph → autonomy → handoff.
-- **Status:** 609 tests · 123 modules · CI green · Phases 1–9e
+- **Status:** 673 tests · 126 modules · CI green · Phases 1–9e
   complete · Phase 12 (regulatory), Phase 10-prep (HW scaffold),
   Phase 13-prep (deployment) done · Levels A–C (gap closures,
-  dev UX, docs polish) done. See
-  [`triage4/docs/STATUS.md`](triage4/docs/STATUS.md) for the
+  dev UX, docs polish) done · all 9 K3-matrix cells implemented.
+  See [`triage4/docs/STATUS.md`](triage4/docs/STATUS.md) for the
   honest pros / cons.
 - **License:** MIT. See [`triage4/LICENSES/`](triage4/LICENSES/).
 

@@ -13,7 +13,7 @@ triage'а (DARPA Triage Challenge Event 3 и аналогичные сценар
 ## Статус
 
 **Roadmap Phases 1–9e + 10-prep + 12 + 13-prep + Levels A/B/C закрыты.**
-123 Python-модуля, **609 тестов** (все зелёные), ruff + mypy + claims-lint
+126 Python-модулей, **673 теста** (все зелёные), ruff + mypy + claims-lint
 чистые, 0 импортов upstream-репозиториев / внешних SDK во время загрузки.
 
 Честный анализ плюсов / минусов / того что ещё открыто — в
@@ -37,16 +37,15 @@ triage'а (DARPA Triage Challenge Event 3 и аналогичные сценар
 | Level B | ✅ | Makefile · CONTRIBUTING · SBOM generator · hypothesis property tests (+ marker_codec bug fix) |
 | Level C | ✅ | stress benchmark · multi-platform / calibration / replay демо · CALIBRATION + EXPLAINABILITY docs |
 
-Открытые пункты:
+**Все 9 клеток K3-матрицы реализованы.** Включая три бывших stub'а
+(`1.3` skeletal graph, `2.2` conflict resolver, `3.3` forecast layer) —
+закрыты в текущем коммите.
 
-- **Внешние ресурсы** — Phase 10 proper (живое железо), Phase 11 (клинический
-  партнёр + IRB), Phase 13 proper (заказчик).
-- **3 клетки K3-матрицы** (всё ещё stub'ы — единственная self-contained
-  работа, которую можно делать без внешних зависимостей):
-  - `1.3` dynamic skeletal graph — time-evolving body graph с wound
-    morphology;
-  - `2.2` conflict_resolver — reconciles contradictory trauma hypotheses;
-  - `3.3` forecast_layer — проекция траектории пациента / миссии.
+Открытые пункты требуют внешних ресурсов:
+
+- **Phase 10 proper** — живое железо (UAV / quadruped / сенсорная цепь).
+- **Phase 11** — клинический партнёр + IRB approval.
+- **Phase 13 proper** — заказчик / production site.
 
 См. [`docs/ROADMAP.md`](docs/ROADMAP.md) и [`CHANGELOG.md`](CHANGELOG.md) для
 полной истории.

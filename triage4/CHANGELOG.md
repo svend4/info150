@@ -10,6 +10,38 @@ is implemented by one or several commits on the feature branch.
 
 ## Unreleased / 0.1.0 — branch `claude/analyze-documents-structure-Ik1KX`
 
+### K3 matrix closure — 3 remaining cells shipped
+
+Closes the last three empty cells of the K3 matrix. All 9 cells
+now have concrete implementations. Pure-Python stdlib math, no new
+runtime deps, 64 new tests.
+
+- `state_graph/skeletal_graph.py` (K3-1.3) — 13-joint humanoid
+  skeleton with time-stamped observations, per-joint wound
+  intensity, motion score (clipped path length per second),
+  wound-intensity slope (least-squares), and left-vs-right
+  asymmetry across 5 mirror pairs. Bounded history.
+- `state_graph/conflict_resolver.py` (K3-2.2) — single-pass
+  reconciler over hypothesis scores: applies support boosts and
+  conflict penalties, groups mutually-exclusive hypotheses into
+  cliques with a winner per group. Ships with a clinically-
+  defensible default KB.
+- `world_replay/forecast_layer.py` (K3-3.3) — forward-looking
+  projection. `project_casualty` blends linear extrapolation with
+  the existing `DeteriorationModel` trend and returns a
+  `CasualtyForecast` with priority band + stability-based
+  confidence. `project_mission` extrapolates the five channels of
+  `MissionSignature` and feeds the result back through
+  `classify_mission`, returning a `MissionForecast`.
+- `tests/test_skeletal_graph.py` — 26 tests.
+- `tests/test_conflict_resolver.py` — 17 tests.
+- `tests/test_forecast_layer.py` — 21 tests.
+- `state_graph/__init__.py`, `world_replay/__init__.py` updated
+  to export the new symbols.
+- `docs/ROADMAP.md`, `docs/STATUS.md`, `README.md`, root
+  `README.md` updated — the 3 cells are moved from open to
+  complete.
+
 ### Status analysis + docs polish
 
 - `docs/STATUS.md` — honest technical + conceptual pros / cons,

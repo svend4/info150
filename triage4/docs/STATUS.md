@@ -8,7 +8,10 @@ it is.
 
 ## 1. What was built (scope)
 
-- 123 Python modules, 609 tests, CI green on Python 3.11 + 3.12.
+- 126 Python modules, 673 tests, CI green on Python 3.11 + 3.12.
+- All 9 K3-matrix cells have concrete implementations (the last
+  three — skeletal graph / conflict resolver / forecast layer —
+  shipped in the current commit).
 - 12 docs (this one makes 13).
 - 11 runnable example scripts including a full-pipeline benchmark,
   multi-platform coordination, calibration walkthrough, mission
@@ -81,11 +84,10 @@ it is.
   synthetic dataset. PhysioNet adapter is in place but no real
   archive has been ingested. Tagged RISK CAL-001. This is the
   single biggest gap between Alpha and credible Beta.
-- **3 K3 matrix cells still empty:**
-  - 1.3 dynamic skeletal graph (time-evolving body + wound
-    morphology);
-  - 2.2 conflict resolver (contradictory-evidence reconciliation);
-  - 3.3 forecast layer (mission / patient trajectory projection).
+- **K3 matrix cells:** all 9 now have implementations. The three
+  previously-empty cells (1.3 dynamic skeletal graph, 2.2 conflict
+  resolver, 3.3 forecast layer) shipped as of the current commit.
+  See the "K3 matrix closure" block in `ROADMAP.md`.
 - **Mutation testing is configured but not yet run.** The
   opt-in `make mutation` path works; a first full run against
   the 7-module scope has not been scored. Survivor-rate baseline
@@ -182,19 +184,12 @@ The source chat log (`/home/user/info150/Branch · Branch · Branch
 methodological ideas that went into the K3 design but have **not
 yet landed as code**. Most valuable leads:
 
-- **K3-1.3 Dynamic Skeletal Graph** — a time-evolving body graph
-  with wound morphology and limb-asymmetry tracking. Current
-  implementation is static polygon regions (K3-1.2 only). This
-  is the single most articulated-but-unfinished cell.
-- **K3-2.2 Conflict Resolver** — reconciles contradictory trauma
-  hypotheses via support/conflict edge weighting, rank-order
-  voting, and uncertainty quantification. Stub exists in the
-  state_graph module; the reasoning layer does not yet consume
-  it.
-- **K3-3.3 Forecast Layer** — projects casualty trajectory and
-  mission escalation into the near future. Timeline storage +
-  replay ship in Phase 9c; predictive "what happens if we do
-  nothing for 10 minutes" does not.
+- **K3-1.3 Dynamic Skeletal Graph** — **shipped**
+  (`state_graph/skeletal_graph.py`, 26 tests).
+- **K3-2.2 Conflict Resolver** — **shipped**
+  (`state_graph/conflict_resolver.py`, 17 tests).
+- **K3-3.3 Forecast Layer** — **shipped**
+  (`world_replay/forecast_layer.py`, 21 tests).
 - **Tangram body-region abstraction** — the body decomposed into
   stable geometric parts. Implemented (`perception/body_regions.py`)
   but the naming / narrative is under-surfaced in the docs.
@@ -220,7 +215,7 @@ Each item is a roadmap candidate, not a shipped feature.
 - **Small conceptual debt** — mostly about surfacing the existing
   framing (fractal / stand-off taxonomy / scope anchor /
   bibliography), not about inventing new ideas.
-- **Three K3 cells** represent the only *self-contained* technical
-  work left that can be done without external dependencies. All
-  three are independently scoped and could be tackled one at a
-  time.
+- **All K3 cells closed.** The three previously-open cells
+  (skeletal graph, conflict resolver, forecast layer) have shipped
+  with 64 combined tests. No self-contained technical work item of
+  comparable scope remains on the roadmap.
