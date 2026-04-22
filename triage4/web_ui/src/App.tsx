@@ -8,7 +8,11 @@ import { priorityColor } from "./util/priority";
 
 type TabKey = "casualties" | "map" | "replay";
 
-const API_BASE = "http://127.0.0.1:8000";
+// Empty string = relative paths, which the Vite dev proxy (see
+// web_ui/vite.config.ts) forwards to the FastAPI backend. Override
+// at build / dev time with VITE_API_BASE when the frontend runs on
+// a different host than the backend.
+const API_BASE = (import.meta.env.VITE_API_BASE as string | undefined) ?? "";
 
 export default function App() {
   const [items, setItems] = useState<Casualty[]>([]);
