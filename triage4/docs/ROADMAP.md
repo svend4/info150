@@ -183,8 +183,7 @@ breaking changes. The critical calibration gap from Phase 9a is closed.
 ## Phase 9c — Innovation pack, part 2
 
 Six of the nine brainstorm ideas shipped as production-ready modules.
-The remaining three are deliberately left as future exploration — see
-the "Speculative / deferred" block below.
+The remaining three ship as Phase 9e below.
 
 - [x] `triage_reasoning/bayesian_twin.py` — `PatientTwinFilter`
       (particle filter, default 200 particles) over
@@ -211,21 +210,40 @@ the "Speculative / deferred" block below.
 
 **Phase 9c complete.**
 
-## Speculative / deferred
+## Phase 9e — Speculative trio (shipped)
 
-Three ideas from the Phase 9 brainstorm that were judged lower-value
-or too speculative to ship right now, but logged so the project's
-conceptual surface isn't lost:
+The three ideas from the Phase 9 brainstorm that had been deferred as
+"speculative" are now shipped as small, well-scoped modules. Each one
+is independent, has no external deps, and is covered by focused tests:
 
-- **Steganographic battlefield markers** — encode a `CasualtyNode` in
-  a QR / AR tag left physically on a casualty. Overlaps in scope with
-  the CRDT denied-comms path, which is already shipped.
-- **C.elegans-inspired fixed-topology classifier** — 302-neuron-style
-  hand-wired graph as an alternative to score fusion. Research-grade
-  hypothesis, would need actual connectome-inspired weight design.
-- **Fractal mission-as-casualty** — apply `RapidTriageEngine` at the
-  mission level, with each casualty replacing one signature channel.
-  Philosophical symmetry; minimal new code but blurs existing layers.
+- [x] `integrations/marker_codec.py` — steganographic battlefield
+      markers. Encodes the essential triage fields of a `CasualtyNode`
+      into an HMAC-signed JSON envelope (< 400 B, QR-safe). Pure
+      stdlib, rejects tampered payloads, wrong secrets, and stale
+      markers. Complements (does not replace) the CRDT path: CRDT is
+      for medic-to-medic sync when tablets meet; markers are for a
+      casualty-bound note that any responder can read offline.
+- [x] `triage_reasoning/celegans_net.py` — `CelegansTriageNet`.
+      Fixed-topology 4-sensory / 6-interneuron / 3-motor network with
+      45 hand-authored, clinically-defensible weights. No training
+      loop, no gradient, fully auditable. Complements the heuristic
+      `RapidTriageEngine` as an independent second-opinion classifier.
+- [x] `mission_coordination/mission_triage.py` — fractal
+      mission-as-casualty. Treats the mission itself as a casualty
+      with five signature channels (density, immediate fraction,
+      unresolved sector fraction, medic utilisation, time-budget
+      burn) and returns `escalate` / `sustain` / `wind_down`. Lets a
+      commander see mission-level pressure with the same vocabulary
+      as a patient.
+
+Supporting work:
+- [x] `examples/marker_handoff_demo.py` — end-to-end encode → QR →
+      decode + tamper / wrong-secret / expired rejection demo.
+- [x] `tests/test_phase9e.py` — 28 tests across the three modules
+      plus a cross-module smoke (C.elegans classifies a signature →
+      marker encodes the node → decoded priority matches).
+
+**Phase 9e complete.**
 
 ## Риск-регистр
 

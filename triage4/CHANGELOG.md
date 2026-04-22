@@ -10,6 +10,22 @@ is implemented by one or several commits on the feature branch.
 
 ## Unreleased / 0.1.0 — branch `claude/analyze-documents-structure-Ik1KX`
 
+### Phase 9e — Speculative trio
+
+- `integrations/marker_codec.py` — HMAC-signed QR-safe marker codec
+  for denied-comms, casualty-bound handoff. Pure stdlib. Rejects
+  tampered payloads, wrong secrets, and stale markers.
+- `triage_reasoning/celegans_net.py` — `CelegansTriageNet`,
+  fixed-topology 4/6/3 network with 45 hand-authored weights + motor
+  biases. Auditable second-opinion classifier, no training loop.
+- `mission_coordination/mission_triage.py` — fractal mission-as-
+  casualty. `MissionSignature` (5 channels) → escalate / sustain /
+  wind_down with contributions and reasons.
+- `examples/marker_handoff_demo.py` — end-to-end encode → QR → decode
+  + failure-mode rejection demo.
+- `tests/test_phase9e.py` — 28 tests across all three modules plus a
+  cross-module smoke.
+
 ### Phase 9d — Consolidation round 2
 
 - `examples/full_pipeline_benchmark.py` extended with Bayesian twin

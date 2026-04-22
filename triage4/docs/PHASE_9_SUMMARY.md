@@ -120,7 +120,7 @@ Bayesian twin (per casualty)     P(true priority) ≥ 0.80 on all 8
 | 9b | ✅ done | Larrey-gap closed, YOLO adapter, calibrator |
 | 9c | ✅ done | Bayesian twin + counterfactual + CRDT + acoustic + LLM grounding |
 | 9d | ✅ done | Consolidation round 2 |
-| 9e | planned | Speculative trio (markers / C.elegans / fractal-mission) |
+| 9e | ✅ done | Speculative trio (markers / C.elegans / fractal-mission) |
 | 10 | needs HW | Live UAV / quadruped / camera integration |
 | 11 | needs partner | Clinical data partnership + IRB |
 | 12 | planned | Regulatory awareness docs (SaMD / IEC 62304) |

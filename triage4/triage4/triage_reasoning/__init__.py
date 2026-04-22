@@ -20,14 +20,17 @@ from .llm_grounding import (
     build_prompt,
     explain,
 )
+from .celegans_net import CelegansTriageNet, NetActivation
 
 __all__ = [
     "CalibrationResult",
+    "CelegansTriageNet",
     "Explanation",
     "ExplainabilityBuilder",
     "GroundingPrompt",
     "LLMBackend",
     "LarreyBaselineTriage",
+    "NetActivation",
     "PatientTwinFilter",
     "RapidTriageEngine",
     "TemplateGroundingBackend",
