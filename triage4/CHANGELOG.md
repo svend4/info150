@@ -10,6 +10,56 @@ is implemented by one or several commits on the feature branch.
 
 ## Unreleased / 0.1.0 — branch `claude/analyze-documents-structure-Ik1KX`
 
+### Phase 9d — Consolidation round 2
+
+- `examples/full_pipeline_benchmark.py` extended with Bayesian twin
+  posteriors, Eulerian stand-off HR, counterfactual replay, grounded
+  explanations. New `--json` flag for CI-diffable output.
+- `examples/bayesian_twin_demo.py`, `examples/crdt_sync_demo.py`,
+  `examples/counterfactual_replay.py` — focused Phase 9 demo scripts.
+- `docs/API.md` refreshed with every Phase 9 public symbol.
+- `docs/ONE_PAGER.md` extended with Eulerian / Bayesian / CRDT / LLM
+  grounding differentiators and a counterfactual line in the scorecard.
+- New `docs/PHASE_9_SUMMARY.md` — one-page summary of all Phase 9 work.
+
+### Phase 9c — Innovation pack, part 2
+
+- `triage_reasoning/bayesian_twin.py` — particle filter over
+  (priority_band, deterioration_rate) per casualty, returns a full
+  posterior with ESS sanity flag.
+- `evaluation/counterfactual.py` — retrospective what-if scorer with
+  per-casualty regret.
+- `triage_temporal/entropy_handoff.py` — Shannon-entropy-based handoff
+  recommendation.
+- `state_graph/crdt_graph.py` — OR-set + LWW-register + G-counter
+  for denied-comms medic coordination.
+- `signatures/acoustic_signature.py` — cough / wheeze / groan / silence
+  bandpower detector.
+- `triage_reasoning/llm_grounding.py` — grounded prompt builder plus
+  `TemplateGroundingBackend` (LLM-free default).
+
+### Phase 9b — Real-data classical calibration
+
+- `triage_reasoning/score_fusion.py` — `MortalThresholds` override,
+  closes the Larrey-gap from 9a.
+- `perception/yolo_detector.py` — `LoopbackYOLODetector` plus
+  `build_ultralytics_detector` lazy factory.
+- `sim/realistic_dataset.py` — 70-case labelled dataset with edge
+  cases and sensor-degradation noise.
+- `triage_reasoning/calibration.py` — grid-search calibrator minimising
+  critical_miss_rate first, macro_f1 second.
+- `integrations/physionet_adapter.py` — `PhysioNetRecord` with
+  `load_dict` (in-memory) and `load_wfdb` (lazy WFDB).
+- `docs/ONE_PAGER.md` — grant-ready project summary.
+
+### Phase 9a — Innovation pack, part 1
+
+- `signatures/remote_vitals.py` — Eulerian-style bandpass extractor for
+  stand-off vitals from ordinary RGB.
+- `autonomy/active_sensing.py` — information-gain next-target planner.
+- `triage_reasoning/larrey_baseline.py` — 1797 Larrey mortal /
+  serious / light baseline classifier.
+
 ### Consolidation
 
 - `tests/test_end_to_end.py` — two integration tests covering the full
