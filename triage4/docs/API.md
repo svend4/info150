@@ -32,6 +32,8 @@ from triage4.signatures import (
     PerfusionSignatureExtractor,   # skin-color curve → perfusion drop
     ThermalSignatureExtractor,     # thermal patch → hotspot + asymmetry
     PostureSignatureExtractor,     # body-region polygons → collapse + asymmetry
+    EulerianVitalsExtractor,       # stand-off HR / RR from RGB video (Phase 9a)
+    AcousticSignatureExtractor,    # cough / wheeze / groan (Phase 9c)
     FractalMotionAnalyzer,         # fractal / CSS / chain-code descriptors
     SignatureRegistry,             # runtime register + batch extract
 )
@@ -68,6 +70,12 @@ from triage4.triage_reasoning import (
     ExplainabilityBuilder,   # node → human-readable summary
     UncertaintyModel,        # propagate per-channel quality
     VitalsEstimator,         # FFT-based HR / RR
+    # Phase 9 additions:
+    LarreyBaselineTriage,    # 1797 Larrey rules — auditable baseline (9a)
+    PatientTwinFilter,       # particle filter → priority posterior (9c)
+    calibrate,               # grid-search weights + thresholds (9b)
+    explain,                 # grounded natural-language explanation (9c)
+    TemplateGroundingBackend,  # LLM-free default for ``explain`` (9c)
 )
 ```
 
@@ -80,6 +88,7 @@ from triage4.autonomy import (
     TaskAllocator,
     plan_robot_route,         # BFS на mission edges
     bfs_path,
+    ActiveSensingPlanner,     # information-gain target selection (Phase 9a)
 )
 ```
 
@@ -92,6 +101,18 @@ from triage4.evaluation import (
     evaluate_gate3, Gate3Report,    # multi-label trauma
     evaluate_gate4, Gate4Report,    # HR / RR accuracy
     evaluate_hmt_lane, HMTReport, HMTEvent,
+    evaluate_counterfactuals, CounterfactualReport,  # what-if regret (Phase 9c)
+)
+```
+
+## Denied-comms / state replication
+
+```python
+from triage4.state_graph import (
+    CRDTCasualtyGraph,       # OR-set + LWW + G-counter for offline sync (9c)
+)
+from triage4.triage_temporal import (
+    EntropyHandoffTrigger,   # Shannon-entropy handoff timer (9c)
 )
 ```
 

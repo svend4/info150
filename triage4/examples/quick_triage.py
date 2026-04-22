@@ -19,7 +19,6 @@ if str(_PROJECT_ROOT) not in sys.path:
 
 from triage4.core.models import CasualtySignature  # noqa: E402
 from triage4.triage_reasoning import (  # noqa: E402
-    ExplainabilityBuilder,
     RapidTriageEngine,
     UncertaintyModel,
 )
@@ -65,7 +64,7 @@ def main() -> None:
 
     # Explainability builder expects a CasualtyNode, so skip it here for
     # brevity; see full_pipeline_benchmark.py for the complete path.
-    print(f"\nper-channel confidence:")
+    print("\nper-channel confidence:")
     for channel, conf in uncertainty.per_channel_confidence.items():
         print(f"  {channel:<24s} {conf:.2f}")
 

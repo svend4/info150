@@ -29,11 +29,15 @@ decision, and packages it for handoff to a medic.
 | 1 — find & locate | `evaluation/gate1_find_locate` | F1 = 1.00, mean error 0.7 m |
 | 2 — rapid triage | `evaluation/gate2_rapid_triage` | accuracy = 1.00, critical-miss = 0% |
 | 3 — trauma | `evaluation/gate3_trauma` | micro-F1 = 0.57, macro = 0.60 |
-| 4 — vitals | `evaluation/gate4_vitals` | HR MAE 1.9 bpm, RR MAE 1.9 bpm |
+| 4 — vitals (contact) | `evaluation/gate4_vitals` | HR MAE 1.9 bpm, RR MAE 1.9 bpm |
+| 4 — vitals (stand-off Eulerian) | `signatures/remote_vitals` | HR MAE 1.9 bpm, max err 3 bpm |
 | HMT lane | `evaluation/hmt_lane` | agreement = 1.00, timeliness = 1.00 |
+| Counterfactual replay | `evaluation/counterfactual` | mean regret = 0.06 on synthetic |
+| Bayesian twin posterior | `triage_reasoning/bayesian_twin` | P(true priority) ≥ 0.80 on all 8 casualties |
 
 All numbers are from a deterministic 8-casualty synthetic benchmark,
-reproducible with `python examples/full_pipeline_benchmark.py`.
+reproducible with `python examples/full_pipeline_benchmark.py`
+(`--json` for machine-readable output).
 
 ## Technical differentiators
 
@@ -56,6 +60,18 @@ reproducible with `python examples/full_pipeline_benchmark.py`.
 - **Information-gain active sensing** — autonomy layer picks the next
   observation by expected uncertainty reduction, not by a fixed
   coverage plan.
+- **Bayesian patient twin** — particle filter per casualty returns a
+  full posterior over priority bands, not a point estimate; effective
+  sample size flags degenerate estimates as untrustworthy.
+- **Retrospective counterfactual scoring** — every mission can be
+  replayed as "what if we'd decided differently?" with per-casualty
+  regret scores against a monotonic outcome model.
+- **CRDT denied-comms coordination** — three medic tablets syncing
+  pairwise over Bluetooth or LoRa converge to identical state without
+  a central server. Merges are provably commutative and idempotent.
+- **LLM grounding, not LLM decision** — any LLM plug-in only
+  *phrases* the numeric facts triage4 already decided. Cannot invent
+  clinical claims; the default backend is LLM-free.
 
 ## Honest gaps
 

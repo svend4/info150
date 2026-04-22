@@ -32,7 +32,7 @@ jobs:
           pip install ruff mypy httpx
 
       - name: ruff check
-        run: ruff check triage4 tests
+        run: ruff check triage4 tests examples
 
       - name: mypy
         run: mypy --ignore-missing-imports triage4
@@ -40,5 +40,16 @@ jobs:
       - name: pytest
         run: pytest -q
 
-      - name: Full pipeline benchmark (smoke)
+      - name: Full pipeline benchmark (text)
         run: python examples/full_pipeline_benchmark.py
+
+      - name: Full pipeline benchmark (JSON smoke)
+        run: python examples/full_pipeline_benchmark.py --json benchmark.json
+
+      - name: Phase 9 demo scripts
+        run: |
+          python examples/quick_triage.py
+          python examples/uav_waypoint_demo.py
+          python examples/bayesian_twin_demo.py
+          python examples/crdt_sync_demo.py
+          python examples/counterfactual_replay.py

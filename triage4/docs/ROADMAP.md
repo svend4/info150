@@ -180,14 +180,70 @@ breaking changes. The critical calibration gap from Phase 9a is closed.
 
 **Phase 9b complete.**
 
-## Phase 9c — Innovation pack, part 2 (planned)
+## Phase 9c — Innovation pack, part 2
 
-Remaining ideas from the creative brainstorm:
-CRDT denied-comms coordination, Bayesian patient twin, retrospective
-counterfactual re-scoring, bioacoustic signature fusion, steganographic
-battlefield markers, fractal mission-as-casualty, C.elegans-inspired
-fixed-topology classifier, entropy-based handoff timing, LLM grounding
-layer for natural-language explanation.
+Six of the nine brainstorm ideas shipped as production-ready modules.
+The remaining three ship as Phase 9e below.
+
+- [x] `triage_reasoning/bayesian_twin.py` — `PatientTwinFilter`
+      (particle filter, default 200 particles) over
+      (priority_band, deterioration_rate). Upgrades the scalar
+      `UncertaintyReport` to a full posterior distribution with
+      effective-sample-size sanity.
+- [x] `evaluation/counterfactual.py` — retrospective "what-if" scorer
+      per casualty. Returns `CounterfactualCase` with regret score
+      between actual and best-alternative priority.
+- [x] `triage_temporal/entropy_handoff.py` — Shannon-entropy trigger
+      that recommends medic handoff when the priority-observation
+      stream plateaus. Avoids both premature and late handoffs.
+- [x] `state_graph/crdt_graph.py` — `CRDTCasualtyGraph` with OR-set
+      of ids, LWW-register per priority, G-counter per observation
+      count. Merges are commutative + idempotent — denied-comms-ready.
+- [x] `signatures/acoustic_signature.py` — cough / wheeze / groan /
+      silence bandpower scorer. Fills the audio channel with a
+      deterministic, non-ML baseline.
+- [x] `triage_reasoning/llm_grounding.py` — prompt builder +
+      `TemplateGroundingBackend` (LLM-free default). LLMs never make
+      triage decisions — they only phrase the numeric facts triage4
+      already decided. `LLMBackend` Protocol lets any provider
+      (OpenAI, Anthropic, local) drop in without code changes.
+
+**Phase 9c complete.**
+
+## Phase 9e — Speculative trio (shipped)
+
+The three ideas from the Phase 9 brainstorm that had been deferred as
+"speculative" are now shipped as small, well-scoped modules. Each one
+is independent, has no external deps, and is covered by focused tests:
+
+- [x] `integrations/marker_codec.py` — steganographic battlefield
+      markers. Encodes the essential triage fields of a `CasualtyNode`
+      into an HMAC-signed JSON envelope (< 400 B, QR-safe). Pure
+      stdlib, rejects tampered payloads, wrong secrets, and stale
+      markers. Complements (does not replace) the CRDT path: CRDT is
+      for medic-to-medic sync when tablets meet; markers are for a
+      casualty-bound note that any responder can read offline.
+- [x] `triage_reasoning/celegans_net.py` — `CelegansTriageNet`.
+      Fixed-topology 4-sensory / 6-interneuron / 3-motor network with
+      45 hand-authored, clinically-defensible weights. No training
+      loop, no gradient, fully auditable. Complements the heuristic
+      `RapidTriageEngine` as an independent second-opinion classifier.
+- [x] `mission_coordination/mission_triage.py` — fractal
+      mission-as-casualty. Treats the mission itself as a casualty
+      with five signature channels (density, immediate fraction,
+      unresolved sector fraction, medic utilisation, time-budget
+      burn) and returns `escalate` / `sustain` / `wind_down`. Lets a
+      commander see mission-level pressure with the same vocabulary
+      as a patient.
+
+Supporting work:
+- [x] `examples/marker_handoff_demo.py` — end-to-end encode → QR →
+      decode + tamper / wrong-secret / expired rejection demo.
+- [x] `tests/test_phase9e.py` — 28 tests across the three modules
+      plus a cross-module smoke (C.elegans classifies a signature →
+      marker encodes the node → decoded priority matches).
+
+**Phase 9e complete.**
 
 ## Риск-регистр
 
