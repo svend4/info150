@@ -128,6 +128,47 @@ instructions.
 
 **Phase 8 complete.**
 
+## Phase 9a — Innovation pack, part 1
+
+Three genuinely novel modules not ported from any upstream, grounded in
+cross-domain ideas (MIT video magnification, Bayesian experimental
+design, Napoleonic-era military medicine) and adapted to triage4's
+existing contracts.
+
+- [x] `signatures/remote_vitals.py` — Eulerian-style bandpass extractor
+      for HR / RR signals from a plain RGB stack. Hands off to the
+      existing ``VitalsEstimator``. Enables stand-off vitals from any
+      camera, not just thermal or contact sensors.
+- [x] `autonomy/active_sensing.py` — `ActiveSensingPlanner` ranks the
+      next observation target by expected information gain
+      (`uncertainty × priority_weight × novelty`). Plugs into the
+      autonomy layer as a drop-in replacement for fixed coverage plans.
+- [x] `triage_reasoning/larrey_baseline.py` — 1797-style mortal /
+      serious / light classifier as an auditable baseline. Running it
+      alongside `RapidTriageEngine` through Gate 2 immediately
+      surfaced a calibration gap where the modern engine misses
+      isolated heavy bleeding — now captured as a regression test in
+      `tests/test_larrey_baseline.py`.
+
+**Phase 9a complete.**
+
+## Phase 9b — Real-data classical calibration (planned)
+
+- Pick one public dataset per channel (ISIC / PhysioNet / COCO-person).
+- Replace `PersonDetector` stub with a real YOLO-class model.
+- Recalibrate `RapidTriageEngine` thresholds via `select_f1_threshold`.
+- Close the critical gap found in Phase 9a (isolated-bleeding miss).
+- Draft a one-pager using the full pipeline scorecard.
+
+## Phase 9c — Innovation pack, part 2 (planned)
+
+Remaining ideas from the creative brainstorm:
+CRDT denied-comms coordination, Bayesian patient twin, retrospective
+counterfactual re-scoring, bioacoustic signature fusion, steganographic
+battlefield markers, fractal mission-as-casualty, C.elegans-inspired
+fixed-topology classifier, entropy-based handoff timing, LLM grounding
+layer for natural-language explanation.
+
 ## Риск-регистр
 
 - **overexpansion** — не выходить за MVP без exit-criteria каждой фазы;
