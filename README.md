@@ -4,19 +4,28 @@ Monorepo for the **triage4** project — a simulation-first
 autonomous stand-off triage research stack.
 
 The actual code, tests, docs, and deployment artefacts live under
-[`triage4/`](triage4/). This top-level directory also carries the
-original conceptual drafts the project started from.
+[`triage4/`](triage4/). This top-level directory also carries
+frozen archives that document the project's origins — see
+[`ARCHIVES.md`](ARCHIVES.md) for what they are and why they are
+kept.
 
 ## Layout
 
 ```
 info150/
-├── README.md                         # this file
+├── README.md                         # this file — orientation + quickstart
+├── ARCHIVES.md                       # description of the two frozen artefacts below
 ├── triage4/                          # the project proper (see below)
-└── Branch · Branch · Branch · Обзор проекта svend4_meta2.{md,txt,json}
-                                      # original ChatGPT design log (~12,500 lines)
-                                      # inputs to Phases 1–6 scaffolding
+├── Branch · Branch · Branch · Обзор проекта svend4_meta2.{md,txt,json}
+│                                     # original ChatGPT design log (~12,500 lines, 2026-04-01)
+│                                     # seeded Phases 1–6 of triage4
+└── triage4_repo_v13.zip              # 530 KB — alternative SaaS-direction triage4 variant
+                                      # (v6→v13 trajectory from the same conversation)
+                                      # incompatible architecture, kept for provenance only
 ```
+
+See [`ARCHIVES.md`](ARCHIVES.md) for a full per-file breakdown of
+what's inside the archives, what is *not* integrated, and why.
 
 ## triage4 at a glance
 
