@@ -84,6 +84,21 @@ demo-marker:          ## Steganographic marker handoff (encode + tamper test)
 demo-uav:             ## UAV waypoint routing
 	$(PYTHON) $(EXAMPLES)/uav_waypoint_demo.py
 
+demo-multi:           ## Multi-platform coordination (UAV + Spot + ROS2)
+	$(PYTHON) $(EXAMPLES)/multi_platform_demo.py
+
+demo-calibration:     ## Grid-search calibration walkthrough
+	$(PYTHON) $(EXAMPLES)/calibration_walkthrough.py
+
+demo-replay:          ## Mission timeline replay with priority revision
+	$(PYTHON) $(EXAMPLES)/mission_replay_demo.py
+
+stress:               ## Scaling + memory stress benchmark (10 / 100 / 500)
+	$(PYTHON) $(EXAMPLES)/stress_benchmark.py
+
+stress-big:           ## Stress benchmark at 100 / 1000 / 5000 casualties
+	$(PYTHON) $(EXAMPLES)/stress_benchmark.py --sizes 100 1000 5000
+
 # -- mutation testing (opt-in, slow) --------------------------------
 
 mutation:             ## Run mutmut against the triage-critical scope

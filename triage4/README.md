@@ -54,6 +54,10 @@ make benchmark          # полный pipeline на 8 фикстурных па
 make test               # pytest -q
 make demo-crdt          # denied-comms CRDT sync, 3 медика
 make demo-marker        # оффлайн-марким + rollback на tampered/expired
+make demo-multi         # multi-platform orchestrator: UAV + Spot + ROS2
+make demo-calibration   # grid-search calibration walkthrough
+make demo-replay        # mission timeline replay
+make stress             # scaling benchmark (10 / 100 / 500 casualties)
 make docker-build       # slim image < 200 MB
 ```
 
@@ -180,6 +184,8 @@ triage4/
 - [`docs/REGULATORY.md`](docs/REGULATORY.md) — SaMD / IEC 62304 / FDA / EU MDR landscape (non-binding)
 - [`docs/SAFETY_CASE.md`](docs/SAFETY_CASE.md) — GSN-style safety argument
 - [`docs/RISK_REGISTER.md`](docs/RISK_REGISTER.md) — ISO 14971-style реестр
+- [`docs/EXPLAINABILITY.md`](docs/EXPLAINABILITY.md) — три слоя объяснений + LLM grounding
+- [`docs/CALIBRATION.md`](docs/CALIBRATION.md) — tuning fusion weights + thresholds против dataset
 
 Интеграция и деплой:
 - [`docs/HARDWARE_INTEGRATION.md`](docs/HARDWARE_INTEGRATION.md) — per-platform wiring

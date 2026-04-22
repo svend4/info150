@@ -402,6 +402,39 @@ shipped together on this branch.
 
 **Level B complete.**
 
+## Level C — Optional refinement (benchmarks + demos + docs)
+
+- [x] `examples/stress_benchmark.py` — scaling + memory stress
+      benchmark. Generates synthetic scenes of configurable size,
+      times the triage hot path, reports per-casualty µs and KB,
+      plus a slope estimate (linear / sub-linear / super-linear).
+      At 5000 casualties: ~11 µs/casualty, ~280 bytes/casualty,
+      linear scaling. Wired into `make stress` / `make stress-big`.
+- [x] `examples/multi_platform_demo.py` — runnable demo of the
+      `MultiPlatformManager` orchestrating UAV + Spot + ROS2
+      bridges (broadcast, targeted publish, health gating,
+      auto-pick, stale-telemetry refusal).
+- [x] `examples/calibration_walkthrough.py` — end-to-end demo:
+      70-case realistic dataset → baseline → grid-search calibrate
+      → calibrated engine → side-by-side comparison table.
+- [x] `examples/mission_replay_demo.py` — 6-tick mission with a
+      mid-mission priority revision; replayed via `TimelineStore`
+      + `ReplayEngine`, plus `frame_at(index)` random-access.
+- [x] `docs/CALIBRATION.md` — what gets calibrated and what does
+      not, dataset description, API walkthrough, when-to-
+      recalibrate, real-data (PhysioNet) path.
+- [x] `docs/EXPLAINABILITY.md` — three explanation layers (reasons
+      list / per-channel confidence / NL summary), LLM-grounding
+      Protocol, observability (`/explain` endpoint, logs,
+      Prometheus), explicit non-goals (no SHAP / no saliency here).
+- [x] `Makefile` extended with `demo-multi`, `demo-calibration`,
+      `demo-replay`, `stress`, `stress-big` targets.
+- [x] `.github/workflows/ci.yml` — Level C demos added to the
+      smoke-run step so they can't silently rot.
+- [x] `README.md` — docs index + quickstart lists the new demos.
+
+**Level C complete.**
+
 
 
 ## Риск-регистр (краткий)
