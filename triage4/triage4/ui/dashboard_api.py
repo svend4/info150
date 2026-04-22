@@ -19,10 +19,23 @@ from triage4.ui.seed import seed_demo_data
 
 app = FastAPI(title="triage4 API", version="0.2.0")
 
+# CORS — permissive for local dev (Vite at :5173 by default) but
+# deliberately NOT using ``allow_credentials=True`` with wildcard
+# origins, because that combination is rejected by browser CORS
+# preflight per the spec. The Vite proxy in ``web_ui/vite.config.ts``
+# makes this irrelevant in the standard dev setup; the CORS block
+# stays as a fallback for callers that hit the backend directly.
+_ALLOWED_ORIGINS = [
+    "http://localhost:5173",
+    "http://127.0.0.1:5173",
+    "http://localhost:4173",      # vite preview
+    "http://127.0.0.1:4173",
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    allow_origins=_ALLOWED_ORIGINS,
+    allow_credentials=False,
     allow_methods=["*"],
     allow_headers=["*"],
 )
