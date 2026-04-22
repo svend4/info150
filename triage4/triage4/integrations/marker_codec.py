@@ -24,6 +24,7 @@ triage fields leave the tablet (no video / signatures / raw features).
 from __future__ import annotations
 
 import base64
+import binascii
 import hashlib
 import hmac
 import json
@@ -145,14 +146,17 @@ def decode_marker(
     if not isinstance(payload_dict, dict) or not isinstance(provided_sig_b64, str):
         raise InvalidMarker("envelope missing payload or sig")
 
-    provided_sig = base64.b64decode(provided_sig_b64)
+    try:
+        provided_sig = base64.b64decode(provided_sig_b64, validate=True)
+    except (binascii.Error, ValueError) as exc:
+        raise InvalidMarker(f"signature not valid base64: {exc}") from exc
     expected_sig = _sign(_canonical_bytes(payload_dict), secret)
     if not hmac.compare_digest(provided_sig, expected_sig):
         raise InvalidMarker("HMAC mismatch (tampered or wrong secret)")
 
     try:
         payload = MarkerPayload(**payload_dict)
-    except TypeError as exc:
+    except (TypeError, ValueError) as exc:
         raise InvalidMarker(f"payload shape invalid: {exc}") from exc
 
     if max_age_s > 0.0:

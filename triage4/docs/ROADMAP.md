@@ -352,7 +352,7 @@ shipped together on this branch.
 
 - [x] `scripts/claims_lint.py` + `tests/test_claims_lint.py` —
       scans user-facing `.md` + Python docstrings for framing
-      claims ("diagnose", "FDA-cleared", "medical device",
+      claims ("diagnose", "FDA-cleared", "medical device",  [claims-lint: allow]
       "product can treat", ...). Allowlists `REGULATORY.md`,
       `RISK_REGISTER.md`, `SAFETY_CASE.md`. Supports inline
       `[claims-lint: allow]` markers. Wired into CI. Closes
@@ -376,6 +376,31 @@ shipped together on this branch.
       Addresses DEPLOYMENT §9 open question.
 
 **Level A complete.**
+
+## Level B — Developer experience polish
+
+- [x] `Makefile` — 24 targets, self-documenting `make help`. Covers
+      install / QA / benchmark / demos / mutation / SBOM / Docker.
+- [x] `CONTRIBUTING.md` — scope, workflow, test conventions, claims
+      discipline, safety-critical change protocol, do-nots.
+- [x] `README.md` — refreshed status table (Phases 1–9e + Level A),
+      test count, `make` quickstart, expanded docs index.
+- [x] `scripts/generate_sbom.py` + `tests/test_generate_sbom.py` —
+      CycloneDX 1.5 SBOM generator with `cyclonedx-py` CLI path and
+      stdlib fallback. Referenced by `make sbom` and the
+      `DEPLOYMENT.md` pre-deploy checklist.
+- [x] `tests/test_properties.py` — 9 hypothesis property-based
+      tests. Proved CRDT merge is commutative / idempotent /
+      associative across randomised event histories; verified
+      marker encode/decode roundtrip, QR roundtrip, single-byte-
+      flip rejection, wrong-secret rejection; score-fusion
+      bleeding-monotonicity and unit-interval invariant.
+- [x] `integrations/marker_codec.py` — hardened: malformed base64
+      signature and out-of-range payload fields now raise
+      `InvalidMarker` instead of letting the underlying exceptions
+      escape. Bug surfaced by the property test.
+
+**Level B complete.**
 
 
 

@@ -10,6 +10,31 @@ is implemented by one or several commits on the feature branch.
 
 ## Unreleased / 0.1.0 — branch `claude/analyze-documents-structure-Ik1KX`
 
+### Level B — Developer experience polish
+
+- `Makefile` — 24 targets covering install / QA / benchmark / demos /
+  mutation / SBOM / Docker / housekeeping. `make help` self-documents.
+- `CONTRIBUTING.md` — scope, workflow, test rules (fixed seeds, no
+  sleeps, contracts-over-numbers), claims discipline, safety-critical
+  change protocol, do-nots.
+- `README.md` refresh — status block now lists Phases 1–9e + Level A,
+  595→609 tests, Makefile quickstart, expanded docs index with
+  regulatory / integration / process groupings.
+- `scripts/generate_sbom.py` + `tests/test_generate_sbom.py` —
+  CycloneDX JSON SBOM generator with cyclonedx-py CLI path and
+  stdlib `importlib.metadata` fallback. 5 tests lock the
+  fallback format.
+- `tests/test_properties.py` — 9 hypothesis property-based tests
+  for CRDT merge algebra (commutative / idempotent / associative),
+  marker codec (roundtrip, QR roundtrip, any-single-byte-flip
+  rejection, wrong-secret rejection), and score fusion (bleeding-
+  monotonicity, unit-interval invariant).
+- `integrations/marker_codec.py` — hardened against malformed
+  base64 signatures and invalid-range payloads surfaced by the
+  property test. Any tampered envelope now raises `InvalidMarker`
+  rather than letting `binascii.Error` / `ValueError` escape.
+- `pyproject.toml` — adds `hypothesis>=6.100` to `[dev]`.
+
 ### Level A — Gap closures (claims-lint, mutation, multi-platform, metrics)
 
 Four discrete items that close tracked gaps from `RISK_REGISTER.md`
