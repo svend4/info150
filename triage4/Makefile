@@ -93,6 +93,9 @@ demo-calibration:     ## Grid-search calibration walkthrough
 demo-replay:          ## Mission timeline replay with priority revision
 	$(PYTHON) $(EXAMPLES)/mission_replay_demo.py
 
+demo-webcam:          ## Webcam perception + Eulerian HR (synthetic fallback)
+	$(PYTHON) $(EXAMPLES)/webcam_triage_demo.py --synthetic --frames 120
+
 stress:               ## Scaling + memory stress benchmark (10 / 100 / 500)
 	$(PYTHON) $(EXAMPLES)/stress_benchmark.py
 
