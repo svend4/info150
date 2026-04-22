@@ -24,10 +24,14 @@ two-terminal local setup. Covers the Vite dev proxy, the relative
 ```
 
 Two processes, one browser tab. The Vite proxy forwards every
-backend path (`/health`, `/casualties`, `/map`, `/replay`,
-`/metrics`, `/graph`, `/tasks`, `/export.html`) to the FastAPI
-server, so the browser sees only the frontend origin
-(`localhost:5173`) — **no cross-origin, no CORS preflight**.
+backend path prefix (`/health`, `/metrics`, `/casualties` +
+sub-routes, `/graph`, `/map`, `/replay`, `/tasks`, `/export.html`,
+`/mission`, `/forecast`, `/evaluation`, `/overview`, `/sensing`) to
+the FastAPI server, so the browser sees only the frontend origin
+(`localhost:5173`) — **no cross-origin, no CORS preflight**. The
+list lives in `web_ui/vite.config.ts` — when a new backend path is
+added, extend `BACKEND_PATHS` there too or the Vite dev server will
+return 404 for the new route.
 
 ## 2. Run both processes
 
