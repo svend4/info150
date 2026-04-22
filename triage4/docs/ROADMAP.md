@@ -180,14 +180,52 @@ breaking changes. The critical calibration gap from Phase 9a is closed.
 
 **Phase 9b complete.**
 
-## Phase 9c — Innovation pack, part 2 (planned)
+## Phase 9c — Innovation pack, part 2
 
-Remaining ideas from the creative brainstorm:
-CRDT denied-comms coordination, Bayesian patient twin, retrospective
-counterfactual re-scoring, bioacoustic signature fusion, steganographic
-battlefield markers, fractal mission-as-casualty, C.elegans-inspired
-fixed-topology classifier, entropy-based handoff timing, LLM grounding
-layer for natural-language explanation.
+Six of the nine brainstorm ideas shipped as production-ready modules.
+The remaining three are deliberately left as future exploration — see
+the "Speculative / deferred" block below.
+
+- [x] `triage_reasoning/bayesian_twin.py` — `PatientTwinFilter`
+      (particle filter, default 200 particles) over
+      (priority_band, deterioration_rate). Upgrades the scalar
+      `UncertaintyReport` to a full posterior distribution with
+      effective-sample-size sanity.
+- [x] `evaluation/counterfactual.py` — retrospective "what-if" scorer
+      per casualty. Returns `CounterfactualCase` with regret score
+      between actual and best-alternative priority.
+- [x] `triage_temporal/entropy_handoff.py` — Shannon-entropy trigger
+      that recommends medic handoff when the priority-observation
+      stream plateaus. Avoids both premature and late handoffs.
+- [x] `state_graph/crdt_graph.py` — `CRDTCasualtyGraph` with OR-set
+      of ids, LWW-register per priority, G-counter per observation
+      count. Merges are commutative + idempotent — denied-comms-ready.
+- [x] `signatures/acoustic_signature.py` — cough / wheeze / groan /
+      silence bandpower scorer. Fills the audio channel with a
+      deterministic, non-ML baseline.
+- [x] `triage_reasoning/llm_grounding.py` — prompt builder +
+      `TemplateGroundingBackend` (LLM-free default). LLMs never make
+      triage decisions — they only phrase the numeric facts triage4
+      already decided. `LLMBackend` Protocol lets any provider
+      (OpenAI, Anthropic, local) drop in without code changes.
+
+**Phase 9c complete.**
+
+## Speculative / deferred
+
+Three ideas from the Phase 9 brainstorm that were judged lower-value
+or too speculative to ship right now, but logged so the project's
+conceptual surface isn't lost:
+
+- **Steganographic battlefield markers** — encode a `CasualtyNode` in
+  a QR / AR tag left physically on a casualty. Overlaps in scope with
+  the CRDT denied-comms path, which is already shipped.
+- **C.elegans-inspired fixed-topology classifier** — 302-neuron-style
+  hand-wired graph as an alternative to score fusion. Research-grade
+  hypothesis, would need actual connectome-inspired weight design.
+- **Fractal mission-as-casualty** — apply `RapidTriageEngine` at the
+  mission level, with each casualty replacing one signature channel.
+  Philosophical symmetry; minimal new code but blurs existing layers.
 
 ## Риск-регистр
 
