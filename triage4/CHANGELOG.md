@@ -10,6 +10,16 @@ is implemented by one or several commits on the feature branch.
 
 ## Unreleased / 0.1.0 — branch `claude/analyze-documents-structure-Ik1KX`
 
+### Phase 12 — Regulatory awareness docs
+
+- `docs/REGULATORY.md` — IMDRF / IEC 62304 / FDA / EU MDR / AI-ML
+  landscape, claims discipline, pre-pilot checklist. Non-binding.
+- `docs/SAFETY_CASE.md` — GSN-style safety argument linking each
+  claim to specific tests / modules.
+- `docs/RISK_REGISTER.md` — ISO 14971-style hazard register across
+  nine categories with pre- and post-mitigation scoring.
+- `docs/ROADMAP.md` — Phase 12 entry added.
+
 ### Phase 9e — Speculative trio
 
 - `integrations/marker_codec.py` — HMAC-signed QR-safe marker codec

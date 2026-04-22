@@ -245,7 +245,34 @@ Supporting work:
 
 **Phase 9e complete.**
 
-## Риск-регистр
+## Phase 12 — Regulatory awareness
+
+Pre-clinical documentation that anticipates the regulatory framework
+*if* triage4 ever moves toward a medical product. Non-binding; not
+legal advice. Written to surface known gaps so they can be closed
+before any clinical pilot, not to claim compliance.
+
+- [x] `docs/REGULATORY.md` — IMDRF SaMD classification (target
+      Class III), IEC 62304 safety-class analysis (Class C),
+      FDA De Novo / 510(k) pathway notes, EU MDR notes, AI/ML
+      considerations (GMLP, PCCP), HIPAA / GDPR overlay, claims
+      discipline, pre-pilot checklist.
+- [x] `docs/SAFETY_CASE.md` — GSN-style top goal + four sub-goals
+      (output correctness, failure-mode safety, operator-in-the-loop,
+      data integrity) + assurance continuity, each backed by specific
+      test / module evidence.
+- [x] `docs/RISK_REGISTER.md` — ISO 14971-style register covering
+      calibration, safety-critical classification, operator-in-the-
+      loop, data integrity, platform bridges, cybersecurity, build /
+      CI, claims / regulatory, and UI hazards. Each row scored
+      pre- and post-mitigation, with gate flags on residuals ≥ 6.
+
+**Phase 12 complete.** (Docs only — no code changes.)
+
+## Риск-регистр (краткий)
+
+См. `docs/RISK_REGISTER.md` для полного реестра. Краткая сводка
+основных категорий:
 
 - **overexpansion** — не выходить за MVP без exit-criteria каждой фазы;
 - **weak explainability** — каждый triage-вывод обязан иметь reasons;
