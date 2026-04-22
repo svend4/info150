@@ -343,6 +343,40 @@ deployment can ship in a day rather than a week.
 
 **Phase 13-prep complete.** Phase 13 proper still needs a customer.
 
+## Level A follow-ups — Closing documented gaps
+
+Four discrete items that close explicitly-tracked gaps from
+`RISK_REGISTER.md` and the open questions in the Phase 10-prep /
+13-prep docs. All four are pure-Python, no new runtime deps, and
+shipped together on this branch.
+
+- [x] `scripts/claims_lint.py` + `tests/test_claims_lint.py` —
+      scans user-facing `.md` + Python docstrings for framing
+      claims ("diagnose", "FDA-cleared", "medical device",
+      "product can treat", ...). Allowlists `REGULATORY.md`,
+      `RISK_REGISTER.md`, `SAFETY_CASE.md`. Supports inline
+      `[claims-lint: allow]` markers. Wired into CI. Closes
+      **CLAIM-001** gate.
+- [x] `pyproject.toml [tool.mutmut]` + `scripts/run_mutation.sh`
+      + `docs/MUTATION_TESTING.md` + `tests/test_mutation_config.py`
+      — mutmut scoped to the 7 triage-critical modules. Opt-in
+      (not CI-gated yet due to runtime). Closes **CI-002** gate.
+- [x] `triage4/integrations/multi_platform.py` +
+      `tests/test_multi_platform.py` — `MultiPlatformManager`
+      orchestrator. Satisfies `PlatformBridge` protocol, supports
+      broadcast + targeted publish, health-gated waypoint dispatch,
+      auto-picks healthiest platform. Addresses HARDWARE_INTEGRATION
+      §7 open question.
+- [x] `triage4/ui/metrics.py` + `tests/test_metrics.py` —
+      stdlib-only Prometheus text-format exposition. Three metric
+      families: `triage4_casualties_total` (counter per priority),
+      `triage4_handoff_latency_seconds` (histogram), and
+      `triage4_bridge_health` (gauge per platform/state) plus
+      uptime. Wired into `dashboard_api` as `GET /metrics`.
+      Addresses DEPLOYMENT §9 open question.
+
+**Level A complete.**
+
 
 
 ## Риск-регистр (краткий)

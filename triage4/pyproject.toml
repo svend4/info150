@@ -25,9 +25,23 @@ dependencies = [
 dev = [
   "pytest>=8.0"
 ]
+mutation = [
+  "mutmut>=2.4"
+]
 
 [tool.setuptools]
 include-package-data = true
 
 [tool.setuptools.packages.find]
 include = ["triage4*"]
+
+# ---------------------------------------------------------------------------
+# Mutation testing (mutmut) — covers Phase 13-prep RISK_REGISTER CI-002 gate.
+# Scope: the triage-critical modules where a silent-regression would be
+# most dangerous. Broader coverage is possible but slow; start with the
+# life-vs-death surface.
+# ---------------------------------------------------------------------------
+[tool.mutmut]
+paths_to_mutate = "triage4/triage_reasoning/score_fusion.py,triage4/triage_reasoning/rapid_triage.py,triage4/triage_reasoning/larrey_baseline.py,triage4/triage_reasoning/celegans_net.py,triage4/mission_coordination/mission_triage.py,triage4/integrations/marker_codec.py,triage4/integrations/bridge_health.py"
+runner = "python -m pytest -x -q"
+tests_dir = "tests/"

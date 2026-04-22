@@ -37,6 +37,9 @@ jobs:
       - name: mypy
         run: mypy --ignore-missing-imports triage4
 
+      - name: claims-lint
+        run: python scripts/claims_lint.py
+
       - name: pytest
         run: pytest -q
 

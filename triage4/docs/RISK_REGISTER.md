@@ -99,7 +99,7 @@ Acceptable residual risk: **≤ 6** for clinical decision-support.
 | ID | Hazard | Sev | Lik | Risk | Mitigation | Residual |
 |---|---|---|---|---|---|---|
 | CI-001 | Silent type regression slips through (mypy disabled) | 3 | 3 | 9 | mypy is gated in `.github/workflows/ci.yml`; Python 3.11 + 3.12 matrix | 3×1=3 |
-| CI-002 | Test coverage breadth-first; no mutation testing | 3 | 4 | 12 | Known gap; `mutmut` deferred to Phase 13 | 3×3=9 (gate) |
+| CI-002 | Test coverage breadth-first; no mutation testing | 3 | 4 | 12 | `mutmut` configured in `pyproject.toml [tool.mutmut]`, scoped to 7 triage-critical modules; `scripts/run_mutation.sh` + `docs/MUTATION_TESTING.md`; opt-in nightly pattern documented | 3×2=6 |
 | CI-003 | Dependency pin rot (numpy API change) | 3 | 3 | 9 | `pyproject.toml` bounds; Dependabot on GitHub (policy, not enforced) | 3×2=6 |
 | CI-004 | Flaky test masks regression | 3 | 3 | 9 | Every test uses fixed seeds; no time-based assertions except explicit timeout tests | 3×1=3 |
 
@@ -109,7 +109,7 @@ Acceptable residual risk: **≤ 6** for clinical decision-support.
 
 | ID | Hazard | Sev | Lik | Risk | Mitigation | Residual |
 |---|---|---|---|---|---|---|
-| CLAIM-001 | Docs accidentally use "diagnose" / "treat" wording | 4 | 3 | 12 | Claims discipline in `REGULATORY.md §9`; future claims-lint CI check | 4×2=8 (gate) |
+| CLAIM-001 | Docs accidentally use "diagnose" / "treat" wording | 4 | 3 | 12 | Claims discipline in `REGULATORY.md §9`; `scripts/claims_lint.py` wired into CI; `tests/test_claims_lint.py` locks the pass state | 4×1=4 |
 | CLAIM-002 | UI copy implies FDA clearance | 5 | 2 | 10 | No UI copy shipped yet; claims review on dashboard rollout | 5×1=5 |
 | CLAIM-003 | Publication implies clinical efficacy without clinical trial | 5 | 3 | 15 | Pre-clinical framing enforced; publication templates include "decision-support research" qualifier | 5×2=10 (gate) |
 

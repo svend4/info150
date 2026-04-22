@@ -21,6 +21,12 @@ from .bridge_health import (
     check_telemetry,
     safe_to_dispatch,
 )
+from .multi_platform import (
+    DispatchResult,
+    MultiPlatformManager,
+    NoHealthyPlatform,
+    PlatformNotFound,
+)
 from .websocket_bridge import LoopbackWebSocketBridge, build_fastapi_websocket_bridge
 from .mavlink_bridge import LoopbackMAVLinkBridge, build_pymavlink_bridge
 from .ros2_bridge import LoopbackROS2Bridge, build_rclpy_bridge
@@ -44,6 +50,7 @@ from .marker_codec import (
 __all__ = [
     "BridgeHealth",
     "BridgeUnavailable",
+    "DispatchResult",
     "InfoMGraphAdapter",
     "In4nSceneAdapter",
     "InvalidMarker",
@@ -53,9 +60,12 @@ __all__ = [
     "LoopbackWebSocketBridge",
     "MarkerPayload",
     "Meta2SignatureAdapter",
+    "MultiPlatformManager",
+    "NoHealthyPlatform",
     "PhysioNetRecord",
     "PhysioNetUnavailable",
     "PlatformBridge",
+    "PlatformNotFound",
     "PlatformTelemetry",
     "build_bosdyn_bridge",
     "build_fastapi_websocket_bridge",

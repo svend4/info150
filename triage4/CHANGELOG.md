@@ -10,6 +10,32 @@ is implemented by one or several commits on the feature branch.
 
 ## Unreleased / 0.1.0 — branch `claude/analyze-documents-structure-Ik1KX`
 
+### Level A — Gap closures (claims-lint, mutation, multi-platform, metrics)
+
+Four discrete items that close tracked gaps from `RISK_REGISTER.md`
+and the Phase 10-prep / 13-prep open questions. No new runtime deps.
+
+- `scripts/claims_lint.py` + `tests/test_claims_lint.py` — product-
+  claim linter with allowlist and inline opt-out marker. Wired into
+  CI (`.github/workflows/ci.yml`). Closes CLAIM-001 gate.
+- `pyproject.toml [tool.mutmut]` + `scripts/run_mutation.sh` +
+  `docs/MUTATION_TESTING.md` + `tests/test_mutation_config.py` —
+  mutation testing scoped to 7 triage-critical modules. Opt-in
+  runtime. Closes CI-002 gate.
+- `integrations/multi_platform.py` + `tests/test_multi_platform.py`
+  — `MultiPlatformManager` orchestrator satisfying `PlatformBridge`,
+  with broadcast / targeted publish and health-gated dispatch.
+  Addresses HARDWARE_INTEGRATION §7 open question.
+- `ui/metrics.py` + `tests/test_metrics.py` + `GET /metrics` on
+  dashboard — stdlib-only Prometheus text-format exposition:
+  `triage4_casualties_total`, `triage4_handoff_latency_seconds`,
+  `triage4_bridge_health`, uptime. Addresses DEPLOYMENT §9 open
+  question.
+
+RISK_REGISTER.md:
+- CLAIM-001 residual: 4×2=8 → 4×1=4 (no longer a gate).
+- CI-002 residual: 3×3=9 → 3×2=6 (no longer a gate).
+
 ### Phase 13-prep — Deployment patterns
 
 - `Dockerfile` + `.dockerignore` — slim multi-stage image, runs as
