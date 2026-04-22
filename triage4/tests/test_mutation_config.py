@@ -10,6 +10,8 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
+import pytest
+
 if sys.version_info >= (3, 11):
     import tomllib
 else:  # pragma: no cover
@@ -50,8 +52,16 @@ def test_mutmut_extra_dep_declared():
     assert any("mutmut" in dep for dep in extras["mutation"])
 
 
-def test_mutation_runner_script_is_executable():
+def test_mutation_runner_script_exists():
     script = _REPO_ROOT / "scripts" / "run_mutation.sh"
     assert script.exists()
+
+
+@pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="NTFS has no POSIX executable bit; chmod +x is Unix-only",
+)
+def test_mutation_runner_script_is_executable_on_posix():
+    script = _REPO_ROOT / "scripts" / "run_mutation.sh"
     # Readable by anyone, executable by owner at least.
     assert script.stat().st_mode & 0o100
