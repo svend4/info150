@@ -10,6 +10,49 @@ is implemented by one or several commits on the feature branch.
 
 ## Unreleased / 0.1.0 — branch `claude/analyze-documents-structure-Ik1KX`
 
+### Phase 10 — real hardware integration (three-stage rollout)
+
+Three independent stages that take triage4 from loopback-only to
+real-hardware-ready, all testable in CI without any SDK / camera /
+drone installed.
+
+**Stage 1 — SITL (commit earlier on this branch).**
+`PyMAVLinkBridge` + real `build_pymavlink_bridge` factory,
+`ROS2Bridge` + real `build_rclpy_bridge` factory. Both use
+dependency-injected SDK handles so 39 tests run without pymavlink
+or rclpy present. Lat/lon swap tagged against RISK BRIDGE-003.
+`docs/PHASE_10_SITL.md` covers ArduPilot + PX4 + ROS2 setup.
+
+**Stage 2 — webcam (commit earlier on this branch).**
+`FrameSource` Protocol + `LoopbackFrameSource` +
+`SyntheticFrameSource` (three patterns: pulse / gradient /
+moving_square) + `build_opencv_frame_source` lazy factory.
+`examples/webcam_triage_demo.py` with auto-fallback and Eulerian
+HR round-trip (synthetic 1.2 Hz pulse recovers HR within ±3 bpm).
+21 new tests. `docs/PHASE_10_WEBCAM.md`.
+
+**Stage 3 — Tello (this commit).**
+`integrations/tello_bridge.py`: `LoopbackTelloBridge` simulator
+(kinematics mirror Tello envelope: 20 cm min move, 500 cm max,
+~10 min flight, 80 cm takeoff altitude, battery drains while
+airborne, forced-land on 0 %) + real `TelloBridge` wrapping
+`djitellopy.Tello` + `build_tello_bridge` factory. Relative-pose
+(metres) → body-frame (cm) translation with firmware clamp.
+`examples/tello_triage_demo.py` flies a 3-waypoint survey
+triangle via `MultiPlatformManager`; auto-fallback to loopback.
+26 new tests (loopback kinematics, real-bridge via fake Tello,
+factory BridgeUnavailable path).
+`docs/PHASE_10_TELLO.md` covers frame handling, camera-stream
+wiring, multi-platform composition with Stage 1 / 2 bridges.
+
+Supporting:
+- `.github/workflows/ci.yml` — Stage 2 and Stage 3 demos now run
+  on every PR (loopback, deterministic).
+- `Makefile` — `demo-webcam` and `demo-tello` targets.
+- `docs/ROADMAP.md` — new "Phase 10 — real hardware integration
+  (three-stage rollout)" section marks all three stages done at
+  the code level.
+
 ### K3 matrix closure — 3 remaining cells shipped
 
 Closes the last three empty cells of the K3 matrix. All 9 cells

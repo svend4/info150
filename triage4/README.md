@@ -13,7 +13,7 @@ triage'а (DARPA Triage Challenge Event 3 и аналогичные сценар
 ## Статус
 
 **Roadmap Phases 1–9e + 10-prep + 12 + 13-prep + Levels A/B/C закрыты.**
-126 Python-модулей, **673 теста** (все зелёные), ruff + mypy + claims-lint
+130 Python-модулей, **759 тестов** (все зелёные), ruff + mypy + claims-lint
 чистые, 0 импортов upstream-репозиториев / внешних SDK во время загрузки.
 
 Честный анализ плюсов / минусов / того что ещё открыто — в

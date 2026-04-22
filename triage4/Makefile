@@ -96,6 +96,9 @@ demo-replay:          ## Mission timeline replay with priority revision
 demo-webcam:          ## Webcam perception + Eulerian HR (synthetic fallback)
 	$(PYTHON) $(EXAMPLES)/webcam_triage_demo.py --synthetic --frames 120
 
+demo-tello:           ## Tello 3-waypoint survey demo (loopback by default)
+	$(PYTHON) $(EXAMPLES)/tello_triage_demo.py
+
 stress:               ## Scaling + memory stress benchmark (10 / 100 / 500)
 	$(PYTHON) $(EXAMPLES)/stress_benchmark.py
 

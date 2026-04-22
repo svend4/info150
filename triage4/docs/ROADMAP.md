@@ -301,7 +301,48 @@ investigation.
       WebSocket security), BridgeHealth usage, first-flight
       checklist, optional-dep layout, non-goals, open questions.
 
-**Phase 10-prep complete.** Phase 10 proper still needs real HW.
+**Phase 10-prep complete.**
+
+## Phase 10 — real hardware integration (three-stage rollout)
+
+Phase 10 proper is split into three independent stages. Each can
+be delivered on its own; together they take triage4 from "works
+in loopback" to "flies on real hardware".
+
+- [x] **Stage 1 — SITL.** Real `PyMAVLinkBridge` and `ROS2Bridge`
+      classes. Factories lazy-import the SDK and hand off a real
+      connection. Swaps the lat/lon correctly (RISK
+      **BRIDGE-003**). 39 new tests (18 pymavlink, 21 rclpy) run
+      with injected SDK mocks — no `pymavlink` or `rclpy` needed
+      in CI. `docs/PHASE_10_SITL.md` covers ArduPilot + PX4 SITL
+      setup and ROS2 + Gazebo.
+- [x] **Stage 2 — webcam.** `FrameSource` Protocol with
+      `LoopbackFrameSource`, `SyntheticFrameSource` (pulse /
+      gradient / moving_square), `build_opencv_frame_source`.
+      `build_ultralytics_detector` lazy factory stays in place.
+      `examples/webcam_triage_demo.py` has auto-fallback (real
+      webcam → synthetic if cv2 missing / no camera) and a full
+      Eulerian-HR round trip. Synthetic 1.2 Hz pulse recovers HR
+      within ±3 bpm. 21 new tests. `docs/PHASE_10_WEBCAM.md` is
+      the setup guide.
+- [x] **Stage 3 — Tello ($100).** `LoopbackTelloBridge`
+      simulator + real `TelloBridge` wrapping `djitellopy.Tello`.
+      `build_tello_bridge` factory, relative-pose (metres) →
+      body-frame (cm) translation with firmware minimum/maximum
+      clamps. `examples/tello_triage_demo.py` flies a 3-waypoint
+      survey (auto-fallback to loopback if no drone). 26 new
+      tests. `docs/PHASE_10_TELLO.md` covers frame handling,
+      first-flight checklist, camera-stream wiring.
+
+**Phase 10 proper complete at the code scaffold level.** Real
+hardware validation is the user's job:
+  - SITL: run `sim_vehicle.py` locally and repeat the smoke-test
+    from `docs/PHASE_10_SITL.md §1.3`.
+  - Webcam: plug in a USB camera and run
+    `python examples/webcam_triage_demo.py`.
+  - Tello: buy the drone, follow `docs/PHASE_10_TELLO.md §3`.
+
+
 
 ## Phase 13-prep — Deployment patterns
 

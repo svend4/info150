@@ -67,3 +67,6 @@ jobs:
 
       - name: Phase 10 Stage 2 webcam demo (synthetic fallback)
         run: python examples/webcam_triage_demo.py --synthetic --frames 90
+
+      - name: Phase 10 Stage 3 Tello demo (loopback)
+        run: python examples/tello_triage_demo.py
