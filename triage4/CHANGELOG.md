@@ -10,6 +10,46 @@ is implemented by one or several commits on the feature branch.
 
 ## Unreleased / 0.1.0 — branch `claude/analyze-documents-structure-Ik1KX`
 
+### Status analysis + docs polish
+
+- `docs/STATUS.md` — honest technical + conceptual pros / cons,
+  what was built, what's still open, what the original drafts
+  still have that isn't yet mined. Includes the 3 K3 cells that
+  remain as self-contained future work.
+- `docs/FURTHER_READING.md` — consolidated bibliography (Larrey,
+  Eulerian VM, DTW, CRDT, HMAC, IEC 62304, ISO 14971, hypothesis,
+  mutmut, and ~30 more), grouped by triage4 area with module
+  cross-references.
+- Root `README.md` — replaced the 2-line placeholder with a
+  monorepo layout overview, project status line, quickstart, and
+  entry-point index pointing into `triage4/`.
+- `triage4/README.md` — status block now includes Level B and
+  Level C; docs index surfaces STATUS.md and FURTHER_READING.md;
+  explicit list of the 3 open K3 cells.
+- `docs/ROADMAP.md` — "Open self-contained work — 3 remaining K3
+  cells" section added so the only remaining non-external work
+  is visible at a glance.
+
+### Level C — Benchmarks + demos + docs refinement
+
+- `examples/stress_benchmark.py` — scaling + memory benchmark with
+  per-casualty µs / KB + slope classification. Linear at 5k casualties.
+- `examples/multi_platform_demo.py` — `MultiPlatformManager` run with
+  UAV + Spot + ROS2 bridges and health-gated dispatch.
+- `examples/calibration_walkthrough.py` — end-to-end calibration
+  demo on the 70-case realistic dataset.
+- `examples/mission_replay_demo.py` — timeline recording + replay
+  with mid-mission priority revision.
+- `docs/CALIBRATION.md` — what calibration tunes, dataset layout,
+  API walkthrough, when to recalibrate, real-data path.
+- `docs/EXPLAINABILITY.md` — three explanation layers, LLM grounding
+  Protocol, observability, non-goals.
+- `Makefile` — `demo-multi`, `demo-calibration`, `demo-replay`,
+  `stress`, `stress-big` targets added.
+- `.github/workflows/ci.yml` — Level C demos run on every PR.
+- `README.md` — new docs indexed under regulatory/safety; demo
+  quickstart refreshed.
+
 ### Level B — Developer experience polish
 
 - `Makefile` — 24 targets covering install / QA / benchmark / demos /

@@ -12,9 +12,12 @@ triage'а (DARPA Triage Challenge Event 3 и аналогичные сценар
 
 ## Статус
 
-**Roadmap Phases 1–9e + Level A закрыты.** 123 Python-модуля, **595 тестов**
-(все зелёные), ruff + mypy + claims-lint чистые, 0 импортов upstream-
-репозиториев / внешних SDK во время загрузки.
+**Roadmap Phases 1–9e + 10-prep + 12 + 13-prep + Levels A/B/C закрыты.**
+123 Python-модуля, **609 тестов** (все зелёные), ruff + mypy + claims-lint
+чистые, 0 импортов upstream-репозиториев / внешних SDK во время загрузки.
+
+Честный анализ плюсов / минусов / того что ещё открыто — в
+[`docs/STATUS.md`](docs/STATUS.md).
 
 | Phase | Статус | Что |
 |---|---|---|
@@ -31,9 +34,19 @@ triage'а (DARPA Triage Challenge Event 3 и аналогичные сценар
 | 12 | ✅ | Regulatory awareness (REGULATORY + SAFETY_CASE + RISK_REGISTER) |
 | 13-prep | ✅ | Dockerfile + systemd unit + nginx template + 3 deployment profiles |
 | Level A | ✅ | claims-lint (CLAIM-001 closed) · mutation testing (CI-002 closed) · `MultiPlatformManager` · Prometheus `/metrics` |
+| Level B | ✅ | Makefile · CONTRIBUTING · SBOM generator · hypothesis property tests (+ marker_codec bug fix) |
+| Level C | ✅ | stress benchmark · multi-platform / calibration / replay демо · CALIBRATION + EXPLAINABILITY docs |
 
-Остались фазы, требующие внешних ресурсов: **10 proper** (живое железо),
-**11** (клинический партнёр + IRB), **13 proper** (заказчик).
+Открытые пункты:
+
+- **Внешние ресурсы** — Phase 10 proper (живое железо), Phase 11 (клинический
+  партнёр + IRB), Phase 13 proper (заказчик).
+- **3 клетки K3-матрицы** (всё ещё stub'ы — единственная self-contained
+  работа, которую можно делать без внешних зависимостей):
+  - `1.3` dynamic skeletal graph — time-evolving body graph с wound
+    morphology;
+  - `2.2` conflict_resolver — reconciles contradictory trauma hypotheses;
+  - `3.3` forecast_layer — проекция траектории пациента / миссии.
 
 См. [`docs/ROADMAP.md`](docs/ROADMAP.md) и [`CHANGELOG.md`](CHANGELOG.md) для
 полной истории.
@@ -54,6 +67,10 @@ make benchmark          # полный pipeline на 8 фикстурных па
 make test               # pytest -q
 make demo-crdt          # denied-comms CRDT sync, 3 медика
 make demo-marker        # оффлайн-марким + rollback на tampered/expired
+make demo-multi         # multi-platform orchestrator: UAV + Spot + ROS2
+make demo-calibration   # grid-search calibration walkthrough
+make demo-replay        # mission timeline replay
+make stress             # scaling benchmark (10 / 100 / 500 casualties)
 make docker-build       # slim image < 200 MB
 ```
 
@@ -169,17 +186,21 @@ triage4/
 ## Документация
 
 Основная:
+- [`docs/STATUS.md`](docs/STATUS.md) — честный статус: плюсы, минусы, что ещё открыто
 - [`CHANGELOG.md`](CHANGELOG.md) — история коммитов по фазам
 - [`docs/API.md`](docs/API.md) — публичный API triage4
 - [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — архитектура и K3-матрица
 - [`docs/ROADMAP.md`](docs/ROADMAP.md) — план развития
 - [`docs/ONE_PAGER.md`](docs/ONE_PAGER.md) — grant-ready one-pager
 - [`docs/PHASE_9_SUMMARY.md`](docs/PHASE_9_SUMMARY.md) — рекап Phase 9
+- [`docs/FURTHER_READING.md`](docs/FURTHER_READING.md) — bibliography
 
 Регуляторика и безопасность:
 - [`docs/REGULATORY.md`](docs/REGULATORY.md) — SaMD / IEC 62304 / FDA / EU MDR landscape (non-binding)
 - [`docs/SAFETY_CASE.md`](docs/SAFETY_CASE.md) — GSN-style safety argument
 - [`docs/RISK_REGISTER.md`](docs/RISK_REGISTER.md) — ISO 14971-style реестр
+- [`docs/EXPLAINABILITY.md`](docs/EXPLAINABILITY.md) — три слоя объяснений + LLM grounding
+- [`docs/CALIBRATION.md`](docs/CALIBRATION.md) — tuning fusion weights + thresholds против dataset
 
 Интеграция и деплой:
 - [`docs/HARDWARE_INTEGRATION.md`](docs/HARDWARE_INTEGRATION.md) — per-platform wiring

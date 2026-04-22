@@ -56,3 +56,11 @@ jobs:
           python examples/bayesian_twin_demo.py
           python examples/crdt_sync_demo.py
           python examples/counterfactual_replay.py
+          python examples/marker_handoff_demo.py
+
+      - name: Level C demos + stress benchmark
+        run: |
+          python examples/multi_platform_demo.py
+          python examples/calibration_walkthrough.py
+          python examples/mission_replay_demo.py
+          python examples/stress_benchmark.py
