@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "triage4-drive"
+version = "0.1.0"
+description = "In-cab driver monitoring library — drowsiness, distraction, incapacitation — sibling of triage4, privacy-first fleet framing"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [
+  { name = "svend4" }
+]
+# Minimal dependencies. The signatures are deterministic
+# statistical calculations over normalised-coordinate time series;
+# production deployments add MediaPipe Face Mesh + a gaze model
+# upstream, but the library doesn't bundle them.
+dependencies = [
+  "numpy>=1.26"
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0"
+]
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+include = ["triage4_drive*"]

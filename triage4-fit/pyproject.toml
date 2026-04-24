@@ -1,0 +1,33 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "triage4-fit"
+version = "0.1.0"
+description = "Stand-off fitness / wellness coaching cue engine — sibling of triage4, wellness posture"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [
+  { name = "svend4" }
+]
+# NOTE — intentionally narrow dependency surface. Keeps install size
+# small and makes the wellness-vs-clinical separation explicit: no
+# fastapi, no pydantic, no uvicorn. This is a library that produces
+# coaching cues from observations; the UI is separate.
+dependencies = [
+  "numpy>=1.26",
+  "scipy>=1.11"
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0"
+]
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+include = ["triage4_fit*"]
