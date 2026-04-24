@@ -87,14 +87,21 @@ class RoomTransition:
     """One room-to-room transition event.
 
     ``distance_m`` is the approximate path length for the
-    transition (set by the sensor-hub's home map). Used by
-    the mobility-pace signature to estimate walking speed.
+    transit (set by the sensor-hub's home map).
+    ``duration_s`` is the actual transit time — the elapsed
+    wall time from leaving ``from_room`` to entering
+    ``to_room``. The two fields together give the pace
+    estimate (distance / duration). Time between
+    transitions is NOT the same as transit time (the
+    resident may have stopped in a room for an hour), so
+    the signature requires an explicit duration.
     """
 
     t_s: float
     from_room: RoomKind
     to_room: RoomKind
     distance_m: float
+    duration_s: float
 
     def __post_init__(self) -> None:
         if self.t_s < 0:
@@ -117,6 +124,10 @@ class RoomTransition:
         if not 0.5 <= self.distance_m <= 50.0:
             raise ValueError(
                 f"distance_m out of plausible range: {self.distance_m}"
+            )
+        if not 0.5 <= self.duration_s <= 300.0:
+            raise ValueError(
+                f"duration_s out of plausible range: {self.duration_s}"
             )
 
 
