@@ -1,4 +1,10 @@
-"""Pool-watch engine + threshold bands.
+"""Pool-watch engine + threshold bands."""
 
-Stage 2: drowning_bands, monitoring_engine.
-"""
+from .drowning_bands import DEFAULT_BANDS, DrowningBands
+from .monitoring_engine import PoolWatchEngine
+
+__all__ = [
+    "DEFAULT_BANDS",
+    "DrowningBands",
+    "PoolWatchEngine",
+]
