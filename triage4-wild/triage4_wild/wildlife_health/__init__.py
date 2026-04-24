@@ -1,4 +1,10 @@
-"""Wildlife-health engine + species thresholds.
+"""Wildlife-health engine + species thresholds."""
 
-Stage 2: species_thresholds, monitoring_engine.
-"""
+from .monitoring_engine import WildlifeHealthEngine
+from .species_thresholds import SpeciesProfile, profile_for
+
+__all__ = [
+    "SpeciesProfile",
+    "WildlifeHealthEngine",
+    "profile_for",
+]
