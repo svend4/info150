@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "triage4-aqua"
+version = "0.1.0"
+description = "Pool / beach drowning-detection support library — submersion + IDR posture + absent-swimmer — sibling of triage4, lifeguard framing"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [
+  { name = "svend4" }
+]
+# Minimal dependency surface. Signatures are deterministic
+# time-series stats over abstracted surface / submersion
+# events. Underwater perception + IDR visual classifiers
+# live in the consumer application.
+dependencies = [
+  "numpy>=1.26"
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0"
+]
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+include = ["triage4_aqua*"]
