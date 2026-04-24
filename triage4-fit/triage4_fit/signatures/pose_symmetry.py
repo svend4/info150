@@ -81,8 +81,9 @@ def compute_rep_symmetry(
 
     mean_asym = sum(diffs) / len(diffs)
     # Map [0, +∞) → [1.0, 0.0] via exp(-k * mean_asym). Tuned so
-    # that 10 % of body scale asymmetry gives ~0.7, 20 % ~0.5,
-    # 50 % ~0.15. These thresholds are stubs; proper calibration
-    # waits on real data.
-    score = math.exp(-3.5 * mean_asym)
+    # that 5 % of body scale asymmetry gives ~0.78 (still minor),
+    # 10 % ~0.61 (at severe threshold), 15 % ~0.47 (clearly severe),
+    # 20 % ~0.37. Severity thresholds in exercise_profiles assume
+    # this shape. Stubs until validated on coach-labelled video.
+    score = math.exp(-5.0 * mean_asym)
     return max(0.0, min(1.0, score))
