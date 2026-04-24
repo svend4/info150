@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "triage4-clinic"
+version = "0.1.0"
+description = "Telemedicine pre-screening library — clinician-facing, grounded-alternatives-required — sibling of triage4, SaMD-adjacent regulatory framing"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [
+  { name = "svend4" }
+]
+# Minimal dependency surface. The library consumes
+# already-extracted stand-off vitals + acoustic + postural
+# samples; upstream capture + perception lives in the
+# consumer app.
+dependencies = [
+  "numpy>=1.26"
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0"
+]
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+include = ["triage4_clinic*"]
