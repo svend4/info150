@@ -414,7 +414,9 @@ class SiteReport:
         watch = self.alerts_at_level("watch")
         # Channel counts summary.
         if self.alerts:
-            kinds = ("ppe", "lifting", "heat", "fatigue")
+            kinds: tuple[AlertKind, ...] = (
+                "ppe", "lifting", "heat", "fatigue",
+            )
             counts = {k: len(self.alerts_of_kind(k)) for k in kinds}
             lines.append(
                 "  alerts by channel — "
