@@ -1,4 +1,10 @@
-"""Pet-triage engine + species profiles.
+"""Pet-triage engine + species profiles."""
 
-Stage 2: species_profiles, triage_engine.
-"""
+from .species_profiles import SpeciesProfile, profile_for
+from .triage_engine import PetTriageEngine
+
+__all__ = [
+    "PetTriageEngine",
+    "SpeciesProfile",
+    "profile_for",
+]
