@@ -74,18 +74,29 @@ def generate_observation(
     # the end of the window as severity rises.
     slump_start_s = (1.0 - incapacitation) * window_duration_s if incapacitation > 0 else None
 
-    # Distraction "look away" intervals — several short looks
-    # at "off_road" that together sum to the target fraction.
+    # Distraction "look away" intervals — several off-road
+    # glances that together sum to the target fraction. Event
+    # duration scales with the remaining target so high
+    # distraction (≥ 0.5) is actually achievable within one
+    # window, while low distraction still shows as short
+    # individual glances.
     off_task_total_s = distraction * window_duration_s
     off_task_events: list[tuple[float, float]] = []
     remaining = off_task_total_s
     cursor = 0.0
-    while remaining > 0.1 and cursor < window_duration_s - 1.0:
-        gap = rng.uniform(1.0, 3.0)
+    while remaining > 0.1 and cursor < window_duration_s - 0.5:
+        gap = rng.uniform(0.5, 1.5)
         cursor += gap
         if cursor >= window_duration_s:
             break
-        dur = min(remaining, rng.uniform(0.5, 2.0))
+        target_avg = max(1.0, remaining / 3.0)
+        dur = min(
+            remaining,
+            rng.uniform(target_avg * 0.7, target_avg * 1.3),
+            window_duration_s - cursor,
+        )
+        if dur <= 0:
+            break
         off_task_events.append((cursor, cursor + dur))
         cursor += dur
         remaining -= dur
