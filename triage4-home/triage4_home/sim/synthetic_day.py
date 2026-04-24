@@ -20,6 +20,7 @@ Reproducibility: same ``seed`` produces the same observation.
 from __future__ import annotations
 
 import random
+import zlib
 
 from ..core.enums import ActivityIntensity, RoomKind
 from ..core.models import (
@@ -98,7 +99,12 @@ def generate_observation(
     if window_duration_s <= 0:
         raise ValueError("window_duration_s must be positive")
 
-    rng = random.Random(hash((window_id, seed)) & 0xFFFFFFFF)
+    # NB: built-in hash() on strings is randomised per-process
+    # by default (PYTHONHASHSEED), so use zlib.crc32 for a
+    # stable seed across runs. Determinism is the whole point
+    # of the synthetic fixture.
+    seed_bytes = f"{window_id}|{seed}".encode("utf-8")
+    rng = random.Random(zlib.crc32(seed_bytes))
 
     # --- Activity samples ---
     # Base day has ~35 % resting / ~45 % light / ~20 % moderate.
