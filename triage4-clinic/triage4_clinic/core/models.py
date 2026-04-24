@@ -479,10 +479,9 @@ class PreTriageReport:
                     lines.append(f"        - ({alt.likelihood}) {alt.text}")
         else:
             lines.append(
-                "  No urgent-review channels surfaced. "
-                "Defaulting to schedule recommendation — the "
-                "library observed a 1-2 minute window and "
-                "flags nothing it considered urgent. The "
+                "  No channel alerts surfaced. This reflects "
+                "the 1-2 minute window only; absence of alerts "
+                "is not a clearance of the patient. The "
                 "clinician reviews before deciding next steps."
             )
         return "\n".join(lines)
