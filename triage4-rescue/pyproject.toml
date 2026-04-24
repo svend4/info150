@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "triage4-rescue"
+version = "0.1.0"
+description = "Civilian mass-casualty triage support library — START + JumpSTART — sibling of triage4, humanitarian framing"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [
+  { name = "svend4" }
+]
+# Intentionally minimal dependency surface. The core algorithm
+# (START + JumpSTART) is deterministic rule evaluation — no ML
+# at the MVP layer. Platform adapters (CRDT sync, drone bridges,
+# responder tablets) live in consumer applications, not here.
+dependencies = [
+  "numpy>=1.26"
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0"
+]
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+include = ["triage4_rescue*"]
