@@ -157,7 +157,10 @@ def demo_venue() -> list[ZoneObservation]:
         generate_zone_observation(
             zone_id="Z2-seating",
             zone_kind="seating",
-            density_pressure=0.50,
+            # Intentionally in the watch band — 2.5 p/m² on
+            # seating is above dense but below the urgent
+            # threshold, so the demo exercises both levels.
+            density_pressure=0.20,
             seed=2,
         ),
         generate_zone_observation(
