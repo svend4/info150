@@ -31,7 +31,7 @@ mypy:                 ## mypy --ignore-missing-imports
 qa: lint mypy test    ## All quality gates (CI-equivalent)
 
 demo:                 ## Run a one-herd welfare-screening demo
-	$(PYTHON) -c "from triage4_farm.sim.synthetic_herd import demo_herd; from triage4_farm.welfare_check.welfare_engine import WelfareCheckEngine; herd = demo_herd(n_animals=6, n_lame=2); report = WelfareCheckEngine().review(herd); print(report.as_text())"
+	$(PYTHON) -m triage4_farm.sim.demo_runner
 
 clean:                ## Remove caches + build artifacts
 	rm -rf .pytest_cache .mypy_cache .ruff_cache build dist *.egg-info
