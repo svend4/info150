@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "triage4-home"
+version = "0.1.0"
+description = "In-home elderly monitoring library — fall / activity / mobility — sibling of triage4, dignity-first family+caregiver framing"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [
+  { name = "svend4" }
+]
+# Minimal dependencies. Signatures are deterministic stats over
+# normalised sensor streams. Production deployments add a fall-
+# detection sensor and an ADL ontology upstream, but the library
+# does not bundle them.
+dependencies = [
+  "numpy>=1.26"
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0"
+]
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+include = ["triage4_home*"]
