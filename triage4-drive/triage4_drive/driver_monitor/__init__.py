@@ -1,4 +1,10 @@
-"""Driver-state monitoring engine + threshold bands.
+"""Driver-state monitoring engine + threshold bands."""
 
-Stage 2: fatigue_bands, monitoring_engine.
-"""
+from .fatigue_bands import DEFAULT_BANDS, FatigueBands
+from .monitoring_engine import DriverMonitoringEngine
+
+__all__ = [
+    "DEFAULT_BANDS",
+    "DriverMonitoringEngine",
+    "FatigueBands",
+]
