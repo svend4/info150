@@ -1,4 +1,10 @@
-"""Venue-monitoring engine + threshold bands.
+"""Venue-monitoring engine + threshold bands."""
 
-Stage 2: crowd_safety_bands, monitoring_engine.
-"""
+from .crowd_safety_bands import DEFAULT_BANDS, CrowdSafetyBands
+from .monitoring_engine import VenueMonitorEngine
+
+__all__ = [
+    "DEFAULT_BANDS",
+    "CrowdSafetyBands",
+    "VenueMonitorEngine",
+]
