@@ -1,0 +1,32 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "triage4-pet"
+version = "0.1.0"
+description = "Pre-visit pet health assessment library — dual-audience (owner + vet) — sibling of triage4, pet-owner-phone-video framing"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [
+  { name = "svend4" }
+]
+# Minimal dependency surface. The library consumes already-
+# extracted pose + vitals + pain-behavior samples from a
+# consumer app that wraps MediaPipe / pretrained quadruped
+# pose models; this library doesn't bundle them.
+dependencies = [
+  "numpy>=1.26"
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0"
+]
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+include = ["triage4_pet*"]
