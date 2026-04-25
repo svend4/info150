@@ -12,6 +12,7 @@ from __future__ import annotations
 
 import math
 import random
+import zlib
 from typing import Iterable
 
 from ..core.enums import Species, VALID_SPECIES
@@ -92,7 +93,11 @@ def generate_observation(
     if n_frames < 4:
         raise ValueError("n_frames must be >= 4")
 
-    rng = random.Random(hash((animal_id, species, seed)) & 0xFFFFFFFF)
+    # NB: stdlib hash() on strings is randomised per-process by
+    # default (PYTHONHASHSEED). zlib.crc32 gives a stable seed
+    # across runs, which the test suite + tutorials depend on.
+    seed_bytes = f"{animal_id}|{species}|{seed}".encode("utf-8")
+    rng = random.Random(zlib.crc32(seed_bytes))
     base = _BASE_POSES[species]
     pose_frames: list[list[JointPoseSample]] = []
 

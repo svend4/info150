@@ -19,6 +19,7 @@ observation — critical for test determinism.
 from __future__ import annotations
 
 import random
+import zlib
 
 from ..core.enums import GazeRegion
 from ..core.models import (
@@ -51,7 +52,11 @@ def generate_observation(
     if sample_rate_hz <= 0:
         raise ValueError("sample_rate_hz must be positive")
 
-    rng = random.Random(hash((session_id, seed)) & 0xFFFFFFFF)
+    # NB: stdlib hash() on strings is randomised per-process
+    # by default (PYTHONHASHSEED). zlib.crc32 gives a stable
+    # seed across runs, which the test suite depends on.
+    seed_bytes = f"{session_id}|{seed}".encode("utf-8")
+    rng = random.Random(zlib.crc32(seed_bytes))
     n_samples = max(2, int(window_duration_s * sample_rate_hz))
     dt = window_duration_s / (n_samples - 1)
 
