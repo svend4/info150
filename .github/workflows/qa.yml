@@ -80,11 +80,15 @@ jobs:
       - name: Install biocore (shared utility package)
         run: pip install -e biocore/
 
+      # Use each package's `make install-dev` rather than inlining
+      # the pip commands. The flagship's install-dev adds httpx
+      # (test-client dep for FastAPI dashboard tests); inlining the
+      # pip commands here would silently drop that and break the
+      # flagship's QA gate. Letting each Makefile own its dev-install
+      # contract keeps CI honest about what's actually required.
       - name: Install ${{ matrix.package }} with dev extras
         working-directory: ${{ matrix.package }}
-        run: |
-          pip install -e '.[dev]'
-          pip install ruff mypy
+        run: make install-dev
 
       - name: Run QA gate (lint + mypy + pytest)
         working-directory: ${{ matrix.package }}
