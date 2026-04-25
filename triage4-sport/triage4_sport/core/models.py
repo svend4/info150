@@ -20,7 +20,6 @@ from .enums import (
     MovementKind,
     RiskBand,
     Sport,
-    VALID_CHANNEL_KINDS,
     VALID_MOVEMENT_KINDS,
     VALID_RISK_BANDS,
     VALID_SPORTS,

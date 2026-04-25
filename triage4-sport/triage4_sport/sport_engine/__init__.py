@@ -1,4 +1,10 @@
-"""Sport-performance engine + threshold bands.
+"""Sport-performance engine + threshold bands."""
 
-Stage 2: performance_bands, monitoring_engine.
-"""
+from .monitoring_engine import SportPerformanceEngine
+from .performance_bands import DEFAULT_BANDS, PerformanceBands
+
+__all__ = [
+    "DEFAULT_BANDS",
+    "PerformanceBands",
+    "SportPerformanceEngine",
+]
