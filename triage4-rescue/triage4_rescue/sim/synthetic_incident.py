@@ -14,6 +14,7 @@ casualties — critical for test determinism.
 from __future__ import annotations
 
 import random
+import zlib
 from typing import Literal
 
 from ..core.models import CivilianCasualty, VitalSignsObservation
@@ -107,7 +108,11 @@ def generate_casualty(
     age_years: float | None = None,
 ) -> CivilianCasualty:
     """Build one casualty matching the named profile."""
-    rng = random.Random(hash((casualty_id, profile, seed)) & 0xFFFFFFFF)
+    # NB: stdlib hash() on strings is randomised per-process by
+    # default (PYTHONHASHSEED). zlib.crc32 gives a stable seed
+    # across runs, which the test suite depends on.
+    seed_bytes = f"{casualty_id}|{profile}|{seed}".encode("utf-8")
+    rng = random.Random(zlib.crc32(seed_bytes))
     vitals = _profile_vitals(profile, rng)
 
     # Default age inferred from profile, but caller can override.

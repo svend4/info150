@@ -192,6 +192,25 @@ info150/
                             # on identical API surfaces (year 2+)
 ```
 
+> **Status note (added after the catalog completed):** all
+> fourteen siblings now exist as concrete copy-forks
+> (`triage4-fit`, `triage4-farm`, `triage4-rescue`,
+> `triage4-drive`, `triage4-home`, `triage4-site`,
+> `triage4-crowd`, `triage4-aqua`, `triage4-pet`,
+> `triage4-clinic`, `triage4-wild`, `triage4-bird`,
+> `triage4-sport`, `triage4-fish`). With that sample size
+> the §7 extraction threshold is well past — a first
+> minimal `biocore/` slice has been extracted, scoped
+> deliberately to the duplications the catalog actually
+> produced (deterministic seeds, decimal-coord regex,
+> claims-guard helpers, SMS-length cap). See
+> `biocore/README.md` for what's in scope, what's
+> deliberately not, and the per-sibling adoption pattern.
+> The next extraction tier (engine fusion helpers,
+> mortal-sign-override pattern, three-audience routing
+> shape) is a separate effort and is NOT in the current
+> `biocore/` slice.
+
 Each sibling project:
 
 - lives in its own directory at the monorepo root
