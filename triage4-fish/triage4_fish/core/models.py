@@ -17,8 +17,9 @@ See docs/PHILOSOPHY.md.
 
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass, field
+
+from biocore.coords import DECIMAL_PAIR_RE
 
 from .enums import (
     AlertKind,
@@ -32,11 +33,10 @@ from .enums import (
 )
 
 
-# Same field-security regex as triage4-wild / triage4-bird —
-# offshore tuna / bluefin pens are theft targets.
-_DECIMAL_PAIR_RE = re.compile(
-    r"[-+]?\d+\.\d{2,}\s*[,\s]\s*[-+]?\d+\.\d{2,}"
-)
+# Field-security regex imported from biocore.coords —
+# offshore tuna / bluefin pens are theft targets and the
+# regex shape is shared across the three field-security
+# siblings (wild + bird + fish).
 
 
 # ---------------------------------------------------------------------------
@@ -208,7 +208,7 @@ class PenObservation:
             )
         if not self.location_handle.strip():
             raise ValueError("location_handle must not be empty")
-        if _DECIMAL_PAIR_RE.search(self.location_handle):
+        if DECIMAL_PAIR_RE.search(self.location_handle):
             raise ValueError(
                 "location_handle appears to contain decimal-degree "
                 "coordinates — opaque pen-handle tokens only "
@@ -301,12 +301,12 @@ class FarmManagerAlert:
             raise ValueError("alert text must not be empty")
         if not self.location_handle.strip():
             raise ValueError("location_handle must not be empty")
-        if _DECIMAL_PAIR_RE.search(self.location_handle):
+        if DECIMAL_PAIR_RE.search(self.location_handle):
             raise ValueError(
                 "location_handle contains decimal-degree coords — "
                 "field-security boundary"
             )
-        if _DECIMAL_PAIR_RE.search(self.text):
+        if DECIMAL_PAIR_RE.search(self.text):
             raise ValueError(
                 "alert text contains decimal-degree coords — "
                 "field-security boundary"

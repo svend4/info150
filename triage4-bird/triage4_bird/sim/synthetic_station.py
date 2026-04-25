@@ -10,7 +10,8 @@ Seeds use ``zlib.crc32`` for cross-run stability.
 from __future__ import annotations
 
 import random
-import zlib
+
+from biocore.seeds import crc32_seed
 
 from ..core.enums import CallKind, Species
 from ..core.models import (
@@ -26,8 +27,12 @@ _DEFAULT_WINDOW_S = 60.0
 
 
 def _rng(seed_source: tuple[str, int]) -> random.Random:
-    seed_bytes = f"{seed_source[0]}|{seed_source[1]}".encode("utf-8")
-    return random.Random(zlib.crc32(seed_bytes))
+    """Build a deterministic RNG for the seed-source tuple.
+
+    Delegates to ``biocore.seeds.crc32_seed`` (extracted in
+    biocore tier-1).
+    """
+    return random.Random(crc32_seed(*seed_source))
 
 
 def generate_observation(

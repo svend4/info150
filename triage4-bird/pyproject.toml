@@ -13,7 +13,8 @@ authors = [
   { name = "svend4" }
 ]
 dependencies = [
-  "numpy>=1.26"
+  "numpy>=1.26",
+  "biocore>=0.1.0"
 ]
 
 [project.optional-dependencies]

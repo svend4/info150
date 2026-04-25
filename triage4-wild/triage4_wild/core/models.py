@@ -21,8 +21,10 @@ See docs/PHILOSOPHY.md.
 
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass, field
+
+from biocore.coords import DECIMAL_PAIR_RE
+from biocore.sms import check_sms_cap
 
 from .enums import (
     AlertKind,
@@ -44,14 +46,11 @@ from .enums import (
 # ---------------------------------------------------------------------------
 
 
-# Heuristic for obvious decimal-degree content that a
-# caller might accidentally put into a location handle.
-# Matches two float numbers with 2+ decimal digits
-# separated by a comma or whitespace, which covers both
-# "1.234, 5.678" and "1.234 5.678" coordinate formats.
-_DECIMAL_PAIR_RE = re.compile(
-    r"[-+]?\d+\.\d{2,}\s*[,\s]\s*[-+]?\d+\.\d{2,}"
-)
+# Heuristic for obvious decimal-degree content. Imported from
+# biocore.coords (extraction tier 1 — the regex is literally
+# identical across triage4-wild / triage4-bird / triage4-fish).
+# Same characters, same intent — see biocore/README.md §
+# "What's in scope".
 
 
 @dataclass(frozen=True)
@@ -70,7 +69,7 @@ class LocationHandle:
     def __post_init__(self) -> None:
         if not self.handle.strip():
             raise ValueError("LocationHandle.handle must not be empty")
-        if _DECIMAL_PAIR_RE.search(self.handle):
+        if DECIMAL_PAIR_RE.search(self.handle):
             raise ValueError(
                 "LocationHandle.handle appears to contain decimal-"
                 "degree coordinates — the library only accepts "
@@ -335,17 +334,13 @@ class RangerAlert:
             )
         if not self.text.strip():
             raise ValueError("alert text must not be empty")
-        if len(self.text) > MAX_RANGER_SMS_CHARS:
-            raise ValueError(
-                f"alert text exceeds SMS cap of "
-                f"{MAX_RANGER_SMS_CHARS} chars "
-                f"(got {len(self.text)}); see "
-                f"docs/PHILOSOPHY.md on the SMS-length "
-                f"structural constraint"
-            )
+        # SMS-length cap delegated to biocore.sms — extracted
+        # in tier-1 because triage4-wild + triage4-bird share
+        # the 200-char Iridium / SMS frame budget.
+        check_sms_cap(self.text, MAX_RANGER_SMS_CHARS)
         if not self.location_handle.strip():
             raise ValueError("location_handle must not be empty")
-        if _DECIMAL_PAIR_RE.search(self.location_handle):
+        if DECIMAL_PAIR_RE.search(self.location_handle):
             raise ValueError(
                 "location_handle contains decimal-degree "
                 "coordinates — field-security boundary; see "
@@ -358,7 +353,7 @@ class RangerAlert:
         # body text itself. An alert text that embeds
         # "1.234, 5.678" leaks coordinates even if the
         # location_handle is obfuscated.
-        if _DECIMAL_PAIR_RE.search(self.text):
+        if DECIMAL_PAIR_RE.search(self.text):
             raise ValueError(
                 "alert text appears to contain decimal-"
                 "degree coordinates — field-security "

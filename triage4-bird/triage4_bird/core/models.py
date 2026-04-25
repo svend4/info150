@@ -23,8 +23,10 @@ See docs/PHILOSOPHY.md.
 
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass, field
+
+from biocore.coords import DECIMAL_PAIR_RE
+from biocore.sms import check_sms_cap
 
 from .enums import (
     AlertKind,
@@ -39,10 +41,9 @@ from .enums import (
 )
 
 
-# Decimal-coordinate-pair regex — same shape as triage4-wild.
-_DECIMAL_PAIR_RE = re.compile(
-    r"[-+]?\d+\.\d{2,}\s*[,\s]\s*[-+]?\d+\.\d{2,}"
-)
+# Decimal-coordinate-pair regex imported from biocore.coords.
+# Same shape as triage4-wild and triage4-fish — the three-
+# sibling convergence that justified the tier-1 extraction.
 
 
 # ---------------------------------------------------------------------------
@@ -168,7 +169,7 @@ class BirdObservation:
             raise ValueError("station_id must not be empty")
         if not self.location_handle.strip():
             raise ValueError("location_handle must not be empty")
-        if _DECIMAL_PAIR_RE.search(self.location_handle):
+        if DECIMAL_PAIR_RE.search(self.location_handle):
             raise ValueError(
                 "location_handle appears to contain decimal-degree "
                 "coordinates — the library accepts opaque grid / "
@@ -266,19 +267,18 @@ class OrnithologistAlert:
             )
         if not self.text.strip():
             raise ValueError("alert text must not be empty")
-        if len(self.text) > MAX_AVIAN_SMS_CHARS:
-            raise ValueError(
-                f"alert text exceeds SMS cap of "
-                f"{MAX_AVIAN_SMS_CHARS} chars (got {len(self.text)})"
-            )
+        # SMS-length cap delegated to biocore.sms — extracted
+        # in tier-1 because triage4-wild + triage4-bird share
+        # the same Iridium / SMS frame budget.
+        check_sms_cap(self.text, MAX_AVIAN_SMS_CHARS)
         if not self.location_handle.strip():
             raise ValueError("location_handle must not be empty")
-        if _DECIMAL_PAIR_RE.search(self.location_handle):
+        if DECIMAL_PAIR_RE.search(self.location_handle):
             raise ValueError(
                 "location_handle contains decimal-degree "
                 "coordinates — field-security boundary"
             )
-        if _DECIMAL_PAIR_RE.search(self.text):
+        if DECIMAL_PAIR_RE.search(self.text):
             raise ValueError(
                 "alert text contains decimal-degree "
                 "coordinates — field-security boundary"
