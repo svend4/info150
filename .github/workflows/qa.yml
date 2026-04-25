@@ -1,8 +1,8 @@
 name: QA gates
 
-# Lint + mypy + pytest across all sixteen packages.
-# Matrix-parallel, fail-fast off so one broken package
-# doesn't mask issues in the others.
+# Lint + mypy + pytest across all sixteen packages plus the
+# portal compatibility-layer job. Matrix-parallel, fail-fast
+# off so one broken package doesn't mask issues in the others.
 
 on:
   push:
@@ -12,6 +12,7 @@ on:
     paths:
       - '.github/workflows/qa.yml'
       - 'biocore/**'
+      - 'portal/**'
       - 'triage4/**'
       - 'triage4-*/**'
   pull_request:
@@ -20,6 +21,7 @@ on:
     paths:
       - '.github/workflows/qa.yml'
       - 'biocore/**'
+      - 'portal/**'
       - 'triage4/**'
       - 'triage4-*/**'
   workflow_dispatch:
@@ -98,4 +100,46 @@ jobs:
         # entrypoints rather than a `make demo`.
         if: matrix.package != 'biocore' && matrix.package != 'triage4'
         working-directory: ${{ matrix.package }}
+        run: make demo
+
+  # Portal compatibility-layer job — runs once (no matrix).
+  # Implements the "Не слияние — совместимость" policy
+  # (see docs/DOMAIN_ADAPTATIONS.md §10): reads each pilot
+  # sibling's outputs through its portal_adapter and
+  # discovers cross-sibling bridges. Independent of the per-
+  # sibling matrix above; runs in parallel.
+  portal:
+    name: portal
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: pip
+          cache-dependency-path: |
+            biocore/pyproject.toml
+            portal/pyproject.toml
+            triage4-fish/pyproject.toml
+            triage4-bird/pyproject.toml
+            triage4-wild/pyproject.toml
+
+      - name: Install biocore + pilot siblings + portal
+        run: |
+          pip install -e biocore/
+          pip install -e triage4-fish/
+          pip install -e triage4-bird/
+          pip install -e triage4-wild/
+          pip install -e 'portal/[dev]'
+          pip install ruff mypy
+
+      - name: Run portal QA (lint + mypy --strict + pytest)
+        working-directory: portal
+        run: make qa
+
+      - name: Run portal demo (cross-sibling smoke)
+        working-directory: portal
         run: make demo

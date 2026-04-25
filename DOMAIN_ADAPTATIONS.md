@@ -263,3 +263,75 @@ See [`ARCHIVES.md`](ARCHIVES.md) for provenance of the original
 conversation that seeded triage4, and
 [`triage4/docs/STATUS.md`](triage4/docs/STATUS.md) for the
 current technical + conceptual state of the flagship.
+
+## 10. Portal layer (compatibility policy)
+
+`biocore/` answers the question *"what byte-level helper does
+every sibling re-implement?"* and pulls those into a shared
+dependency. It is a tool for managing **mechanical**
+duplication.
+
+There is a second, complementary policy that the catalog
+also benefits from — and which `biocore/` cannot serve by
+construction. That policy is the one stated in
+[`svend4/nautilus`](https://github.com/svend4/nautilus):
+
+> **Не слияние — совместимость** *(not merger — compatibility).*
+> Like an Office Suite reads `.docx`, `.pdf`, `.xlsx` without
+> merging them into one format.
+
+Applied to `info150`: the siblings stay autonomous and keep
+growing in depth — own signatures, own enums, own plugins,
+own dashboards. A thin **portal/** package READS each
+sibling's `Report` / `Alert` outputs through a per-sibling
+~50-line `portal_adapter.py`, translates them into a common
+`PortalEntry`, and discovers typed `Bridge` relationships
+across them (co-occurrence, domain-neighbour, escalation,
+geographic-neighbour, temporal-correlate, mortality
+analogy). It NEVER modifies a sibling.
+
+### When to use which layer
+
+| Pattern type | Belongs in | Example |
+|---|---|---|
+| Mechanical duplication (regex, hash, weighted sum, SMS cap) | `biocore/` | `DECIMAL_PAIR_RE`, `crc32_seed`, `weighted_overall` |
+| Cross-sibling relationships (one signal across two domains) | `portal/` | fish mortality cluster + bird flock mortality cluster co-locating in the same watershed |
+
+### What's in scope for `portal/`
+
+- ✅ Reading sibling outputs through `PortalEntry`.
+- ✅ Discovering typed bridges between cross-sibling entries.
+- ✅ Domain-coordinate (6-bit) proximity for sibling adjacency.
+- ✅ A `portal demo` CLI that exercises every participating
+  sibling's adapter end-to-end.
+
+### What's deliberately NOT in scope
+
+- ❌ **Pushing canonical types BACK into siblings.** If we
+  ever find ourselves moving alert *formatting* logic into
+  `portal/`, we have crossed the line from compatibility
+  into merger and should pull back.
+- ❌ **Forcing participation.** A sibling without a
+  `portal_adapter.py` is invisible to the portal but
+  otherwise fully functional. Adoption is voluntary and
+  gradual.
+- ❌ **Modifying any sibling's existing types.** The adapter
+  wraps; it never rewrites.
+- ❌ **Replacing biocore.** The two layers are
+  complementary, not competing.
+
+### Pilot adopters
+
+Three siblings ship adapters initially — the same three
+that adopted `biocore` tier-1:
+
+- `triage4-fish/triage4_fish/portal_adapter.py`
+- `triage4-bird/triage4_bird/portal_adapter.py`
+- `triage4-wild/triage4_wild/portal_adapter.py`
+
+Other siblings opt in voluntarily by adding a
+`portal_adapter.py` and registering a 6-bit domain
+coordinate in `portal/portal/coords.py`.
+
+See `portal/README.md` for the policy summary, the
+adapter contract, and the six initial bridge kinds.
