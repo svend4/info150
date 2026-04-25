@@ -28,6 +28,12 @@ See docs/PHILOSOPHY.md.
 
 from __future__ import annotations
 
+from biocore.fusion import (
+    apply_channel_floor,
+    normalise_weights,
+    weighted_overall,
+)
+
 from ..core.enums import AlertKind, WelfareLevel
 from ..core.models import (
     FarmManagerAlert,
@@ -61,11 +67,10 @@ class AquacultureHealthEngine:
         self,
         weights: dict[str, float] | None = None,
     ) -> None:
-        w = dict(weights or _CHANNEL_WEIGHTS)
-        total = sum(w.values())
-        if total <= 0:
-            raise ValueError("weight total must be positive")
-        self._weights = {k: v / total for k, v in w.items()}
+        # biocore.fusion.normalise_weights — extracted in
+        # tier-2 because the validate-and-rescale pattern
+        # is identical across twelve engines.
+        self._weights = normalise_weights(weights or _CHANNEL_WEIGHTS)
 
     # -- public API -----------------------------------------------------
 
@@ -90,30 +95,36 @@ class AquacultureHealthEngine:
         # vision_confidence from the water-chemistry signature.
         # Turbid water → vision channels blend toward neutral.
         v = water.vision_confidence
-        gill_adj = gill * v + 1.0 * (1.0 - v)
-        school_adj = school * v + 1.0 * (1.0 - v)
-        lice_adj = lice * v + 1.0 * (1.0 - v)
-        mortality_adj = mortality * v + 1.0 * (1.0 - v)
+        adjusted_channel_scores: dict[str, float] = {
+            "gill_rate":        gill * v + 1.0 * (1.0 - v),
+            "school_cohesion":  school * v + 1.0 * (1.0 - v),
+            "sea_lice":         lice * v + 1.0 * (1.0 - v),
+            "mortality_floor":  mortality * v + 1.0 * (1.0 - v),
+            "water_chemistry":  water.safety,
+        }
 
-        overall = (
-            self._weights["gill_rate"] * gill_adj
-            + self._weights["school_cohesion"] * school_adj
-            + self._weights["sea_lice"] * lice_adj
-            + self._weights["mortality_floor"] * mortality_adj
-            + self._weights["water_chemistry"] * water.safety
-        )
-        overall = max(0.0, min(1.0, overall))
+        # biocore.fusion.weighted_overall — extracted in
+        # tier-2 because the weighted-sum-then-clamp shape
+        # is identical across twelve engines.
+        overall = weighted_overall(self._weights, adjusted_channel_scores)
 
-        # Channel-urgent mortal-sign override.
-        channel_urgent = (
-            gill < prof.channel_urgent
-            or school < prof.channel_urgent
-            or lice < prof.channel_urgent
-            or mortality < prof.channel_urgent
-            or water.safety < prof.channel_urgent
+        # biocore.fusion.apply_channel_floor — channel-urgent
+        # mortal-sign override. Pass RAW (un-blended) channel
+        # scores so silt-storm doesn't accidentally hide a
+        # genuine vision-channel-urgent signal.
+        raw_channel_scores: dict[str, float] = {
+            "gill_rate":        gill,
+            "school_cohesion":  school,
+            "sea_lice":         lice,
+            "mortality_floor":  mortality,
+            "water_chemistry":  water.safety,
+        }
+        overall = apply_channel_floor(
+            overall,
+            raw_channel_scores,
+            urgent_threshold=prof.channel_urgent,
+            overall_floor=prof.overall_urgent,
         )
-        if channel_urgent:
-            overall = min(overall, prof.overall_urgent - 0.01)
 
         if overall < prof.overall_urgent:
             level: WelfareLevel = "urgent"

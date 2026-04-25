@@ -130,10 +130,10 @@ structural:
   (explicit L/R asymmetry pairs, wound-intensity slope, motion
   score clipped to [0, 1]).
 
-### What might be worth extracting later
+### What might be worth extracting later — for the FLAGSHIP
 
-A small amount of code is technically reusable if the project
-ever needs the corresponding capability:
+A small amount of code is technically reusable if the **flagship**
+`triage4/` ever needs the corresponding capability:
 
 - `triage4/analytics/diffing.py` (~40 LOC) — `deep_diff(left,
   right)` recursive dict/list/scalar comparison. Could underpin
@@ -147,8 +147,65 @@ ever needs the corresponding capability:
   between two world-states. **Already covered** by our
   counterfactual evaluator.
 
-**No extraction is planned.** This list exists only so a future
-contributor doesn't have to re-audit the archive from scratch.
+**No flagship extraction is planned.** This list exists only so a
+future contributor doesn't have to re-audit the archive from scratch.
+
+### Per-sibling reuse — see [`V13_REUSE_MAP.md`](V13_REUSE_MAP.md)
+
+The flagship-level "do not import" verdict above does **not** carry
+over to every sibling. Several of the 14 catalogue siblings have
+fundamentally different regulatory postures (operational rather than
+clinical, multi-staff rather than single-user, audit-trail-required
+rather than stateless) and v13's `auth/`, `jobs/`, `audit_repository`
+and `analytics/diffing` modules are genuinely useful as **reference
+scaffolding**.
+
+The full per-sibling decision matrix lives in
+[`V13_REUSE_MAP.md`](V13_REUSE_MAP.md). Headlines:
+
+| Sibling     | Verdict                                           |
+|-------------|---------------------------------------------------|
+| 09 rescue   | **Pilot** — `auth/` + `jobs/` + `audit/` ported (see below). |
+| 07 site     | Strong fit — RBAC + audit required by regulation. |
+| 13 drive    | Strong fit — fleet RBAC + session replay.         |
+| 14 crowd    | Strong fit — event-ops RBAC + timeline replay.    |
+| 11 aqua     | Fit — lifeguard team RBAC + light audit.          |
+| 06 home     | Cautious — auth yes, replay no (PHI hazard).      |
+| 03/10 fish/farm | Partial — `jobs/` yes, RBAC deferred.         |
+| 01/02/04 wild/bird/fit | Minimal — single-user; only `analytics/diffing`. |
+| 05 clinic   | **Do not borrow** — same posture as flagship.     |
+
+### Pilot — `triage4-rescue/triage4_rescue/multiuser/`
+
+`triage4-rescue` is the first sibling to actually adopt v13 ideas.
+The new `multiuser/` subpackage contains:
+
+- `roles.py` — `viewer / dispatcher / incident_commander / admin`
+  (rescue-specific, not v13's `viewer/analyst/operator/admin`).
+- `actions.py` — rescue action vocabulary (`incident:log`,
+  `responder:assign`, `shift:close`, …) — no scenario / workspace
+  verbs from v13.
+- `session_manager.py` — in-memory user + session store (sessions
+  are short-lived, no persistence justified).
+- `policy_engine.py` — role × action permission gate with
+  inheritance up the role ladder.
+- `audit_log.py` — append-only journal with two backends:
+  in-memory (default) and SQLite-backed (opt-in via `db_path=`).
+  This is the **only** optional persistence in any sibling
+  today.
+- `jobs.py` — `BackgroundWorkerLoop` + `AsyncJobQueue` over
+  `threading.Queue` + daemon worker.
+
+72 dedicated tests under `triage4-rescue/tests/test_multiuser.py`
+exercise: role validation, action grants + inheritance, session
+lifecycle (create/resolve/revoke/role-cascade/delete-cleanup),
+audit log (in-memory + SQLite + persistence across instances), job
+queue (success / failure / FIFO order / exception isolation).
+
+**Crucially: no v13 source code or data was extracted.** The
+pilot is copy-fork — architectural ideas only. The
+`triage4_repo_v13.zip` archive remains read-only, untouched, and
+its `data/triage4.sqlite` blob was **never** unpacked.
 
 ### Why the zip is kept
 

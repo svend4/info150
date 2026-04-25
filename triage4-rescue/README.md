@@ -81,6 +81,30 @@ This is sibling #3. The first `biocore/` extraction experiment
 becomes reasonable *after* this commit — the three concrete
 copies now make it safe to ask "what really is shared?"
 
+## Multi-user / multi-shift coordination
+
+`triage4_rescue.multiuser` is the **pilot** adoption of architectural
+ideas from the archived `triage4_repo_v13.zip` SaaS variant — see the
+top-level [`V13_REUSE_MAP.md`](../V13_REUSE_MAP.md) for the per-sibling
+reuse policy. The subpackage adds:
+
+- **`SessionManager`** — in-memory user + session store with
+  `viewer / dispatcher / incident_commander / admin` roles.
+- **`PolicyEngine`** — role × action permission gate. Action vocabulary
+  is rescue-specific (`incident:log`, `responder:assign`, `shift:close`,
+  …) and does not reuse v13's SaaS verbs.
+- **`AuditLog`** — append-only journal of dispatcher actions. Defaults
+  to in-memory; pass `db_path=` for SQLite-backed persistence (the only
+  optional persistence in the rescue library).
+- **`AsyncJobQueue`** — daemon-thread FIFO worker for batch
+  incident-summary processing.
+
+This is **copy-fork**, not import. No code is shared with v13 source;
+the package is sized for the rescue domain and free to diverge. Other
+siblings borrowing the same architecture write their own copy with
+their own role / action vocabulary — see `V13_REUSE_MAP.md` for the
+sibling-by-sibling table.
+
 ## See also
 
 - `docs/PHILOSOPHY.md` — clinical-adjacent posture, what the
@@ -90,3 +114,5 @@ copies now make it safe to ask "what really is shared?"
 - [`docs/adaptations/09_disaster_response.md`](../docs/adaptations/09_disaster_response.md)
   — the parent adaptation study (strategic framing, not a
   product plan).
+- [`V13_REUSE_MAP.md`](../V13_REUSE_MAP.md) — monorepo-wide policy on
+  borrowing from the archived v13 SaaS variant.

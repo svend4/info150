@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "portal"
+version = "0.1.0"
+description = "Read-only cross-sibling coordination layer for the triage4 family — adapts each sibling's native Report/Alert types into a common PortalEntry protocol and discovers typed bridges across them. 'Не слияние — совместимость' (not merger — compatibility)."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [
+  { name = "svend4" }
+]
+# biocore is the only hard dependency. Siblings are NOT
+# pinned here — the portal imports adapter modules lazily
+# at runtime so siblings remain independently installable
+# without portal installed.
+dependencies = [
+  "biocore>=0.1.0"
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0"
+]
+
+[project.scripts]
+portal = "portal.cli:main"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+include = ["portal*"]
