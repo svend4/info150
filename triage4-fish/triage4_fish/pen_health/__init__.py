@@ -1,4 +1,10 @@
-"""Aquaculture pen-health engine + species reference bands.
+"""Aquaculture pen-health engine + species reference bands."""
 
-Stage 2: species_aquatic_bands, monitoring_engine.
-"""
+from .monitoring_engine import AquacultureHealthEngine
+from .species_aquatic_bands import AquaticProfile, profile_for
+
+__all__ = [
+    "AquaticProfile",
+    "AquacultureHealthEngine",
+    "profile_for",
+]
