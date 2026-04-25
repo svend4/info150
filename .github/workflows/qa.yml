@@ -1,0 +1,101 @@
+name: QA gates
+
+# Lint + mypy + pytest across all sixteen packages.
+# Matrix-parallel, fail-fast off so one broken package
+# doesn't mask issues in the others.
+
+on:
+  push:
+    branches:
+      - main
+      - 'claude/**'
+    paths:
+      - '.github/workflows/qa.yml'
+      - 'biocore/**'
+      - 'triage4/**'
+      - 'triage4-*/**'
+  pull_request:
+    branches:
+      - main
+    paths:
+      - '.github/workflows/qa.yml'
+      - 'biocore/**'
+      - 'triage4/**'
+      - 'triage4-*/**'
+  workflow_dispatch:
+
+jobs:
+  qa:
+    name: ${{ matrix.package }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        package:
+          # Shared utility package (built first; depended on
+          # by the three tier-1 + tier-2 adopters).
+          - biocore
+
+          # Flagship + fourteen catalog siblings, in catalog
+          # order (matches DOMAIN_ADAPTATIONS.md numbering).
+          - triage4
+          - triage4-fit       # 04 fitness / wellness
+          - triage4-farm      # 10 livestock / agtech
+          - triage4-rescue    # 09 disaster response
+          - triage4-drive     # 13 driver monitoring
+          - triage4-home      # 06 elderly home
+          - triage4-site      # 07 industrial safety
+          - triage4-crowd     # 14 crowd safety
+          - triage4-aqua      # 11 pool / beach safety
+          - triage4-pet       # 08 veterinary clinic
+          - triage4-clinic    # 05 telemedicine pre-screening
+          - triage4-wild      # 01 wildlife terrestrial
+          - triage4-bird      # 02 wildlife avian
+          - triage4-sport     # 12 sports performance
+          - triage4-fish      # 03 wildlife aquatic / aquaculture
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          # Cache the per-package pyproject for faster
+          # repeat-runs.
+          cache: pip
+          cache-dependency-path: |
+            biocore/pyproject.toml
+            ${{ matrix.package }}/pyproject.toml
+
+      # biocore is the shared utility package. Three siblings
+      # (wild / bird / fish) depend on it after the tier-1 +
+      # tier-2 migrations, so install it first regardless of
+      # which package the matrix row is testing. When the
+      # matrix row IS biocore, this step + the next install
+      # combine cleanly.
+      - name: Install biocore (shared utility package)
+        run: pip install -e biocore/
+
+      - name: Install ${{ matrix.package }} with dev extras
+        working-directory: ${{ matrix.package }}
+        run: |
+          pip install -e '.[dev]'
+          pip install ruff mypy
+
+      - name: Run QA gate (lint + mypy + pytest)
+        working-directory: ${{ matrix.package }}
+        # Each package's Makefile defines a `qa` target that
+        # runs ruff + mypy + pytest. triage4 (the flagship)
+        # additionally runs scripts/claims_lint.py — its qa
+        # target includes that step.
+        run: make qa
+
+      - name: Run demo (smoke test)
+        # Skip biocore + triage4 — biocore is a library
+        # without a demo; triage4 has its own dashboard
+        # entrypoints rather than a `make demo`.
+        if: matrix.package != 'biocore' && matrix.package != 'triage4'
+        working-directory: ${{ matrix.package }}
+        run: make demo
