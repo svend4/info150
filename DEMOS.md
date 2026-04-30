@@ -31,42 +31,42 @@ If you are looking for "how do I clone + install", that's in
 | **`triage4`** flagship | 11 named demos + benchmark + stress         | **FastAPI + React/Vite** | the original; multi-page |
 | `biocore`         | none (utility library — has no domain to demo)    | —                    | use `make qa` to validate |
 | `portal`          | `python -m portal.cli demo`                       | —                    | needs pilot siblings installed (fish / bird / wild) |
-| `triage4-aqua`    | one-pool lifeguard demo                            | —                    | engine: `PoolWatchEngine` |
-| `triage4-bird`    | station-pass avian demo                            | —                    | engine: `AvianHealthEngine` (audio + visual) |
-| `triage4-clinic`  | telemedicine pre-screening demo                    | —                    | engine: `ClinicalPreTriageEngine` |
-| `triage4-crowd`   | one-venue crowd-safety demo                        | —                    | engine: `VenueMonitorEngine` |
-| `triage4-drive`   | one-session driver-monitoring demo                 | —                    | engine: `DriverMonitoringEngine` |
-| `triage4-farm`    | one-herd welfare demo                              | —                    | engine: `WelfareCheckEngine` |
-| **`triage4-fish`** | pen-pass aquaculture demo                         | **FastAPI + React/Vite** (pilot) | engine: `AquacultureHealthEngine` (multi-modal) |
-| `triage4-fit`     | one-session coaching demo (inline `python -c`)    | —                    | engine: `RapidFormEngine` |
-| `triage4-home`    | one-day in-home monitoring demo                    | —                    | engine: `HomeMonitoringEngine` |
-| `triage4-pet`     | pet-video demo (owner + vet output)                | —                    | engine: `PetTriageEngine` |
-| **`triage4-rescue`** | one-incident mass-casualty demo                | **FastAPI + React/Vite** (pilot) | engine: `StartProtocolEngine`, plus `multiuser/` package |
-| `triage4-site`    | one-shift site-safety demo                         | —                    | engine: `SiteSafetyEngine` |
-| `triage4-sport`   | session sport-performance demo                     | —                    | engine: `SportPerformanceEngine` |
-| `triage4-wild`    | reserve-pass wildlife demo                         | —                    | engine: `WildlifeHealthEngine` |
+| **`triage4-aqua`** | one-pool lifeguard demo                           | **FastAPI + React/Vite** | engine: `PoolWatchEngine` |
+| **`triage4-bird`** | station-pass avian demo                           | **FastAPI + React/Vite** | engine: `AvianHealthEngine` (audio + visual) |
+| **`triage4-clinic`** | telemedicine pre-screening demo                 | **FastAPI + React/Vite** | engine: `ClinicalPreTriageEngine` |
+| **`triage4-crowd`** | one-venue crowd-safety demo                      | **FastAPI + React/Vite** | engine: `VenueMonitorEngine` |
+| **`triage4-drive`** | one-session driver-monitoring demo               | **FastAPI + React/Vite** | engine: `DriverMonitoringEngine` |
+| **`triage4-farm`** | one-herd welfare demo                             | **FastAPI + React/Vite** | engine: `WelfareCheckEngine` |
+| **`triage4-fish`** | pen-pass aquaculture demo                         | **FastAPI + React/Vite** | engine: `AquacultureHealthEngine` (multi-modal) |
+| **`triage4-fit`** | one-session coaching demo (inline `python -c`)     | **FastAPI + React/Vite** | engine: `RapidFormEngine` |
+| **`triage4-home`** | one-day in-home monitoring demo                   | **FastAPI + React/Vite** | engine: `HomeMonitoringEngine` |
+| **`triage4-pet`** | pet-video demo (owner + vet output)                | **FastAPI + React/Vite** | engine: `PetTriageEngine` |
+| **`triage4-rescue`** | one-incident mass-casualty demo                 | **FastAPI + React/Vite** | engine: `StartProtocolEngine`, plus `multiuser/` package |
+| **`triage4-site`** | one-shift site-safety demo                        | **FastAPI + React/Vite** | engine: `SiteSafetyEngine` |
+| **`triage4-sport`** | session sport-performance demo                   | **FastAPI + React/Vite** | engine: `SportPerformanceEngine` |
+| **`triage4-wild`** | reserve-pass wildlife demo                        | **FastAPI + React/Vite** | engine: `WildlifeHealthEngine` |
 
-### Per-sibling Web UI rollout
+### Per-sibling Web UI rollout — complete
 
 The 14 siblings are **decision-support libraries** at their core, but
 each one is also intended to grow into an **independent application**
-that can spin out into its own repository. To support that, every
-sibling gets an **opt-in** Web UI surface mirroring the flagship
-pattern: a FastAPI dashboard inside the package + a React + Vite +
-TypeScript single-page app under `<sibling>/web_ui/`.
+that can spin out into its own repository. Every sibling now ships an
+**opt-in** Web UI surface mirroring the flagship pattern: a FastAPI
+dashboard inside the package + a React + Vite + TypeScript single-page
+app under `<sibling>/web_ui/`.
 
-Status:
+Status (as of the most recent rollout commit):
 
 - **Flagship** `triage4/` — full multi-page React UI, the original.
-- **Pilot siblings** `triage4-rescue` and `triage4-fish` — opt-in
-  FastAPI + single-page React UI shipped under the `[ui]` extra. See
-  [Sibling Web UIs](#sibling-web-uis) below.
-- **Remaining 12 siblings** — library + text demo only today; the
-  per-sibling UI rollout follows the rescue/fish template.
+- **All 14 catalogue siblings** — opt-in FastAPI + single-page React
+  UI shipped under the `[ui]` extra. See [Sibling Web UIs](#sibling-web-uis)
+  below for the per-sibling endpoint tables.
 
 The Web UI surface is **opt-in** so the library footprint stays
 minimal — `pip install triage4-rescue` does not pull FastAPI; only
-`pip install 'triage4-rescue[ui]'` does.
+`pip install 'triage4-rescue[ui]'` does. Same shape across every
+sibling: `pip install -e ".[ui]"` then `make ui` (or
+`uvicorn <module>.ui.dashboard_api:app`).
 
 ### How every demo is invoked (three forms)
 
@@ -869,27 +869,47 @@ Endpoints:
 Tests: 10 dedicated `test_dashboard_api.py` cases (10 added; 120 total
 sibling tests now 130).
 
-#### Rolling out to the remaining 12 siblings
+#### All 14 catalogue siblings — Web UI summary
 
-The pilot files form a **template** for the rollout. To add a Web UI
-to any other sibling, copy and adapt:
+All 14 siblings ship an opt-in Web UI surface following the same
+template. Endpoint shape varies slightly per domain (entity name,
+level / flag / recommendation literal, channel set), but every
+sibling exposes:
 
-- `triage4-rescue/triage4_rescue/ui/__init__.py`
-- `triage4-rescue/triage4_rescue/ui/dashboard_api.py` — replace
-  domain types + endpoint logic
-- `triage4-rescue/web_ui/{package.json, vite.config.ts, tsconfig.json,
-  index.html, src/}` — replace types + API client + dashboard
-- `triage4-rescue/tests/test_dashboard_api.py` — adapt to new
-  endpoint set
-- `pyproject.toml` — add the `[ui]` extra
-- `Makefile` — add `install-ui`, `ui`, `ui-html`, `web-ui-*` targets
+- `GET /health` — service status + counts
+- `GET /report` (or `/incident`) — full aggregated JSON
+- `GET /<entity>s` — list view (entity = swimmer / zone / worker /
+  animal / observation / submission / window / session / rep /
+  pen / casualty)
+- `GET /<entity>s/{id}` — detail view + per-entity alerts/cues
+- `GET /alerts` (or `/cues`) — flat alert list
+- `POST /demo/reload` — re-seed synthetic data
+- `GET /export.html` — self-contained offline HTML snapshot
+
+| Sibling             | Entity            | Level / flag literal              | Channels |
+|---------------------|-------------------|-----------------------------------|---|
+| `triage4-aqua`      | swimmer_token     | ok / watch / urgent               | submersion, idr, absent, distress |
+| `triage4-bird`      | obs_token         | ok / watch / urgent               | call, distress, vitals, thermal, mortality_cluster |
+| `triage4-clinic`    | patient_token     | self_care / schedule / urgent_review | cardiac, respiratory, acoustic, postural |
+| `triage4-crowd`     | zone_id           | ok / watch / urgent               | density, flow, pressure, medical |
+| `triage4-drive`     | window index      | ok / caution / critical (RISK)    | perclos, distraction, incapacitation |
+| `triage4-farm`      | animal_id         | well / concern / urgent (flag)    | gait, respiratory, thermal |
+| `triage4-fish`      | pen_id            | steady / watch / urgent           | gill, school, sea-lice, mortality, water-chemistry |
+| `triage4-fit`       | rep_index         | ok / minor / severe (cue sev.)    | symmetry, depth, tempo |
+| `triage4-home`      | window_id         | ok / check_in / urgent            | fall_risk, activity, mobility |
+| `triage4-pet`       | pet_token         | can_wait / routine / see_today    | gait, respiratory, cardiac, pain |
+| `triage4-rescue`    | casualty_id       | immediate / delayed / minor / deceased | START / JumpSTART tagging |
+| `triage4-site`      | worker_token      | ok / watch / urgent               | PPE, lifting, heat, fatigue |
+| `triage4-sport`     | athlete_token     | steady / monitor / hold (band)    | form, workload, recovery, baseline |
+| `triage4-wild`      | obs_token         | ok / watch / urgent               | gait, thermal, posture, body_condition, threat |
 
 Each sibling's UI stays in its own directory, owns its own types,
 and is free to diverge — exactly the
 "per-sibling growth-in-depth" policy from
 [`DOMAIN_ADAPTATIONS.md`](DOMAIN_ADAPTATIONS.md). When a sibling
 matures enough to warrant its own repository, the entire
-`<sibling>/` subtree (library + tests + UI + docs) lifts out cleanly.
+`<sibling>/` subtree (library + tests + UI + docs) lifts out
+cleanly.
 
 ---
 
