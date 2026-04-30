@@ -5,6 +5,10 @@ every individual package, plus the optional Docker / Web UI / system
 dependencies. The root [`README.md`](README.md) has the short version;
 this file is the deep reference.
 
+For **what each demo does** and **how to launch the flagship Web UI**,
+see [`DEMOS.md`](DEMOS.md) — it is the third top-level reference
+alongside this file.
+
 ## Table of contents
 
 - [Prerequisites](#prerequisites)
@@ -112,6 +116,11 @@ cross-sibling dependency conflicts.
 ---
 
 ## Per-package install — uniform shape
+
+> **Windows users:** the `make ...` blocks below are Linux/macOS shell.
+> If you don't have `make` (or `&&`-style chaining), jump to the
+> [Windows / PowerShell section](#windows--powershell-without-make) for
+> direct `pip` / `pytest` equivalents that work on stock PowerShell 5.x.
 
 Every package follows the same three-step ritual:
 
@@ -324,7 +333,9 @@ print(log.list())
 
 ## Full monorepo install in one shot
 
-To install + test every package in dependency order:
+To install + test every package in dependency order.
+
+**Linux / macOS (bash):**
 
 ```bash
 cd info150
@@ -342,6 +353,39 @@ done
 
 # 3. Cross-sibling coordination layer
 ( cd portal && make install-dev && make qa )
+```
+
+**Windows PowerShell (no make required):**
+
+```powershell
+cd C:\Users\<you>\info150
+.\.venv\Scripts\Activate.ps1
+
+$packages = @(
+    "biocore", "portal", "triage4",
+    "triage4-aqua",   "triage4-bird",  "triage4-clinic", "triage4-crowd",
+    "triage4-drive",  "triage4-farm",  "triage4-fish",   "triage4-fit",
+    "triage4-home",   "triage4-pet",   "triage4-rescue", "triage4-site",
+    "triage4-sport",  "triage4-wild"
+)
+foreach ($pkg in $packages) {
+    Write-Host "=== $pkg ===" -ForegroundColor Cyan
+    Push-Location $pkg
+    try {
+        pip install -e ".[dev]" -q
+        pip install ruff mypy -q
+        if ($pkg -eq "triage4") { pip install httpx -q }
+        python -m pytest -q
+        if ($LASTEXITCODE -ne 0) {
+            Write-Host "FAIL: $pkg" -ForegroundColor Red
+            Pop-Location
+            break
+        }
+    } finally {
+        Pop-Location
+    }
+}
+Write-Host "All packages green." -ForegroundColor Green
 ```
 
 Total wall-clock time: ~2 minutes on a modern laptop (most of which is
@@ -456,6 +500,8 @@ python -m pytest -q
 | `no configuration file provided: not found` from `docker compose` | You must be inside `triage4/` (where `docker-compose.yml` lives), not in the monorepo root. |
 | `Cannot be loaded because running scripts is disabled on this system` (when activating venv) | Run `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` once. |
 | `pip install -e '.[dev]'` (single quotes) fails to interpret `[dev]` | Use double quotes in PowerShell: `pip install -e ".[dev]"`. Single quotes work in cmd.exe but not always in PS. |
+| `Unable to copy '...\Python313\Lib\venv\scripts\nt\venvlauncher.exe' to '...\.venv\Scripts\python.exe'` during `python -m venv .venv` | A previous `python.exe` (often a still-running uvicorn) is holding files, OR a half-created `.venv` exists. Recover with: `Get-Process python,pythonw -ErrorAction SilentlyContinue | Stop-Process -Force; Remove-Item -Recurse -Force .venv -ErrorAction SilentlyContinue; python -m venv .venv`. |
+| `for pkg in ...; do ...; done` errors on `do`, `&&`, `||` | That's bash. PowerShell uses `foreach ($pkg in @("a","b")) { ... }` — see the [full PS loop](#full-monorepo-install-in-one-shot) above. |
 
 ### One-shot Windows install of the flagship + benchmark
 
