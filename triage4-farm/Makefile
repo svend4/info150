@@ -7,7 +7,7 @@ PIP    ?= pip
 PKG      := triage4_farm
 TESTS    := tests
 
-.PHONY: help install install-dev test lint mypy qa demo clean
+.PHONY: help install install-dev install-ui test lint mypy qa demo ui ui-html web-ui-install web-ui-dev web-ui-build clean
 
 help:
 	@awk 'BEGIN{FS=":.*##"; printf "usage: make <target>\n\ntargets:\n"} /^[a-zA-Z0-9_-]+:.*##/ {printf "  %-20s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -17,6 +17,10 @@ install:              ## Install the package (no dev extras)
 
 install-dev:          ## Install with pytest + ruff + mypy
 	$(PIP) install -e '.[dev]'
+	$(PIP) install ruff mypy
+
+install-ui:           ## Install with the [ui] extra (FastAPI + uvicorn + httpx)
+	$(PIP) install -e '.[dev,ui]'
 	$(PIP) install ruff mypy
 
 test:                 ## Run the pytest suite
@@ -32,6 +36,21 @@ qa: lint mypy test    ## All quality gates (CI-equivalent)
 
 demo:                 ## Run a one-herd welfare-screening demo
 	$(PYTHON) -m triage4_farm.sim.demo_runner
+
+ui:                   ## Run the FastAPI dashboard on http://127.0.0.1:8000
+	$(PYTHON) -m uvicorn triage4_farm.ui.dashboard_api:app --reload
+
+ui-html:              ## Print the offline HTML snapshot to stdout
+	$(PYTHON) -c "from triage4_farm.ui.dashboard_api import export_html; print(export_html())"
+
+web-ui-install:       ## npm install (one time, requires Node.js)
+	cd web_ui && npm install
+
+web-ui-dev:           ## Run the React/Vite frontend on http://localhost:5173
+	cd web_ui && npm run dev
+
+web-ui-build:         ## Production build → web_ui/dist/
+	cd web_ui && npm run build
 
 clean:                ## Remove caches + build artifacts
 	rm -rf .pytest_cache .mypy_cache .ruff_cache build dist *.egg-info
