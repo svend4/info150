@@ -214,7 +214,72 @@ See `../docs/DEPLOYMENT.md` for the three deployment profiles
 
 ---
 
-## 8. Troubleshooting
+## 8. Update / uninstall
+
+### Update to the latest version
+
+```bash
+# Linux / macOS — from monorepo root
+cd info150
+source .venv/bin/activate
+git pull origin main
+cd triage4
+pip install -e ".[dev]"            # in case pyproject.toml changed
+pip install ruff mypy httpx        # flagship's extra dev deps
+cd web_ui
+npm install                        # in case package.json changed
+```
+
+```powershell
+# Windows PowerShell
+cd C:\Users\<your-username>\info150
+.\.venv\Scripts\Activate.ps1
+git pull origin main
+cd triage4
+pip install -e ".[dev]"
+pip install ruff mypy httpx
+cd web_ui
+npm install
+```
+
+Then restart `uvicorn` (Ctrl+C, re-run) and `npm run dev` to pick up
+backend / frontend changes.
+
+### Uninstall just the flagship
+
+```bash
+# Linux / macOS
+cd info150/triage4
+make clean
+pip uninstall -y triage4
+rm -rf web_ui/node_modules web_ui/dist
+```
+
+```powershell
+# Windows PowerShell
+cd C:\Users\<your-username>\info150\triage4
+pip uninstall -y triage4
+Remove-Item -Recurse -Force web_ui\node_modules, web_ui\dist -ErrorAction SilentlyContinue
+```
+
+### Docker cleanup
+
+```bash
+cd info150/triage4
+make docker-compose-down
+docker rmi triage4:0.1.0
+```
+
+### Full monorepo uninstall
+
+For the comprehensive recipe (all 17 packages, venv, every
+`node_modules/`, every cache) — Linux/macOS AND Windows PowerShell
+variants — see
+[`../../INSTALL.md#uninstall--remove-a-package-or-the-whole-monorepo`](../../INSTALL.md#uninstall--remove-a-package-or-the-whole-monorepo).
+
+---
+
+## 9. Troubleshooting
 
 | Symptom                                          | Fix                                                                                  |
 |--------------------------------------------------|--------------------------------------------------------------------------------------|
@@ -230,7 +295,7 @@ See `../docs/DEPLOYMENT.md` for the three deployment profiles
 
 ---
 
-## 9. File map
+## 10. File map
 
 ```
 triage4/web_ui/
@@ -258,7 +323,7 @@ Backend code: `../triage4/ui/dashboard_api.py` (one level up).
 
 ---
 
-## 10. Sibling Web UIs
+## 11. Sibling Web UIs
 
 The 14 catalogue siblings each ship their own minimal sibling-level
 Web UI under `<sibling>/web_ui/`. They follow the same React+Vite+TS
@@ -268,7 +333,7 @@ sibling catalogue.
 
 ---
 
-## 11. See also
+## 12. See also
 
 - `../README.md` — flagship overview (DARPA Gates, K3 matrix)
 - `../docs/STATUS.md` — honest project status

@@ -153,7 +153,67 @@ start clinic.html
 
 ---
 
-## 8. Troubleshooting
+## 8. Update / uninstall
+
+### Update to the latest version
+
+Run from the monorepo root (two levels up from this folder).
+
+```bash
+# Linux / macOS
+cd ../..                          # to info150/
+source .venv/bin/activate
+git pull origin main
+cd triage4-clinic
+pip install -e ".[ui]"             # in case pyproject.toml changed
+cd web_ui
+npm install                        # in case package.json changed
+```
+
+```powershell
+# Windows PowerShell
+cd ..\..
+.\.venv\Scripts\Activate.ps1
+git pull origin main
+cd triage4-clinic
+pip install -e ".[ui]"
+cd web_ui
+npm install
+```
+
+Then restart `uvicorn` (Ctrl+C in its terminal, re-run) and
+`npm run dev` to pick up backend / frontend changes.
+
+### Uninstall just this sibling
+
+```bash
+# Linux / macOS — from this directory
+cd ..                              # to triage4-clinic/
+make clean
+pip uninstall -y triage4-clinic
+rm -rf web_ui/node_modules web_ui/dist
+```
+
+```powershell
+# Windows PowerShell
+cd ..
+pip uninstall -y triage4-clinic
+Remove-Item -Recurse -Force web_ui\node_modules, web_ui\dist -ErrorAction SilentlyContinue
+```
+
+The folder `triage4-clinic/` itself stays on disk. To wipe it
+completely, see the **full monorepo uninstall** recipe.
+
+### Full monorepo uninstall
+
+For the comprehensive recipe (all 17 packages, venv, Docker, every
+`node_modules/`, every cache) — Linux/macOS AND Windows PowerShell
+variants — see
+[`../../INSTALL.md#uninstall--remove-a-package-or-the-whole-monorepo`](../../INSTALL.md#uninstall--remove-a-package-or-the-whole-monorepo).
+
+---
+
+## 9. Troubleshooting
 
 | Symptom                                          | Fix                                                                                  |
 |--------------------------------------------------|--------------------------------------------------------------------------------------|
@@ -167,7 +227,7 @@ start clinic.html
 
 ---
 
-## 9. File map
+## 10. File map
 
 ```
 web_ui/
@@ -189,7 +249,7 @@ Backend code: `../triage4_clinic/ui/dashboard_api.py`.
 
 ---
 
-## 10. See also
+## 11. See also
 
 - `../README.md` — sibling overview (ClinicalPreTriageEngine, decision-support framing)
 - `../../DEMOS.md` — full UI catalogue
