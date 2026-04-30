@@ -118,7 +118,8 @@ package owns its own copy free to diverge.
 ## Installation from scratch
 
 Step-by-step from a clean machine. Tested on Linux + macOS; Windows via
-WSL2 has the same flow.
+WSL2 has the same flow. **For per-package detail, troubleshooting, and
+uninstall instructions see [`INSTALL.md`](INSTALL.md).**
 
 ### 1. Prerequisites
 
@@ -191,6 +192,24 @@ done
 
 That mirrors the matrix in `.github/workflows/qa.yml`.
 
+### 6. Docker (flagship dashboard only)
+
+The flagship `triage4/` ships a slim Dockerfile + docker-compose. No
+Python install needed on the host:
+
+```bash
+cd triage4
+make docker-compose-up         # docker compose up -d
+curl http://localhost:8000/health
+make docker-compose-down       # docker compose down
+```
+
+For TLS reverse-proxy (`docker compose --profile edge up -d`) and the
+three deployment profiles (container / systemd / edge) see
+[`triage4/docs/DEPLOYMENT.md`](triage4/docs/DEPLOYMENT.md). The 14
+siblings + biocore + portal do not ship Docker images — they're
+libraries, not services.
+
 CI (`.github/workflows/qa.yml`) runs the full matrix across all
 17 packages on every push to `main` or `claude/**`. See the workflow
 file for the per-package matrix definition.
@@ -201,6 +220,7 @@ For a given goal, jump here:
 
 | If you want to…                                           | Read first                                                     |
 |-----------------------------------------------------------|----------------------------------------------------------------|
+| Install + run any package step by step                    | [`INSTALL.md`](INSTALL.md)                                     |
 | Understand the flagship stack                             | [`triage4/README.md`](triage4/README.md) → [`triage4/docs/STATUS.md`](triage4/docs/STATUS.md) |
 | Understand the 14-sibling philosophy                      | [`DOMAIN_ADAPTATIONS.md`](DOMAIN_ADAPTATIONS.md)               |
 | Understand the biocore extraction policy                  | [`biocore/README.md`](biocore/README.md) + DOMAIN_ADAPTATIONS §7 |

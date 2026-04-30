@@ -140,6 +140,40 @@ npm install
 npm run dev
 ```
 
+### Docker / docker-compose
+
+Слим-образ (< 200 MB) с FastAPI dashboard внутри. Production-ready
+hardening: read-only rootfs, dropped caps, no-new-privileges, healthcheck.
+
+```bash
+# Простейшая сборка + запуск
+make docker-build       # docker build -t triage4:0.1.0 .
+make docker-run         # docker run --rm -p 8000:8000 triage4:0.1.0
+curl http://localhost:8000/health
+```
+
+Через `docker-compose.yml` (восстанавливается после рестарта, healthcheck,
+hardening настройки):
+
+```bash
+make docker-compose-up      # docker compose up -d
+curl http://localhost:8000/health
+make docker-compose-down    # docker compose down
+```
+
+С TLS-фронтендом (nginx reverse-proxy на 8443) — поднимается через
+профиль `edge`. Перед запуском подложите валидные TLS-сертификаты в
+`configs/` и заполните bearer-auth в `configs/nginx.conf`:
+
+```bash
+docker compose --profile edge up -d
+```
+
+Конфигурация runtime — через переменные окружения:
+`TRIAGE4_CONFIG=/app/configs/production.yaml`,
+`TRIAGE4_LOG_LEVEL=info`. Полные профили деплоя (container / systemd /
+edge) — в [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md).
+
 ### Тесты
 
 ```bash
