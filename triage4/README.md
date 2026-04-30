@@ -52,13 +52,27 @@ triage'а (DARPA Triage Challenge Event 3 и аналогичные сценар
 
 ## Быстрый старт
 
+С чистой машины — скачать, установить, прогнать тесты:
+
 ```bash
+# 1. Скачать монорепо
+git clone https://github.com/svend4/info150.git
+cd info150/triage4
+
+# 2. Виртуальное окружение
 python -m venv .venv
 source .venv/bin/activate
+
+# 3. Установить + проверить + прогнать бенчмарк
 make install-dev        # либо: pip install -e '.[dev]' && pip install ruff mypy httpx
-make qa                 # ruff + mypy + claims-lint + pytest (595 tests, ~3 s)
+make qa                 # ruff + mypy + claims-lint + pytest (~3 s)
 make benchmark          # полный pipeline на 8 фикстурных пациентах
 ```
+
+Если уже скачали репо ранее — пропустите шаг 1, начните с `cd info150/triage4`.
+
+Полная инструкция по установке всех 17 пакетов (биокор, портал,
+14 сиблингов) — в [корневом README](../README.md#installation-from-scratch).
 
 Все основные задачи — через `make help`. Типичные:
 
