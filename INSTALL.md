@@ -15,6 +15,7 @@ this file is the deep reference.
 - [Detailed walkthrough — `portal/`](#detailed-walkthrough--portal)
 - [Detailed walkthrough — the 14 siblings](#detailed-walkthrough--the-14-siblings)
 - [Full monorepo install in one shot](#full-monorepo-install-in-one-shot)
+- [Windows / PowerShell without make](#windows--powershell-without-make)
 - [Docker — flagship only](#docker--flagship-only)
 - [Web UI — flagship only](#web-ui--flagship-only)
 - [Troubleshooting](#troubleshooting)
@@ -29,11 +30,20 @@ this file is the deep reference.
 | Python      | 3.11+   | every package — pinned in each `pyproject.toml`        |
 | pip         | 23+     | bundled with Python; upgrade if older                  |
 | git         | 2.30+   | clone + branch operations                              |
-| GNU make    | any     | every `make install-dev` / `make qa` / `make demo`     |
+| GNU make    | any     | optional — every `make install-dev` / `make qa` / `make demo` is also available as a direct `pip` / `pytest` command (see [Windows section](#windows--powershell-without-make) below) |
 | Docker      | 24+     | optional — only for `triage4/`'s slim image            |
 | docker-compose | v2   | optional — for `make docker-compose-up`                |
 | Node.js     | 18+     | optional — only for `triage4/web_ui/` (React + Vite)   |
 | npm         | 9+      | optional — only for the web UI                         |
+
+Linux + macOS ship `make` and bash; the `make ...` recipes work
+out-of-the-box. **Windows users have two options:**
+
+1. Install GNU make (`winget install GnuWin32.Make`, `choco install make`,
+   or use WSL2) and follow the same `make ...` flow as Linux.
+2. Skip `make` entirely and use the direct `pip` / `pytest` commands —
+   see the dedicated [Windows / PowerShell](#windows--powershell-without-make)
+   section.
 
 Linux + macOS are tested. Windows works through WSL2; native Windows
 PowerShell may need path adjustments in some Make targets.
@@ -67,10 +77,32 @@ git checkout claude/analyze-documents-structure-Ik1KX
 
 (Optional) Create a Python virtual environment for the whole monorepo:
 
+**Linux / macOS:**
+
 ```bash
 python -m venv .venv
-source .venv/bin/activate          # Linux / macOS
-# .venv\Scripts\Activate.ps1       # Windows PowerShell
+source .venv/bin/activate
+```
+
+**Windows PowerShell:**
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+```
+
+If PowerShell blocks the activation script with a security error,
+allow signed scripts for the current user once:
+
+```powershell
+Set-ExecutionPolicy -Scope CurrentUser RemoteSigned
+```
+
+**Windows cmd.exe:**
+
+```cmd
+python -m venv .venv
+.venv\Scripts\activate.bat
 ```
 
 A single venv shared across all 17 packages works fine — every
@@ -318,6 +350,131 @@ each).
 
 This mirrors `.github/workflows/qa.yml` — the CI matrix runs each
 package in parallel.
+
+---
+
+## Windows / PowerShell without make
+
+Windows doesn't ship GNU make and legacy PowerShell 5.x doesn't accept
+`&&` as a statement separator. Two clean options:
+
+### Option A — install GNU make (recommended)
+
+One of:
+
+```powershell
+winget install GnuWin32.Make            # winget (bundled with Windows 11)
+choco install make                      # if you use chocolatey
+scoop install make                      # if you use scoop
+```
+
+After install, restart PowerShell and verify with `make --version`.
+The rest of this guide then works unchanged on Windows.
+
+### Option B — use the equivalent pip / pytest / python commands
+
+Every `make` target in the monorepo is a thin wrapper. Here are the
+direct equivalents for the flagship and any sibling.
+
+**Flagship `triage4/` from a clean clone:**
+
+```powershell
+# 1. From C:\Users\<you>\info150 — create + activate venv
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+
+# 2. Enter the flagship
+cd triage4
+
+# 3. Install (replaces `make install-dev`)
+pip install -e ".[dev]"
+pip install ruff mypy httpx
+
+# 4. QA gate (replaces `make qa`)
+ruff check triage4 tests examples scripts
+python -m mypy --ignore-missing-imports triage4
+python scripts/claims_lint.py
+python -m pytest -q
+
+# 5. Benchmark (replaces `make benchmark`)
+python examples/full_pipeline_benchmark.py
+
+# 6. Dashboard (live)
+uvicorn triage4.ui.dashboard_api:app --reload
+# In another terminal:
+Invoke-WebRequest http://127.0.0.1:8000/health
+```
+
+**Any sibling — same shape minus httpx + claims-lint:**
+
+```powershell
+cd C:\Users\<you>\info150\triage4-rescue
+pip install -e ".[dev]"
+pip install ruff mypy
+
+ruff check triage4_rescue tests
+python -m mypy --ignore-missing-imports triage4_rescue
+python -m pytest -q
+
+# Demo
+python -m triage4_rescue.sim.demo_runner
+```
+
+**`biocore/`:**
+
+```powershell
+cd C:\Users\<you>\info150\biocore
+pip install -e ".[dev]"
+pip install ruff mypy
+
+ruff check biocore tests
+python -m mypy --ignore-missing-imports --strict biocore
+python -m pytest -q
+```
+
+**`portal/`:**
+
+```powershell
+cd C:\Users\<you>\info150\portal
+pip install -e ".[dev]"
+pip install ruff mypy
+
+ruff check portal tests
+python -m mypy --ignore-missing-imports --strict portal
+python -m pytest -q
+```
+
+### Common Windows pitfalls
+
+| Symptom                                                         | Fix                                                            |
+|-----------------------------------------------------------------|----------------------------------------------------------------|
+| `Das Token "&&" ist in dieser Version kein gültiges …`          | PowerShell 5.x — split into separate lines or use `;`. Or upgrade to PowerShell 7+. |
+| `source : Die Benennung "source" wurde nicht … erkannt`         | `source` is bash. Use `.\.venv\Scripts\Activate.ps1` instead.  |
+| `make : Die Benennung "make" wurde nicht … erkannt`             | Either install make (Option A above) or use pip commands directly (Option B). |
+| `cd : Der Pfad "...\info150\info150\..." kann nicht gefunden werden` | You're already inside `info150`. Use `cd triage4`, not `cd info150/triage4`. |
+| `ModuleNotFoundError: No module named 'triage4.ui'` from `uvicorn` | You haven't `pip install -e .` yet, or you're not inside `triage4/`. `cd triage4 && pip install -e ".[dev]"`. |
+| `no configuration file provided: not found` from `docker compose` | You must be inside `triage4/` (where `docker-compose.yml` lives), not in the monorepo root. |
+| `Cannot be loaded because running scripts is disabled on this system` (when activating venv) | Run `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` once. |
+| `pip install -e '.[dev]'` (single quotes) fails to interpret `[dev]` | Use double quotes in PowerShell: `pip install -e ".[dev]"`. Single quotes work in cmd.exe but not always in PS. |
+
+### One-shot Windows install of the flagship + benchmark
+
+Copy-paste from a clean state:
+
+```powershell
+git clone https://github.com/svend4/info150.git
+cd info150
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+cd triage4
+pip install -e ".[dev]"
+pip install ruff mypy httpx
+python -m pytest -q
+python examples/full_pipeline_benchmark.py
+```
+
+That should produce the 759-test green sweep + the 8-casualty
+end-to-end benchmark output documented in `triage4/README.md`.
 
 ---
 

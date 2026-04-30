@@ -117,9 +117,13 @@ package owns its own copy free to diverge.
 
 ## Installation from scratch
 
-Step-by-step from a clean machine. Tested on Linux + macOS; Windows via
-WSL2 has the same flow. **For per-package detail, troubleshooting, and
-uninstall instructions see [`INSTALL.md`](INSTALL.md).**
+Step-by-step from a clean machine. Tested on Linux + macOS; the same
+flow works on Windows PowerShell 7+ or WSL2. **Windows users without
+make:** see the [Windows / PowerShell section in `INSTALL.md`](INSTALL.md#windows--powershell-without-make)
+for a copy-paste recipe that uses `pip` / `pytest` directly.
+
+**For per-package detail, troubleshooting, and uninstall instructions
+see [`INSTALL.md`](INSTALL.md).**
 
 ### 1. Prerequisites
 
