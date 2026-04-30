@@ -23,7 +23,9 @@ alongside this file.
 - [Docker — flagship only](#docker--flagship-only)
 - [Web UI — flagship only](#web-ui--flagship-only)
 - [Troubleshooting](#troubleshooting)
-- [Uninstall / clean](#uninstall--clean)
+- [Update — pull the latest version of the monorepo](#update--pull-the-latest-version-of-the-monorepo)
+- [Uninstall — remove a package or the whole monorepo](#uninstall--remove-a-package-or-the-whole-monorepo)
+- [Reinstall after uninstall](#reinstall-after-uninstall)
 
 ---
 
@@ -651,32 +653,383 @@ for why claims discipline is enforced.
 
 ---
 
-## Uninstall / clean
+## Update — pull the latest version of the monorepo
+
+Update workflow once you've already installed. Run from the
+monorepo root (`info150/`).
+
+### Step 1 — fetch + fast-forward
+
+**Linux / macOS:**
+
+```bash
+cd info150
+source .venv/bin/activate
+git fetch origin
+git pull origin main          # or: git pull origin claude/<branch> if on a feature branch
+```
+
+**Windows PowerShell:**
+
+```powershell
+cd C:\Users\<your-username>\info150
+.\.venv\Scripts\Activate.ps1
+git fetch origin
+git pull origin main
+```
+
+If `git pull` reports merge conflicts, resolve them in the file
+that conflicts (`git status` shows the file), then `git add <file>`
+and `git commit`.
+
+### Step 2 — re-install editable Python packages
+
+`pip install -e` is **already** "live" — code changes you `git pull`
+take effect immediately, no re-install needed. **But** if any
+`pyproject.toml` changed (new dependency, new version pin), you DO
+need to re-install:
+
+```bash
+# Linux / macOS — same on Windows PS
+pip install -e ./biocore
+pip install -e ./portal
+for pkg in triage4 triage4-*; do
+  pip install -e ./$pkg
+done
+```
+
+In PowerShell the loop syntax differs:
+
+```powershell
+foreach ($pkg in @("triage4","triage4-aqua","triage4-bird","triage4-clinic","triage4-crowd","triage4-drive","triage4-farm","triage4-fish","triage4-fit","triage4-home","triage4-pet","triage4-rescue","triage4-site","triage4-sport","triage4-wild")) {
+    pip install -e .\$pkg
+}
+```
+
+If you want the optional Web UI extras updated too:
+
+```bash
+# any sibling, e.g. triage4-fish
+cd triage4-fish
+pip install -e ".[ui]" --upgrade-strategy eager
+```
+
+### Step 3 — refresh frontend dependencies
+
+Frontend `node_modules/` does NOT auto-update on `git pull`. If
+`package.json` or `package-lock.json` changed, refresh per Web UI:
+
+```bash
+# Linux / macOS — from any web_ui/
+npm install              # picks up package.json changes
+# or, to refresh against the lockfile exactly:
+npm ci                   # clean install — deletes node_modules/ first
+```
+
+```powershell
+# Windows PowerShell — same commands
+cd C:\Users\<your-username>\info150\<package>\web_ui
+npm install
+```
+
+To refresh **every** Web UI in one shot:
+
+```bash
+# Linux / macOS
+for d in triage4 triage4-*; do
+  if [ -d "$d/web_ui" ]; then
+    ( cd "$d/web_ui" && npm install ) || break
+  fi
+done
+```
+
+```powershell
+# Windows PowerShell
+foreach ($d in @("triage4","triage4-aqua","triage4-bird","triage4-clinic","triage4-crowd","triage4-drive","triage4-farm","triage4-fish","triage4-fit","triage4-home","triage4-pet","triage4-rescue","triage4-site","triage4-sport","triage4-wild")) {
+    if (Test-Path "$d\web_ui") {
+        Push-Location "$d\web_ui"
+        npm install
+        Pop-Location
+    }
+}
+```
+
+### Step 4 — re-run tests to confirm the update works
 
 Per package:
 
 ```bash
 cd <package>
-make clean              # removes .pytest_cache, .mypy_cache, .ruff_cache, build artefacts
-pip uninstall -y <package-name>
+make qa            # ruff + mypy + pytest
 ```
 
-Whole monorepo:
+Or the whole monorepo (see [Full monorepo install in one shot](#full-monorepo-install-in-one-shot)
+section above for the full bash / PowerShell loop).
+
+### Step 5 — restart any running services
+
+After a backend code change, **stop** any running `uvicorn` (Ctrl+C
+in its terminal) and start it again. The `--reload` flag picks up
+single-file edits but **not** import-graph changes from a fresh
+`git pull`. Same for `npm run dev` — it auto-reloads modified
+files but not new files added by the pull.
+
+```bash
+# stop both terminals (Ctrl+C), then:
+uvicorn <module>.ui.dashboard_api:app --reload    # terminal 1
+npm run dev                                        # terminal 2 (in web_ui/)
+```
+
+### Pip cache + npm cache (optional cleanup)
+
+Pip and npm sometimes hold stale package metadata. Clear them only
+if you see strange "package XYZ has version A.B but resolves to
+C.D" errors:
+
+```bash
+pip cache purge          # ~50 MB
+npm cache clean --force  # ~hundreds of MB
+```
+
+---
+
+## Uninstall — remove a package or the whole monorepo
+
+Three levels of uninstall, in increasing order of nuclear:
+
+1. **Soft clean** — remove caches + build artefacts; leave editable installs.
+2. **Per-package uninstall** — drop one package from the venv.
+3. **Full monorepo uninstall** — drop everything, including the venv.
+
+### Level 1 — soft clean (no uninstall)
+
+Removes `.pytest_cache`, `.mypy_cache`, `.ruff_cache`, `build/`,
+`dist/`, `*.egg-info/`, `__pycache__/`. **Does not** uninstall the
+package — only deletes generated artefacts.
+
+```bash
+# Linux / macOS — per package
+cd <package>
+make clean
+```
+
+```powershell
+# Windows PowerShell — make clean works if you have GNU make
+cd <package>
+make clean
+# Without make, equivalent commands:
+Remove-Item -Recurse -Force .pytest_cache, .mypy_cache, .ruff_cache, build, dist, *.egg-info -ErrorAction SilentlyContinue
+Get-ChildItem -Recurse -Directory -Filter __pycache__ | Remove-Item -Recurse -Force
+```
+
+Whole monorepo soft-clean:
+
+```bash
+# Linux / macOS
+cd info150
+for pkg in biocore portal triage4 triage4-*; do
+  ( cd "$pkg" && make clean ) 2>/dev/null || true
+done
+```
+
+```powershell
+# Windows PowerShell
+cd C:\Users\<your-username>\info150
+foreach ($pkg in @("biocore","portal","triage4","triage4-aqua","triage4-bird","triage4-clinic","triage4-crowd","triage4-drive","triage4-farm","triage4-fish","triage4-fit","triage4-home","triage4-pet","triage4-rescue","triage4-site","triage4-sport","triage4-wild")) {
+    Push-Location $pkg
+    Remove-Item -Recurse -Force .pytest_cache, .mypy_cache, .ruff_cache, build, dist, *.egg-info -ErrorAction SilentlyContinue
+    Get-ChildItem -Recurse -Directory -Filter __pycache__ | Remove-Item -Recurse -Force
+    Pop-Location
+}
+```
+
+### Level 2 — uninstall ONE package
+
+Each package's distribution name (the `name = ...` in its
+`pyproject.toml`) follows the **dash-form** convention:
+
+| Folder              | Distribution name      |
+|---------------------|------------------------|
+| `biocore/`          | `biocore`              |
+| `portal/`           | `portal`               |
+| `triage4/`          | `triage4`              |
+| `triage4-aqua/`     | `triage4-aqua`         |
+| `triage4-bird/`     | `triage4-bird`         |
+| `triage4-clinic/`   | `triage4-clinic`       |
+| `triage4-crowd/`    | `triage4-crowd`        |
+| `triage4-drive/`    | `triage4-drive`        |
+| `triage4-farm/`     | `triage4-farm`         |
+| `triage4-fish/`     | `triage4-fish`         |
+| `triage4-fit/`      | `triage4-fit`          |
+| `triage4-home/`     | `triage4-home`         |
+| `triage4-pet/`      | `triage4-pet`          |
+| `triage4-rescue/`   | `triage4-rescue`       |
+| `triage4-site/`     | `triage4-site`         |
+| `triage4-sport/`    | `triage4-sport`        |
+| `triage4-wild/`     | `triage4-wild`         |
+
+Uninstall + clean the artefacts (e.g. `triage4-fish`):
+
+```bash
+# Linux / macOS
+cd info150/triage4-fish
+make clean
+pip uninstall -y triage4-fish
+# Optional: remove the Web UI's node_modules
+rm -rf web_ui/node_modules web_ui/dist
+```
+
+```powershell
+# Windows PowerShell
+cd C:\Users\<your-username>\info150\triage4-fish
+Remove-Item -Recurse -Force .pytest_cache, .mypy_cache, .ruff_cache, build, dist, *.egg-info -ErrorAction SilentlyContinue
+pip uninstall -y triage4-fish
+# Optional: remove web_ui artefacts
+Remove-Item -Recurse -Force web_ui\node_modules, web_ui\dist -ErrorAction SilentlyContinue
+```
+
+To check the package is gone: `pip show triage4-fish` returns
+"Package(s) not found".
+
+The folder `triage4-fish/` itself remains on disk. If you want it
+gone too, see Level 3.
+
+### Level 3 — full monorepo uninstall
+
+This removes every editable install, the venv, every
+`node_modules/`, and (optionally) the cloned repository itself.
+
+**Linux / macOS:**
 
 ```bash
 cd info150
+
+# 1. Make sure the venv is active so pip uninstall hits the right env
+source .venv/bin/activate
+
+# 2. Soft-clean every package
 for pkg in biocore portal triage4 triage4-*; do
-  ( cd "$pkg" && make clean ) || true
-  pip uninstall -y "$(basename "$pkg")" 2>/dev/null || true
+  ( cd "$pkg" && make clean ) 2>/dev/null || true
 done
-deactivate            # exit venv
-rm -rf .venv          # delete venv if you want a fully clean slate
+
+# 3. Uninstall every editable install (errors are harmless — some packages
+#    might have been removed already)
+pip uninstall -y biocore portal triage4 \
+  triage4-aqua triage4-bird triage4-clinic triage4-crowd triage4-drive \
+  triage4-farm triage4-fish triage4-fit triage4-home triage4-pet \
+  triage4-rescue triage4-site triage4-sport triage4-wild 2>/dev/null
+
+# 4. Remove every Web UI's node_modules + dist
+for d in triage4 triage4-*; do
+  rm -rf "$d/web_ui/node_modules" "$d/web_ui/dist" 2>/dev/null
+done
+
+# 5. Leave the venv and delete it
+deactivate
+rm -rf .venv
+
+# 6. (NUCLEAR) delete the cloned repo entirely
+cd ..
+# rm -rf info150         # ← uncomment ONLY if you want it completely gone
 ```
 
-Docker artefacts:
+**Windows PowerShell:**
+
+```powershell
+cd C:\Users\<your-username>\info150
+.\.venv\Scripts\Activate.ps1
+
+# 1. Soft-clean every package
+$packages = @(
+    "biocore","portal","triage4",
+    "triage4-aqua","triage4-bird","triage4-clinic","triage4-crowd",
+    "triage4-drive","triage4-farm","triage4-fish","triage4-fit",
+    "triage4-home","triage4-pet","triage4-rescue","triage4-site",
+    "triage4-sport","triage4-wild"
+)
+foreach ($pkg in $packages) {
+    Push-Location $pkg
+    Remove-Item -Recurse -Force .pytest_cache, .mypy_cache, .ruff_cache, build, dist, *.egg-info -ErrorAction SilentlyContinue
+    Get-ChildItem -Recurse -Directory -Filter __pycache__ -ErrorAction SilentlyContinue | Remove-Item -Recurse -Force
+    Pop-Location
+}
+
+# 2. Uninstall every editable install
+pip uninstall -y biocore portal triage4 `
+    triage4-aqua triage4-bird triage4-clinic triage4-crowd triage4-drive `
+    triage4-farm triage4-fish triage4-fit triage4-home triage4-pet `
+    triage4-rescue triage4-site triage4-sport triage4-wild
+
+# 3. Remove every Web UI's node_modules + dist
+foreach ($d in @("triage4") + ($packages | Where-Object { $_ -like "triage4-*" })) {
+    if (Test-Path "$d\web_ui") {
+        Remove-Item -Recurse -Force "$d\web_ui\node_modules", "$d\web_ui\dist" -ErrorAction SilentlyContinue
+    }
+}
+
+# 4. Leave the venv and delete it
+deactivate
+Remove-Item -Recurse -Force .venv
+
+# 5. (NUCLEAR) delete the cloned repo entirely
+cd ..
+# Remove-Item -Recurse -Force info150     # ← uncomment to wipe everything
+```
+
+After step 4 your environment is back to "Python is installed but
+nothing from this monorepo is". After step 5 the cloned repo is
+gone too.
+
+### Docker cleanup (flagship only)
+
+The flagship's Dockerfile + docker-compose state lives outside the
+venv. Clean separately:
+
+```bash
+# Linux / macOS — from info150/triage4/
+make docker-compose-down                  # docker compose down
+docker rmi triage4:0.1.0                  # remove the image
+docker image prune -f                     # remove dangling images
+docker volume prune -f                    # remove unused volumes
+```
+
+```powershell
+# Windows PowerShell — same commands work
+cd C:\Users\<your-username>\info150\triage4
+make docker-compose-down
+docker rmi triage4:0.1.0
+docker image prune -f
+docker volume prune -f
+```
+
+If you used the `edge` profile (nginx reverse proxy):
 
 ```bash
 cd info150/triage4
-make docker-compose-down
-docker rmi triage4:0.1.0
+docker compose --profile edge down
+```
+
+### Pip / npm caches (optional final cleanup)
+
+If you want to reclaim disk space after a full uninstall:
+
+```bash
+pip cache purge                  # ~50 MB
+npm cache clean --force          # can be hundreds of MB
+```
+
+---
+
+## Reinstall after uninstall
+
+If you've done a Level 3 uninstall and want to start over without
+re-cloning, you don't need to. The folder `info150/` still has the
+git checkout. Just:
+
+```bash
+cd info150
+python -m venv .venv
+source .venv/bin/activate          # Linux / macOS
+# .\.venv\Scripts\Activate.ps1     # Windows PowerShell
+# Then follow Section "Per-package install" or "Full monorepo install in one shot" above.
 ```
