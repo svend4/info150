@@ -115,17 +115,63 @@ log + async jobs, with rescue-specific role vocabulary). The pattern
 is **copy-fork, not import** — no v13 source flows through; the rescue
 package owns its own copy free to diverge.
 
-## Quickstart
+## Installation from scratch
 
-Each package is independently installable + testable.
+Step-by-step from a clean machine. Tested on Linux + macOS; Windows via
+WSL2 has the same flow. **For per-package detail, troubleshooting, and
+uninstall instructions see [`INSTALL.md`](INSTALL.md).**
+
+### 1. Prerequisites
+
+- **Python 3.11+** (every package's `pyproject.toml` pins
+  `requires-python = ">=3.11"`).
+- **git** — for cloning the repo.
+- **GNU make** — every package's developer entry points (`install-dev`,
+  `qa`, `demo`, `benchmark`) are Makefile targets.
+- *(optional)* **Docker + docker-compose** — only if you want the
+  flagship dashboard image (`triage4/Dockerfile`,
+  `triage4/docker-compose.yml`).
+- *(optional)* **Node.js 18+ + npm** — only if you want to run the
+  flagship's web UI (`triage4/web_ui/`).
+
+### 2. Clone the repository
 
 ```bash
-# flagship
-cd triage4 && make install-dev && make qa
+git clone https://github.com/svend4/info150.git
+cd info150
+```
 
-# any sibling — same shape
-cd triage4-rescue && make install-dev && make qa
+### 3. Create a virtual environment (recommended)
 
+```bash
+python -m venv .venv
+source .venv/bin/activate          # Linux / macOS
+# .venv\Scripts\activate           # Windows PowerShell
+```
+
+### 4. Install + run a package
+
+Pick whichever package you want to work with. Every package follows
+the same three-step ritual: `install-dev → qa → demo` (or
+`benchmark` for the flagship).
+
+```bash
+# flagship — DARPA Triage Challenge stack
+cd triage4
+make install-dev                   # pip install -e '.[dev]' + ruff + mypy + httpx
+make qa                            # ruff + mypy + claims-lint + pytest (~3 s)
+make benchmark                     # 8-casualty end-to-end pipeline
+```
+
+```bash
+# any sibling — same shape, no httpx needed
+cd triage4-rescue
+make install-dev                   # pip install -e '.[dev]' + ruff + mypy
+make qa                            # ruff + mypy + pytest
+make demo                          # one-incident triage demo
+```
+
+```bash
 # shared utility layer
 cd biocore && make install-dev && make qa
 
@@ -133,9 +179,40 @@ cd biocore && make install-dev && make qa
 cd portal && make install-dev && make qa
 ```
 
+`make help` inside any package lists every target available there
+(test / lint / mypy / clean / package-specific demos).
+
+### 5. Run the full CI sweep across all 17 packages locally (optional)
+
+```bash
+for pkg in biocore portal triage4 triage4-*; do
+  ( cd "$pkg" && make install-dev && make qa ) || break
+done
+```
+
+That mirrors the matrix in `.github/workflows/qa.yml`.
+
+### 6. Docker (flagship dashboard only)
+
+The flagship `triage4/` ships a slim Dockerfile + docker-compose. No
+Python install needed on the host:
+
+```bash
+cd triage4
+make docker-compose-up         # docker compose up -d
+curl http://localhost:8000/health
+make docker-compose-down       # docker compose down
+```
+
+For TLS reverse-proxy (`docker compose --profile edge up -d`) and the
+three deployment profiles (container / systemd / edge) see
+[`triage4/docs/DEPLOYMENT.md`](triage4/docs/DEPLOYMENT.md). The 14
+siblings + biocore + portal do not ship Docker images — they're
+libraries, not services.
+
 CI (`.github/workflows/qa.yml`) runs the full matrix across all
-17 packages on every push. See the workflow file for the per-package
-matrix definition.
+17 packages on every push to `main` or `claude/**`. See the workflow
+file for the per-package matrix definition.
 
 ## Where to start reading
 
@@ -143,6 +220,7 @@ For a given goal, jump here:
 
 | If you want to…                                           | Read first                                                     |
 |-----------------------------------------------------------|----------------------------------------------------------------|
+| Install + run any package step by step                    | [`INSTALL.md`](INSTALL.md)                                     |
 | Understand the flagship stack                             | [`triage4/README.md`](triage4/README.md) → [`triage4/docs/STATUS.md`](triage4/docs/STATUS.md) |
 | Understand the 14-sibling philosophy                      | [`DOMAIN_ADAPTATIONS.md`](DOMAIN_ADAPTATIONS.md)               |
 | Understand the biocore extraction policy                  | [`biocore/README.md`](biocore/README.md) + DOMAIN_ADAPTATIONS §7 |
