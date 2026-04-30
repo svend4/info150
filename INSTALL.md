@@ -566,7 +566,19 @@ Runtime configuration via env vars:
 
 ---
 
-## Web UI — flagship only
+## Web UI — flagship + every sibling
+
+Each of the 14 catalogue siblings + the flagship now ships its own
+React + Vite + TypeScript dashboard under `<package>/web_ui/`.
+**Copy-paste install + run recipes for each one — both Linux/macOS
+and Windows PowerShell — live in the per-package
+`web_ui/README.md` file.** See the table at
+[`DEMOS.md#detailed-run-instructions--per-sibling-readmes`](DEMOS.md#detailed-run-instructions--per-sibling-readmes).
+
+The flagship's UI is the most feature-rich (multi-page, semantic-zoom
+map, replay timeline). The siblings are single-page dashboards.
+
+### Flagship `triage4/web_ui/`
 
 React + Vite dashboard living under `triage4/web_ui/`.
 

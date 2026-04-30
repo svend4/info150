@@ -777,9 +777,13 @@ for that).
 ### Sibling Web UIs
 
 Sibling-level dashboards mirror the flagship's two-tier shape but are
-much smaller (single-page, ~250-300 LOC TS/TSX per sibling). Two
-pilots are live; the rest of the siblings will get the same template
-in a follow-up rollout.
+much smaller (single-page, ~250-300 LOC TS/TSX per sibling). All 14
+catalogue siblings + the flagship now ship Web UIs.
+
+> **Detailed copy-paste run instructions for every sibling — covering
+> Linux/macOS AND Windows PowerShell — live in each sibling's
+> `web_ui/README.md`.** Open the link in the per-sibling subsection
+> below for a self-contained two-terminal recipe.
 
 The pattern per sibling:
 
@@ -798,6 +802,32 @@ The pattern per sibling:
 - **Make targets:** `make ui` (uvicorn), `make ui-html` (offline HTML
   snapshot), `make web-ui-install` (npm install), `make web-ui-dev`
   (vite dev), `make web-ui-build` (production build).
+
+#### Detailed run instructions — per-sibling READMEs
+
+Each sibling's `web_ui/README.md` is **copy-paste ready** for both
+Linux/macOS and Windows PowerShell — prerequisites table, two-
+terminal quickstart, smoke-check, stop instructions, re-seed demo,
+production build, offline HTML snapshot, troubleshooting matrix,
+file map.
+
+| Sibling          | Detailed README                                                            |
+|------------------|----------------------------------------------------------------------------|
+| triage4 flagship | [`triage4/web_ui/README.md`](triage4/web_ui/README.md)                     |
+| triage4-aqua     | [`triage4-aqua/web_ui/README.md`](triage4-aqua/web_ui/README.md)           |
+| triage4-bird     | [`triage4-bird/web_ui/README.md`](triage4-bird/web_ui/README.md)           |
+| triage4-clinic   | [`triage4-clinic/web_ui/README.md`](triage4-clinic/web_ui/README.md)       |
+| triage4-crowd    | [`triage4-crowd/web_ui/README.md`](triage4-crowd/web_ui/README.md)         |
+| triage4-drive    | [`triage4-drive/web_ui/README.md`](triage4-drive/web_ui/README.md)         |
+| triage4-farm     | [`triage4-farm/web_ui/README.md`](triage4-farm/web_ui/README.md)           |
+| triage4-fish     | [`triage4-fish/web_ui/README.md`](triage4-fish/web_ui/README.md)           |
+| triage4-fit      | [`triage4-fit/web_ui/README.md`](triage4-fit/web_ui/README.md)             |
+| triage4-home     | [`triage4-home/web_ui/README.md`](triage4-home/web_ui/README.md)           |
+| triage4-pet      | [`triage4-pet/web_ui/README.md`](triage4-pet/web_ui/README.md)             |
+| triage4-rescue   | [`triage4-rescue/web_ui/README.md`](triage4-rescue/web_ui/README.md)       |
+| triage4-site     | [`triage4-site/web_ui/README.md`](triage4-site/web_ui/README.md)           |
+| triage4-sport    | [`triage4-sport/web_ui/README.md`](triage4-sport/web_ui/README.md)         |
+| triage4-wild     | [`triage4-wild/web_ui/README.md`](triage4-wild/web_ui/README.md)           |
 
 #### `triage4-rescue` — pilot
 
