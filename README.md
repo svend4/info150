@@ -225,6 +225,7 @@ For a given goal, jump here:
 | If you want to…                                           | Read first                                                     |
 |-----------------------------------------------------------|----------------------------------------------------------------|
 | Install + run any package step by step                    | [`INSTALL.md`](INSTALL.md)                                     |
+| Run a demo for any package or the Web UI                  | [`DEMOS.md`](DEMOS.md)                                         |
 | Understand the flagship stack                             | [`triage4/README.md`](triage4/README.md) → [`triage4/docs/STATUS.md`](triage4/docs/STATUS.md) |
 | Understand the 14-sibling philosophy                      | [`DOMAIN_ADAPTATIONS.md`](DOMAIN_ADAPTATIONS.md)               |
 | Understand the biocore extraction policy                  | [`biocore/README.md`](biocore/README.md) + DOMAIN_ADAPTATIONS §7 |

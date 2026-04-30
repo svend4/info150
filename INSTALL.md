@@ -5,6 +5,10 @@ every individual package, plus the optional Docker / Web UI / system
 dependencies. The root [`README.md`](README.md) has the short version;
 this file is the deep reference.
 
+For **what each demo does** and **how to launch the flagship Web UI**,
+see [`DEMOS.md`](DEMOS.md) — it is the third top-level reference
+alongside this file.
+
 ## Table of contents
 
 - [Prerequisites](#prerequisites)
