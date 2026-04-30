@@ -17,7 +17,7 @@ If you are looking for "how do I clone + install", that's in
 - [Flagship `triage4` — 11 named demos + benchmark + stress](#flagship-triage4--11-named-demos--benchmark--stress)
 - [Sibling demos — 14 packages, uniform shape](#sibling-demos--14-packages-uniform-shape)
 - [Portal demo — cross-sibling smoke](#portal-demo--cross-sibling-smoke)
-- [Web UI — flagship only](#web-ui--flagship-only)
+- [Web UI — flagship + pilot siblings](#web-ui--flagship--pilot-siblings)
 - [Programmatic API — embed instead of demo](#programmatic-api--embed-instead-of-demo)
 - [Benchmark + stress targets](#benchmark--stress-targets)
 - [Troubleshooting demos](#troubleshooting-demos)
@@ -28,7 +28,7 @@ If you are looking for "how do I clone + install", that's in
 
 | Package           | Demo command                                      | Web UI               | Special notes |
 |-------------------|---------------------------------------------------|----------------------|---|
-| **`triage4`** flagship | 11 named demos + benchmark + stress         | **FastAPI + React/Vite** | the only package with a UI |
+| **`triage4`** flagship | 11 named demos + benchmark + stress         | **FastAPI + React/Vite** | the original; multi-page |
 | `biocore`         | none (utility library — has no domain to demo)    | —                    | use `make qa` to validate |
 | `portal`          | `python -m portal.cli demo`                       | —                    | needs pilot siblings installed (fish / bird / wild) |
 | `triage4-aqua`    | one-pool lifeguard demo                            | —                    | engine: `PoolWatchEngine` |
@@ -37,34 +37,36 @@ If you are looking for "how do I clone + install", that's in
 | `triage4-crowd`   | one-venue crowd-safety demo                        | —                    | engine: `VenueMonitorEngine` |
 | `triage4-drive`   | one-session driver-monitoring demo                 | —                    | engine: `DriverMonitoringEngine` |
 | `triage4-farm`    | one-herd welfare demo                              | —                    | engine: `WelfareCheckEngine` |
-| `triage4-fish`    | pen-pass aquaculture demo                          | —                    | engine: `AquacultureHealthEngine` (multi-modal) |
+| **`triage4-fish`** | pen-pass aquaculture demo                         | **FastAPI + React/Vite** (pilot) | engine: `AquacultureHealthEngine` (multi-modal) |
 | `triage4-fit`     | one-session coaching demo (inline `python -c`)    | —                    | engine: `RapidFormEngine` |
 | `triage4-home`    | one-day in-home monitoring demo                    | —                    | engine: `HomeMonitoringEngine` |
 | `triage4-pet`     | pet-video demo (owner + vet output)                | —                    | engine: `PetTriageEngine` |
-| `triage4-rescue`  | one-incident mass-casualty demo                    | —                    | engine: `StartProtocolEngine`, plus `multiuser/` package |
+| **`triage4-rescue`** | one-incident mass-casualty demo                | **FastAPI + React/Vite** (pilot) | engine: `StartProtocolEngine`, plus `multiuser/` package |
 | `triage4-site`    | one-shift site-safety demo                         | —                    | engine: `SiteSafetyEngine` |
 | `triage4-sport`   | session sport-performance demo                     | —                    | engine: `SportPerformanceEngine` |
 | `triage4-wild`    | reserve-pass wildlife demo                         | —                    | engine: `WildlifeHealthEngine` |
 
-### Why only flagship has a Web UI
+### Per-sibling Web UI rollout
 
-The 14 siblings are **decision-support libraries**, not services.
-Each one's natural surface is:
+The 14 siblings are **decision-support libraries** at their core, but
+each one is also intended to grow into an **independent application**
+that can spin out into its own repository. To support that, every
+sibling gets an **opt-in** Web UI surface mirroring the flagship
+pattern: a FastAPI dashboard inside the package + a React + Vite +
+TypeScript single-page app under `<sibling>/web_ui/`.
 
-- a Python API (`<Domain>Engine().review(observation)`)
-- a CLI/text demo (the `make demo` target)
-- whatever GUI / dashboard the **consuming application** decides to
-  build on top — mobile app, web SaaS, embedded device firmware, etc.
+Status:
 
-Shipping a per-sibling Web UI inside the library would couple the
-library to a UI framework choice (React? HTMX? Streamlit?) and would
-contradict the per-sibling growth-in-depth policy from
-[`DOMAIN_ADAPTATIONS.md`](DOMAIN_ADAPTATIONS.md).
+- **Flagship** `triage4/` — full multi-page React UI, the original.
+- **Pilot siblings** `triage4-rescue` and `triage4-fish` — opt-in
+  FastAPI + single-page React UI shipped under the `[ui]` extra. See
+  [Sibling Web UIs](#sibling-web-uis) below.
+- **Remaining 12 siblings** — library + text demo only today; the
+  per-sibling UI rollout follows the rescue/fish template.
 
-The **flagship** `triage4/` is the exception because it doubles as a
-research showcase for DARPA Triage Challenge demos — the FastAPI
-dashboard + React UI is part of the demonstration, not part of the
-library contract.
+The Web UI surface is **opt-in** so the library footprint stays
+minimal — `pip install triage4-rescue` does not pull FastAPI; only
+`pip install 'triage4-rescue[ui]'` does.
 
 ### How every demo is invoked (three forms)
 
@@ -673,7 +675,7 @@ python -m portal.cli demo
 
 ---
 
-## Web UI — flagship only
+## Web UI — flagship + pilot siblings
 
 The flagship `triage4/` ships **two** Web UI surfaces:
 
@@ -771,6 +773,123 @@ The Docker image ships **API only** — the React UI is a build-step
 away and is meant to be served by whatever production proxy the
 deployment uses (the `edge` profile in `docker-compose.yml` has nginx
 for that).
+
+### Sibling Web UIs
+
+Sibling-level dashboards mirror the flagship's two-tier shape but are
+much smaller (single-page, ~250-300 LOC TS/TSX per sibling). Two
+pilots are live; the rest of the siblings will get the same template
+in a follow-up rollout.
+
+The pattern per sibling:
+
+- **Backend:** `<sibling>.ui.dashboard_api:app` — FastAPI app with
+  CORS for the standard Vite dev origins, ~120-180 LOC. Endpoints
+  expose the sibling's `Report` / `Alert` shapes as JSON plus a
+  `/export.html` self-contained snapshot that works fully offline.
+- **Frontend:** `<sibling>/web_ui/` — Vite project with `package.json`,
+  `vite.config.ts`, `tsconfig.json`, `index.html`, `src/main.tsx`,
+  `src/App.tsx`, `src/api.ts`, `src/types.ts`, `src/styles.css`.
+  Vite's dev server proxies the sibling's endpoints to the FastAPI
+  backend on `127.0.0.1:8000` so CORS never fires during dev.
+- **Optional install:** `pip install -e ".[ui]"` (or
+  `make install-ui`) — pulls in `fastapi`, `uvicorn`, `httpx`. The
+  base library does **not** depend on any of these.
+- **Make targets:** `make ui` (uvicorn), `make ui-html` (offline HTML
+  snapshot), `make web-ui-install` (npm install), `make web-ui-dev`
+  (vite dev), `make web-ui-build` (production build).
+
+#### `triage4-rescue` — pilot
+
+Single-page dispatcher dashboard for civilian mass-casualty
+incidents. Shows per-tag counts, casualty list, per-casualty
+reasoning + responder cues, and a re-seed button.
+
+```bash
+# Backend (terminal 1) — from triage4-rescue/
+make install-ui              # or: pip install -e ".[ui]"
+make ui                      # uvicorn → http://127.0.0.1:8000
+
+# Frontend (terminal 2) — from triage4-rescue/web_ui/
+npm install                  # one time
+npm run dev                  # http://localhost:5173
+```
+
+Or via Make from the package root:
+
+```bash
+make web-ui-install
+make web-ui-dev
+```
+
+Endpoints:
+
+| Endpoint              | Returns                                                  |
+|-----------------------|----------------------------------------------------------|
+| `GET  /health`        | service status + casualty count                          |
+| `GET  /incident`      | full incident report (assessments + cues + counts)       |
+| `GET  /casualties`    | list of triage assessments                               |
+| `GET  /casualties/{id}` | single assessment + that casualty's responder cues     |
+| `GET  /alerts`        | every responder cue across the incident                  |
+| `POST /demo/reload`   | regenerate the synthetic incident                        |
+| `GET  /export.html`   | self-contained offline HTML snapshot                     |
+
+Tests: 9 dedicated `test_dashboard_api.py` cases (9 added; 134 total
+sibling tests now 143).
+
+#### `triage4-fish` — pilot
+
+Single-page farm-manager dashboard for aquaculture pen welfare. Shows
+per-level pen counts (steady / watch / urgent), pen list, per-pen
+5-channel breakdown with score bars (gill / school / lice / mortality
+/ water chemistry), and per-pen alerts.
+
+```bash
+# Backend (terminal 1) — from triage4-fish/
+make install-ui
+make ui
+
+# Frontend (terminal 2) — from triage4-fish/web_ui/
+npm install
+npm run dev                  # http://localhost:5173
+```
+
+Endpoints:
+
+| Endpoint         | Returns                                                       |
+|------------------|---------------------------------------------------------------|
+| `GET  /health`   | service status + pen count + alert count                      |
+| `GET  /report`   | full PenReport (scores + alerts + level counts)               |
+| `GET  /pens`     | list of PenWelfareScore rows                                  |
+| `GET  /pens/{id}` | one pen's score + species + location + alerts               |
+| `GET  /alerts`   | every farm-manager alert across the farm                      |
+| `POST /demo/reload` | regenerate the synthetic farm                              |
+| `GET  /export.html` | self-contained offline HTML snapshot                       |
+
+Tests: 10 dedicated `test_dashboard_api.py` cases (10 added; 120 total
+sibling tests now 130).
+
+#### Rolling out to the remaining 12 siblings
+
+The pilot files form a **template** for the rollout. To add a Web UI
+to any other sibling, copy and adapt:
+
+- `triage4-rescue/triage4_rescue/ui/__init__.py`
+- `triage4-rescue/triage4_rescue/ui/dashboard_api.py` — replace
+  domain types + endpoint logic
+- `triage4-rescue/web_ui/{package.json, vite.config.ts, tsconfig.json,
+  index.html, src/}` — replace types + API client + dashboard
+- `triage4-rescue/tests/test_dashboard_api.py` — adapt to new
+  endpoint set
+- `pyproject.toml` — add the `[ui]` extra
+- `Makefile` — add `install-ui`, `ui`, `ui-html`, `web-ui-*` targets
+
+Each sibling's UI stays in its own directory, owns its own types,
+and is free to diverge — exactly the
+"per-sibling growth-in-depth" policy from
+[`DOMAIN_ADAPTATIONS.md`](DOMAIN_ADAPTATIONS.md). When a sibling
+matures enough to warrant its own repository, the entire
+`<sibling>/` subtree (library + tests + UI + docs) lifts out cleanly.
 
 ---
 
