@@ -18,6 +18,7 @@ If you are looking for "how do I clone + install", that's in
 - [Sibling demos — 14 packages, uniform shape](#sibling-demos--14-packages-uniform-shape)
 - [Portal demo — cross-sibling smoke](#portal-demo--cross-sibling-smoke)
 - [Web UI — flagship + pilot siblings](#web-ui--flagship--pilot-siblings)
+- [Camera input — real webcam / RTSP / video file](#camera-input--real-webcam--rtsp--video-file)
 - [Programmatic API — embed instead of demo](#programmatic-api--embed-instead-of-demo)
 - [Benchmark + stress targets](#benchmark--stress-targets)
 - [Troubleshooting demos](#troubleshooting-demos)
@@ -940,6 +941,161 @@ and is free to diverge — exactly the
 matures enough to warrant its own repository, the entire
 `<sibling>/` subtree (library + tests + UI + docs) lifts out
 cleanly.
+
+---
+
+## Camera input — real webcam / RTSP / video file
+
+Originally the project shipped only with drone-mounted camera support
+(MAVLink / Tello / Spot bridges). Phase 10 Stage 2 added a uniform
+**stationary-camera** layer in the flagship: USB webcams, IP / CCTV
+streams, recorded video files. Three pilot siblings now share the
+same pattern.
+
+### Where the code lives
+
+| Package          | Frame source module                          | Webcam demo                            |
+|------------------|----------------------------------------------|----------------------------------------|
+| triage4 flagship | `triage4/triage4/perception/frame_source.py` | `triage4/examples/webcam_triage_demo.py` |
+| triage4-fit      | `triage4-fit/triage4_fit/perception/frame_source.py` | `triage4-fit/examples/webcam_demo.py` |
+| triage4-drive    | `triage4-drive/triage4_drive/perception/frame_source.py` | `triage4-drive/examples/webcam_demo.py` |
+| triage4-sport    | `triage4-sport/triage4_sport/perception/frame_source.py` | `triage4-sport/examples/webcam_demo.py` |
+
+The other 11 siblings do **not** have camera support yet — see
+"Why only these three" below.
+
+### Three frame sources, one Protocol
+
+Every camera-aware package exposes the same surface:
+
+```python
+from <module>.perception import (
+    LoopbackFrameSource,        # in-memory list of preloaded frames (CI-safe, no deps)
+    SyntheticFrameSource,       # programmatic pulse/gradient/moving_square (no hardware)
+    build_opencv_frame_source,  # cv2.VideoCapture wrapper — needs opencv-python
+)
+```
+
+`build_opencv_frame_source(source)` accepts every input OpenCV does:
+
+| `source` | What it is                          | Use case |
+|---|---|---|
+| `0`, `1`, `2…` | integer device index                 | **USB / built-in laptop webcam** |
+| `"rtsp://user:pass@host:554/stream"` | RTSP URL              | **stationary IP camera / CCTV** |
+| `"http://..."`  | HTTP video stream                    | networked camera |
+| `"/path/video.mp4"` | local video file                  | recorded replay |
+| `"v4l2src ! videoconvert ! appsink"` | gstreamer pipeline   | flexible config |
+
+### Run the webcam demo — copy-paste
+
+Each pilot sibling has its own demo with auto-fallback (real webcam →
+synthetic). Pick a sibling and follow the recipe.
+
+#### Linux / macOS
+
+```bash
+# Pick one of fit / drive / sport
+cd info150/triage4-fit          # or triage4-drive / triage4-sport
+source ../.venv/bin/activate
+
+# Install the [camera] extra (adds opencv-python ~50 MB)
+make install-camera             # or: pip install -e ".[dev,camera]"
+
+# Real webcam (auto-detect; falls back to synthetic if no camera)
+make demo-webcam                # or: python examples/webcam_demo.py
+
+# Force a specific source
+python examples/webcam_demo.py --source 0          # USB webcam index 0
+python examples/webcam_demo.py --source "rtsp://10.0.0.5:554/stream"
+python examples/webcam_demo.py --source /path/to/recording.mp4
+
+# Force synthetic (CI-safe, no hardware needed)
+python examples/webcam_demo.py --synthetic --frames 60
+```
+
+#### Windows PowerShell
+
+```powershell
+cd C:\Users\<your-username>\info150\triage4-fit       # or triage4-drive / triage4-sport
+..\.venv\Scripts\Activate.ps1
+pip install -e ".[dev,camera]"
+
+# Real webcam — auto-detect
+python examples\webcam_demo.py
+
+# Force synthetic
+python examples\webcam_demo.py --synthetic --frames 60
+```
+
+If OpenCV isn't installed or the camera is busy, the demo prints a
+`[source] auto-detect failed (...); using synthetic` message and
+continues with the synthetic generator. Exit 0.
+
+### What each pilot does
+
+#### `triage4-fit` — squat-form L/R asymmetry from camera
+
+Captures N frames, measures the **left-vs-right luminance imbalance**
+per frame, and uses the variance over time as the `asymmetry_severity`
+parameter for `demo_session("squat", ...)`. The synthetic session is
+then fed through `RapidFormEngine`, producing real coach cues whose
+severity scales with what the camera saw.
+
+This is **not a real pose detector** — it's a demonstration that
+real frames can drive the engine's input parameters. A production
+deployment swaps the L/R luminance heuristic for a proper joint-pose
+extractor (mediapipe / blazepose).
+
+#### `triage4-drive` — face presence as PERCLOS proxy
+
+Captures N frames, runs OpenCV's bundled Haar cascade face detector
+on each, and builds an `EyeStateSample` series where `closure=0.0`
+(eyes open) for frames with a detected face and `closure=1.0` (eyes
+closed / face away) for frames without. Falls back to a luminance-
+variance heuristic when cv2 is missing. The result is fed to
+`DriverMonitoringEngine` which produces real PERCLOS / distraction /
+incapacitation scores.
+
+This **is** a face-presence proxy for PERCLOS — workable as a
+demonstration even though a real eye-aspect-ratio extractor would
+give per-eye closure rather than per-frame face presence.
+
+#### `triage4-sport` — inter-frame motion as workload proxy
+
+Captures N frames, computes the mean absolute luminance difference
+between consecutive frames as a motion-intensity time series, and
+reports the result alongside the engine's output for the chosen
+synthetic session. The motion metric is **observational only** —
+the engine itself runs on a synthetic AthleteObservation because
+mapping motion-intensity to per-channel `movement_samples` /
+`workload_samples` requires a real MoCap rig.
+
+### Why only these three siblings
+
+Each sibling consumes already-processed observations (positions,
+vitals samples, audio samples, etc.). For a sibling like
+**triage4-clinic** or **triage4-pet** the consuming application is
+expected to handle video capture + ML extraction; the library is
+strictly downstream. For **fit / drive / sport** the link from
+visual frames to the engine's input dataclass is short enough to
+demonstrate end-to-end with a webcam.
+
+Other siblings might gain camera support later if their input
+shape allows; the copy-fork pattern from these three pilots makes
+that mechanical.
+
+### Tests
+
+Each pilot's frame-source module is covered by ~13 tests under
+`<sibling>/tests/test_frame_source.py`:
+LoopbackFrameSource (yield order, type/shape validation,
+exhaustion, idempotent close, context manager) +
+SyntheticFrameSource (shape, exhaustion, invalid pattern, deterministic
+seed) + Protocol conformance + error-class identity.
+
+The `build_opencv_frame_source` factory is **not** exercised in
+tests because opencv-python is in the optional `[camera]` extra and
+CI doesn't always have it.
 
 ---
 

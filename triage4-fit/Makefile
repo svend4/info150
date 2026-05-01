@@ -10,7 +10,7 @@ PIP    ?= pip
 PKG      := triage4_fit
 TESTS    := tests
 
-.PHONY: help install install-dev install-ui test lint mypy qa demo ui ui-html web-ui-install web-ui-dev web-ui-build clean
+.PHONY: help install install-dev install-ui install-camera test lint mypy qa demo demo-webcam ui ui-html web-ui-install web-ui-dev web-ui-build clean
 
 help:
 	@awk 'BEGIN{FS=":.*##"; printf "usage: make <target>\n\ntargets:\n"} /^[a-zA-Z0-9_-]+:.*##/ {printf "  %-20s %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -26,6 +26,10 @@ install-ui:           ## Install with the [ui] extra (FastAPI + uvicorn + httpx)
 	$(PIP) install -e '.[dev,ui]'
 	$(PIP) install ruff mypy
 
+install-camera:       ## Install with the [camera] extra (opencv-python)
+	$(PIP) install -e '.[dev,camera]'
+	$(PIP) install ruff mypy
+
 test:                 ## Run the pytest suite
 	$(PYTHON) -m pytest -q
 
@@ -39,6 +43,9 @@ qa: lint mypy test    ## All quality gates (CI-equivalent)
 
 demo:                 ## Run a one-session coaching demo
 	$(PYTHON) -c "from triage4_fit.sim.synthetic_session import demo_session; from triage4_fit.form_check.rapid_form_engine import RapidFormEngine; sess = demo_session('squat', rep_count=5, asymmetry_severity=0.35); result = RapidFormEngine().review(sess); print(result.as_text())"
+
+demo-webcam:          ## Capture from real webcam (auto-fallback to synthetic)
+	$(PYTHON) examples/webcam_demo.py
 
 ui:                   ## Run the FastAPI dashboard on http://127.0.0.1:8000
 	$(PYTHON) -m uvicorn triage4_fit.ui.dashboard_api:app --reload
