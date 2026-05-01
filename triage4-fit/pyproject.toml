@@ -31,6 +31,13 @@ ui = [
   "uvicorn>=0.30",
   "httpx>=0.27"
 ]
+# Camera input surface — opt-in. Pulls in OpenCV for real frame
+# capture (USB webcam / RTSP / video file). Without this extra the
+# perception layer's LoopbackFrameSource + SyntheticFrameSource still
+# work — useful for tests + demos without a camera.
+camera = [
+  "opencv-python>=4.8"
+]
 
 [tool.setuptools]
 include-package-data = true

@@ -26,6 +26,12 @@ ui = [
   "uvicorn>=0.30",
   "httpx>=0.27"
 ]
+# Camera input surface — opt-in. opencv-python for real frame capture
+# (training-rig camera / RTSP). Without this extra the perception
+# layer's Loopback + Synthetic sources still work.
+camera = [
+  "opencv-python>=4.8"
+]
 
 [tool.setuptools]
 include-package-data = true
