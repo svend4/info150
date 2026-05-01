@@ -954,15 +954,39 @@ same pattern.
 
 ### Where the code lives
 
-| Package          | Frame source module                          | Webcam demo                            |
-|------------------|----------------------------------------------|----------------------------------------|
-| triage4 flagship | `triage4/triage4/perception/frame_source.py` | `triage4/examples/webcam_triage_demo.py` |
-| triage4-fit      | `triage4-fit/triage4_fit/perception/frame_source.py` | `triage4-fit/examples/webcam_demo.py` |
-| triage4-drive    | `triage4-drive/triage4_drive/perception/frame_source.py` | `triage4-drive/examples/webcam_demo.py` |
-| triage4-sport    | `triage4-sport/triage4_sport/perception/frame_source.py` | `triage4-sport/examples/webcam_demo.py` |
+Every package now has a per-sibling `perception/frame_source.py`
+(copy-fork of the flagship's frame source) plus an `examples/webcam_demo.py`
+with **domain-specific** signal extraction.
 
-The other 11 siblings do **not** have camera support yet — see
-"Why only these three" below.
+| Package          | Webcam demo                                    | Domain-specific signal extraction               |
+|------------------|------------------------------------------------|--------------------------------------------------|
+| triage4 flagship | `triage4/examples/webcam_triage_demo.py`       | YOLOv8 person detection + Eulerian rPPG          |
+| triage4-aqua     | `triage4-aqua/examples/webcam_demo.py`         | inter-frame motion → swimmer activity proxy      |
+| triage4-bird     | `triage4-bird/examples/webcam_demo.py`         | motion-above-threshold rate → bird presence      |
+| triage4-clinic   | `triage4-clinic/examples/webcam_demo.py`       | Haar face presence → patient-in-frame (PHI!)     |
+| triage4-crowd    | `triage4-crowd/examples/webcam_demo.py`        | motion → flow proxy, variance → density          |
+| triage4-drive    | `triage4-drive/examples/webcam_demo.py`        | Haar face presence → PERCLOS proxy               |
+| triage4-farm     | `triage4-farm/examples/webcam_demo.py`         | motion → herd activity proxy                     |
+| triage4-fish     | `triage4-fish/examples/webcam_demo.py`         | contrast → turbidity, motion → school cohesion   |
+| triage4-fit      | `triage4-fit/examples/webcam_demo.py`          | L/R luminance imbalance → asymmetry_severity     |
+| triage4-home     | `triage4-home/examples/webcam_demo.py`         | motion → resident activity (PII!)                |
+| triage4-pet      | `triage4-pet/examples/webcam_demo.py`          | motion → pet activity proxy                      |
+| triage4-rescue   | `triage4-rescue/examples/webcam_demo.py`       | motion + variance → scene activity (PHI-eq!)     |
+| triage4-site     | `triage4-site/examples/webcam_demo.py`         | motion → activity, luminance → lighting          |
+| triage4-sport    | `triage4-sport/examples/webcam_demo.py`        | inter-frame motion → workload metric             |
+| triage4-wild     | `triage4-wild/examples/webcam_demo.py`         | motion-event rate → trail-cam wildlife passing   |
+
+**Privacy-sensitive siblings** are explicitly flagged in their demos
+with a startup banner — they print a privacy notice before doing
+anything else:
+
+- **triage4-clinic** — PHI (HIPAA / GDPR)
+- **triage4-rescue** — PHI-equivalent (mass-casualty footage)
+- **triage4-home** — PII (in-home camera)
+- **triage4-pet** — owner data (pet uploads may contain personal context)
+
+These demos are for **developer testing only**; production deploys
+must satisfy local data-protection law.
 
 ### Three frame sources, one Protocol
 
@@ -1070,19 +1094,27 @@ the engine itself runs on a synthetic AthleteObservation because
 mapping motion-intensity to per-channel `movement_samples` /
 `workload_samples` requires a real MoCap rig.
 
-### Why only these three siblings
+### Why every sibling now has it
 
-Each sibling consumes already-processed observations (positions,
-vitals samples, audio samples, etc.). For a sibling like
-**triage4-clinic** or **triage4-pet** the consuming application is
-expected to handle video capture + ML extraction; the library is
-strictly downstream. For **fit / drive / sport** the link from
-visual frames to the engine's input dataclass is short enough to
-demonstrate end-to-end with a webcam.
+Originally only **fit / drive / sport** got camera support because
+their input shape connects most directly to a single visual signal.
+The remaining 11 siblings consume already-processed observations
+(positions, vitals samples, audio samples, etc.), and proper camera
+→ observation mapping needs domain-specific ML.
 
-Other siblings might gain camera support later if their input
-shape allows; the copy-fork pattern from these three pilots makes
-that mechanical.
+Even so, having a camera demo for every sibling is useful: it shows
+the **integration pattern** (frame source → frame stat → engine
+input modulation), gives developers a runnable end-to-end smoke from
+real hardware, and surfaces privacy posture per domain (clinic /
+rescue / home / pet get explicit banners). When a real ML extractor
+is dropped in for a particular sibling, only the per-frame
+extraction function in `webcam_demo.py` changes — the frame source,
+the engine call, the demo argparse all stay.
+
+Each sibling's demo is **honest** about its limitations: prints
+the camera-derived metric alongside the engine output and notes
+"real deployment maps frames → X" so a reader knows which signal is
+real and which is synthetic.
 
 ### Tests
 
