@@ -52,25 +52,25 @@ def _build_source(args: argparse.Namespace):
     if args.synthetic:
         print("[source] forced synthetic")
         return SyntheticFrameSource(
-            pattern="moving_square", n_frames=args.frames,
-            fs_hz=args.fps, width=64, height=48, seed=0,
+            pattern="moving_square", n_frames=args.frames, fs_hz=args.fps, width=64, height=48, seed=0,
         ), "synthetic"
 
-    if args.source is not None:
-        print(f"[source] attempting webcam source {args.source!r}")
-        try:
-            return build_opencv_frame_source(args.source), "webcam"
-        except FrameSourceUnavailable as exc:
-            print(f"[source] webcam unavailable ({exc}); falling back to synthetic")
+    raw = args.source if args.source is not None else 0
+    # cv2.VideoCapture treats "0" (str) and 0 (int) differently
+    # on Windows. Convert numeric strings → int up-front.
+    try:
+        source = int(raw)
+    except (TypeError, ValueError):
+        source = raw
 
     try:
-        return build_opencv_frame_source(0), "webcam"
+        return build_opencv_frame_source(source), "webcam"
     except FrameSourceUnavailable as exc:
-        print(f"[source] auto-detect failed ({exc}); using synthetic")
+        print(f"[source] webcam unavailable ({exc}); using synthetic")
+
     return SyntheticFrameSource(
-        pattern="moving_square", n_frames=args.frames, fs_hz=args.fps,
-        width=64, height=48, seed=0,
-    ), "synthetic"
+        pattern="moving_square", n_frames=args.frames, fs_hz=args.fps, width=64, height=48, seed=0,
+    ), "synthetic-fallback"
 
 
 def _build_face_detector():
