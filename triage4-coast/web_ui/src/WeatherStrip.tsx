@@ -12,7 +12,7 @@ function fmt(v: number | null | undefined, digits = 1, suffix = ""): string {
 }
 
 function uvColor(uv: number | null | undefined): string {
-  if (uv === null || uv === undefined) return "#5c6080";
+  if (uv === null || uv === undefined) return "var(--text-disabled)";
   if (uv >= 8) return "#e74c3c";
   if (uv >= 6) return "#e6a23c";
   if (uv >= 3) return "#f4d03f";
@@ -61,9 +61,9 @@ export default function WeatherStrip({ refreshMs = 60_000 }: { refreshMs?: numbe
   if (!snap) {
     return (
       <div style={{
-        background: "#0e1422", borderRadius: 6, padding: 10, marginBottom: 12,
+        background: "var(--bg)", borderRadius: 6, padding: 10, marginBottom: 12,
         display: "flex", justifyContent: "space-between", alignItems: "center",
-        fontSize: 12, color: "#7a829a",
+        fontSize: 12, color: "var(--text-muted)",
       }}>
         <span>weather: no snapshot yet — click refresh</span>
         <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
@@ -77,7 +77,7 @@ export default function WeatherStrip({ refreshMs = 60_000 }: { refreshMs?: numbe
             {refreshing ? "…" : "↻"}
           </button>
         </div>
-        {error && <span style={{ color: "#ff8c8c" }}>{error}</span>}
+        {error && <span style={{ color: "var(--danger-text)" }}>{error}</span>}
       </div>
     );
   }
@@ -86,9 +86,9 @@ export default function WeatherStrip({ refreshMs = 60_000 }: { refreshMs?: numbe
 
   return (
     <div style={{
-      background: "#0e1422", borderRadius: 6, padding: 10, marginBottom: 12,
+      background: "var(--bg)", borderRadius: 6, padding: 10, marginBottom: 12,
       display: "flex", flexWrap: "wrap", gap: 14, alignItems: "center",
-      fontSize: 12, color: "#dde7df",
+      fontSize: 12, color: "var(--text)",
     }}>
       <Stat icon="🌡️" label="temp" value={fmt(snap.air_temp_c, 1, "°C")} />
       <Stat icon="💨" label="wind" value={fmt(snap.wind_speed_mps, 1, " m/s")} />
@@ -100,7 +100,7 @@ export default function WeatherStrip({ refreshMs = 60_000 }: { refreshMs?: numbe
           ? "—" : `${Math.round((snap.cloud_cover ?? 0) * 100)}%`} />
       <Stat icon="⚡" label="lightning"
         value={String(snap.lightning_strikes_5min)}
-        valueColor={snap.lightning_strikes_5min > 0 ? "#e74c3c" : "#dde7df"} />
+        valueColor={snap.lightning_strikes_5min > 0 ? "#e74c3c" : "var(--text)"} />
       <span style={{ opacity: 0.7, fontStyle: "italic" }}>
         {snap.forecast_summary}
       </span>
@@ -125,13 +125,13 @@ export default function WeatherStrip({ refreshMs = 60_000 }: { refreshMs?: numbe
         </span>
       )}
       {error && (
-        <span style={{ color: "#ff8c8c" }}>{error}</span>
+        <span style={{ color: "var(--danger-text)" }}>{error}</span>
       )}
     </div>
   );
 }
 
-function Stat({ icon, label, value, valueColor = "#dde7df" }: {
+function Stat({ icon, label, value, valueColor = "var(--text)" }: {
   icon: string; label: string; value: string; valueColor?: string;
 }) {
   return (
@@ -144,10 +144,10 @@ function Stat({ icon, label, value, valueColor = "#dde7df" }: {
 }
 
 const inputStyle: React.CSSProperties = {
-  padding: 4, background: "#22293f", color: "#dde7df",
+  padding: 4, background: "var(--surface-2)", color: "var(--text)",
   border: "1px solid #5c7cfa", borderRadius: 4, fontSize: 11,
 };
 const btnStyle: React.CSSProperties = {
-  padding: "4px 10px", background: "#5c7cfa", color: "#fff",
+  padding: "4px 10px", background: "var(--primary)", color: "#fff",
   border: 0, borderRadius: 4, cursor: "pointer", fontSize: 12,
 };

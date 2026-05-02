@@ -29,7 +29,7 @@ export default function RadarChart({ score }: { score: Score | null }) {
   if (!score) {
     return (
       <div style={{
-        width: SIZE, height: SIZE, background: "#0e1422", borderRadius: 6,
+        width: SIZE, height: SIZE, background: "var(--bg)", borderRadius: 6,
         display: "flex", alignItems: "center", justifyContent: "center",
         fontSize: 11, opacity: 0.6,
       }}>
@@ -46,7 +46,7 @@ export default function RadarChart({ score }: { score: Score | null }) {
     .map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(" ");
 
   return (
-    <div style={{ background: "#0e1422", borderRadius: 6, padding: 8 }}>
+    <div style={{ background: "var(--bg)", borderRadius: 6, padding: 8 }}>
       <div style={{ fontSize: 11, opacity: 0.7, marginBottom: 4 }}>
         {score.zone_id} — channel safety radar
       </div>
@@ -55,7 +55,7 @@ export default function RadarChart({ score }: { score: Score | null }) {
         {[0.25, 0.5, 0.75, 1.0].map((r) => (
           <circle key={r}
             cx={CENTER} cy={CENTER} r={RADIUS * r}
-            fill="none" stroke="#26304a" strokeWidth="0.5" />
+            fill="none" stroke="var(--border)" strokeWidth="0.5" />
         ))}
         {/* Axes */}
         {angles.map((a, i) => {
@@ -63,13 +63,13 @@ export default function RadarChart({ score }: { score: Score | null }) {
           return (
             <line key={i}
               x1={CENTER} y1={CENTER} x2={x} y2={y}
-              stroke="#26304a" strokeWidth="0.5" />
+              stroke="var(--border)" strokeWidth="0.5" />
           );
         })}
         {/* Value polygon */}
         <polygon points={polyPts}
-          fill="#5c7cfa" fillOpacity="0.25"
-          stroke="#5c7cfa" strokeWidth="2" />
+          fill="var(--primary)" fillOpacity="0.25"
+          stroke="var(--primary)" strokeWidth="2" />
         {/* Value dots */}
         {values.map((v, i) => {
           const [x, y] = point(angles[i], RADIUS * v);
@@ -85,9 +85,9 @@ export default function RadarChart({ score }: { score: Score | null }) {
           return (
             <text key={i} x={x} y={y}
               textAnchor="middle" dominantBaseline="middle"
-              fontSize="10" fill="#dde7df">
+              fontSize="10" fill="var(--text)">
               {AXES[i].label}
-              <tspan x={x} dy="11" fontSize="9" fill="#7a829a">
+              <tspan x={x} dy="11" fontSize="9" fill="var(--text-muted)">
                 {values[i].toFixed(2)}
               </tspan>
             </text>
@@ -96,7 +96,7 @@ export default function RadarChart({ score }: { score: Score | null }) {
         {/* Center overall */}
         <text x={CENTER} y={CENTER}
           textAnchor="middle" dominantBaseline="middle"
-          fontSize="14" fontWeight="600" fill="#dde7df">
+          fontSize="14" fontWeight="600" fill="var(--text)">
           {score.overall.toFixed(2)}
         </text>
       </svg>

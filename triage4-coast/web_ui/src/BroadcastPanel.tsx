@@ -54,7 +54,7 @@ export default function BroadcastPanel({
 
   return (
     <div style={{
-      background: "#0e1422", borderRadius: 6, padding: 12, marginBottom: 16,
+      background: "var(--bg)", borderRadius: 6, padding: 12, marginBottom: 16,
     }}>
       <div style={{
         display: "flex", justifyContent: "space-between",
@@ -71,8 +71,8 @@ export default function BroadcastPanel({
             onClick={() => setOpen(open === k.kind ? null : k.kind)}
             style={{
               padding: "10px 14px",
-              background: open === k.kind ? "#5c7cfa" : "#181f33",
-              color: "#dde7df", border: "1px solid #5c7cfa",
+              background: open === k.kind ? "var(--primary)" : "var(--surface)",
+              color: "var(--text)", border: "1px solid #5c7cfa",
               borderRadius: 4, cursor: "pointer", fontSize: 13,
             }}>
             {k.icon} {k.label}
@@ -81,40 +81,40 @@ export default function BroadcastPanel({
       </div>
       {open && (
         <div style={{ marginTop: 12, padding: 12,
-          background: "#181f33", borderRadius: 4 }}>
+          background: "var(--surface)", borderRadius: 4 }}>
           <div style={{ fontSize: 11, opacity: 0.7, marginBottom: 6 }}>
             issuing: <b>{open}</b>
           </div>
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap",
             marginBottom: 8 }}>
             <select value={zoneId} onChange={(e) => setZoneId(e.target.value)}
-              style={{ padding: 6, background: "#22293f", color: "#dde7df",
+              style={{ padding: 6, background: "var(--surface-2)", color: "var(--text)",
                 border: "1px solid #5c7cfa", borderRadius: 4 }}>
               <option value="">all zones</option>
               {zoneIds.map((z) => <option key={z} value={z}>{z}</option>)}
             </select>
             <input placeholder="operator id (optional)"
               value={operatorId} onChange={(e) => setOperatorId(e.target.value)}
-              style={{ padding: 6, width: 180, background: "#22293f",
-                color: "#dde7df", border: "1px solid #5c7cfa", borderRadius: 4 }} />
+              style={{ padding: 6, width: 180, background: "var(--surface-2)",
+                color: "var(--text)", border: "1px solid #5c7cfa", borderRadius: 4 }} />
           </div>
           <textarea placeholder={
             KINDS.find((k) => k.kind === open)?.defaultMsg || "Message"
           }
             value={message} onChange={(e) => setMessage(e.target.value)}
             rows={2}
-            style={{ width: "100%", padding: 6, background: "#22293f",
-              color: "#dde7df", border: "1px solid #5c7cfa", borderRadius: 4,
+            style={{ width: "100%", padding: 6, background: "var(--surface-2)",
+              color: "var(--text)", border: "1px solid #5c7cfa", borderRadius: 4,
               fontFamily: "inherit", fontSize: 13, boxSizing: "border-box" }} />
           <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
             <button onClick={() => send(open)}
-              style={{ padding: "6px 14px", background: "#3a8443",
+              style={{ padding: "6px 14px", background: "var(--success-strong)",
                 color: "#fff", border: 0, borderRadius: 4, cursor: "pointer" }}>
               Send broadcast
             </button>
             <button onClick={() => setOpen(null)}
-              style={{ padding: "6px 14px", background: "#22293f",
-                color: "#dde7df", border: "1px solid #444",
+              style={{ padding: "6px 14px", background: "var(--surface-2)",
+                color: "var(--text)", border: "1px solid #444",
                 borderRadius: 4, cursor: "pointer" }}>
               Cancel
             </button>
@@ -127,7 +127,7 @@ export default function BroadcastPanel({
         </div>
       )}
       {error && (
-        <div style={{ marginTop: 8, fontSize: 12, color: "#ff8c8c" }}>
+        <div style={{ marginTop: 8, fontSize: 12, color: "var(--danger-text)" }}>
           {error}
         </div>
       )}

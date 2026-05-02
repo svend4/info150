@@ -10,7 +10,7 @@ const ROW_H = 22;
 const LABEL_W = 130;
 
 function colorFor(value: number | null): string {
-  if (value === null) return "#1a1f2e";
+  if (value === null) return "var(--surface)";
   if (value < 0.45) return "#e74c3c";
   if (value < 0.65) return "#e6a23c";
   return "#27ae60";
@@ -48,7 +48,7 @@ export default function TimeStripChart({
 
   return (
     <div style={{
-      background: "#0e1422", borderRadius: 6, padding: 8, marginBottom: 16,
+      background: "var(--bg)", borderRadius: 6, padding: 8, marginBottom: 16,
     }}>
       <div style={{ fontSize: 11, opacity: 0.7, marginBottom: 4 }}>
         last {hours} h, hourly mean of overall (red = urgent, green = ok)
@@ -60,7 +60,7 @@ export default function TimeStripChart({
           i % 4 === 0 && (
             <text key={i}
               x={W - 6 - i * cellW} y={totalH - 8}
-              textAnchor="middle" fontSize="9" fill="#7a829a">
+              textAnchor="middle" fontSize="9" fill="var(--text-muted)">
               -{i}h
             </text>
           )
@@ -72,7 +72,7 @@ export default function TimeStripChart({
           return (
             <g key={z}>
               <text x={LABEL_W - 8} y={row * ROW_H + ROW_H * 0.7}
-                textAnchor="end" fontSize="11" fill="#dde7df"
+                textAnchor="end" fontSize="11" fill="var(--text)"
                 fontFamily="monospace">
                 {z.slice(0, 16)}
               </text>
@@ -96,7 +96,7 @@ export default function TimeStripChart({
         })}
       </svg>
       {error && (
-        <div style={{ fontSize: 11, color: "#ff8c8c" }}>{error}</div>
+        <div style={{ fontSize: 11, color: "var(--danger-text)" }}>{error}</div>
       )}
     </div>
   );

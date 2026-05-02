@@ -7,7 +7,7 @@ const STATE_COLOR: Record<CameraHealthRow["state"], string> = {
   ok: "#27ae60",
   stale: "#e6a23c",
   down: "#e74c3c",
-  unknown: "#5c6080",
+  unknown: "var(--text-disabled)",
 };
 
 export default function CameraHealthBar({ refreshMs = 5000 }: { refreshMs?: number }) {
@@ -32,8 +32,8 @@ export default function CameraHealthBar({ refreshMs = 5000 }: { refreshMs?: numb
   if (error) {
     return (
       <div style={{
-        padding: "6px 10px", background: "#3a1a1a", borderRadius: 4,
-        fontSize: 11, color: "#ff8c8c", marginBottom: 8,
+        padding: "6px 10px", background: "var(--danger-bg)", borderRadius: 4,
+        fontSize: 11, color: "var(--danger-text)", marginBottom: 8,
       }}>
         cameras/health: {error}
       </div>
@@ -43,8 +43,8 @@ export default function CameraHealthBar({ refreshMs = 5000 }: { refreshMs?: numb
   if (rows.length === 0) {
     return (
       <div style={{
-        padding: "6px 10px", background: "#181f33", borderRadius: 4,
-        fontSize: 11, color: "#7a829a", marginBottom: 8,
+        padding: "6px 10px", background: "var(--surface)", borderRadius: 4,
+        fontSize: 11, color: "var(--text-muted)", marginBottom: 8,
       }}>
         no camera reports yet — POST <code>/cameras/report</code> to register a feed
       </div>
@@ -54,7 +54,7 @@ export default function CameraHealthBar({ refreshMs = 5000 }: { refreshMs?: numb
   return (
     <div style={{
       display: "flex", gap: 8, flexWrap: "wrap", padding: 6,
-      background: "#181f33", borderRadius: 4, marginBottom: 8,
+      background: "var(--surface)", borderRadius: 4, marginBottom: 8,
     }}>
       {rows.map((r) => {
         const age = r.last_frame_ts_unix !== null
@@ -63,7 +63,7 @@ export default function CameraHealthBar({ refreshMs = 5000 }: { refreshMs?: numb
         return (
           <div key={r.source} style={{
             display: "flex", alignItems: "center", gap: 6,
-            padding: "4px 8px", background: "#22293f", borderRadius: 4,
+            padding: "4px 8px", background: "var(--surface-2)", borderRadius: 4,
             border: `1px solid ${STATE_COLOR[r.state]}`,
             fontSize: 11,
           }}>

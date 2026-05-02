@@ -42,12 +42,12 @@ export default function IncidentTimeline({ refreshMs = 10_000 }: { refreshMs?: n
 
   return (
     <div style={{
-      background: "#0e1422", borderRadius: 6, padding: 8,
+      background: "var(--bg)", borderRadius: 6, padding: 8,
       maxHeight: 320, overflowY: "auto",
     }}>
       <div style={{
         fontSize: 11, opacity: 0.7, marginBottom: 4,
-        position: "sticky", top: 0, background: "#0e1422",
+        position: "sticky", top: 0, background: "var(--bg)",
         paddingBottom: 4,
       }}>
         operator log ({entries.length})
@@ -62,7 +62,7 @@ export default function IncidentTimeline({ refreshMs = 10_000 }: { refreshMs?: n
         <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
           {entries.map((e, i) => (
             <div key={i} style={{
-              padding: 8, background: "#181f33", borderRadius: 4,
+              padding: 8, background: "var(--surface)", borderRadius: 4,
               borderLeft: "3px solid #5c7cfa",
             }}>
               <div style={{
@@ -86,7 +86,7 @@ export default function IncidentTimeline({ refreshMs = 10_000 }: { refreshMs?: n
         </div>
       )}
       {error && (
-        <div style={{ fontSize: 11, color: "#ff8c8c" }}>{error}</div>
+        <div style={{ fontSize: 11, color: "var(--danger-text)" }}>{error}</div>
       )}
     </div>
   );

@@ -4,6 +4,7 @@ import CameraHealthBar from "./CameraHealthBar";
 import CameraPanel from "./CameraPanel";
 import HistoryChart from "./HistoryChart";
 import OpsConsole from "./OpsConsole";
+import ThemeToggle from "./ThemeToggle";
 import ZoneGrid from "./ZoneGrid";
 import type { Alert, AlertLevel, Report, Score } from "./types";
 
@@ -30,7 +31,7 @@ function Bar({ value, label }: { value: number; label: string }) {
       <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12 }}>
         <span style={{ opacity: 0.85 }}>{label}</span><span>{value.toFixed(2)}</span>
       </div>
-      <div style={{ height: 6, background: "#2a3346", borderRadius: 3, overflow: "hidden" }}>
+      <div style={{ height: 6, background: "var(--border)", borderRadius: 3, overflow: "hidden" }}>
         <div style={{ width: `${pct}%`, background: color, height: "100%" }} />
       </div>
     </div>
@@ -58,7 +59,7 @@ export default function App() {
   const reload = async () => { await api.reload(); setSelected(null); setDetail(null); await load(); };
 
   if (error) return (
-    <div style={{ padding: 24, color: "#ff8c8c" }}>
+    <div style={{ padding: 24, color: "var(--danger-text)" }}>
       Error: <code>{error}</code>
       <p>Backend running? <code>uvicorn triage4_coast.ui.dashboard_api:app</code></p>
     </div>
@@ -73,14 +74,16 @@ export default function App() {
           coast <code>{report.coast_id}</code> · {report.zone_count} zones · {report.alerts.length} alerts
         </span>
         <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
+          <ThemeToggle />
           <button onClick={() => setView(NEXT_VIEW[view])}
             style={{ padding: "6px 14px",
-              background: "#22293f", color: "#dde7df", border: "1px solid #5c7cfa",
+              background: "var(--surface-2)", color: "var(--text)",
+              border: "1px solid var(--primary)",
               borderRadius: 4, cursor: "pointer", fontSize: 13 }}>
             view: {VIEW_LABELS[view]} ↔
           </button>
           <button onClick={reload} style={{ padding: "6px 14px",
-            background: "#1f5fbf", color: "white", border: 0, borderRadius: 4,
+            background: "var(--primary-strong)", color: "white", border: 0, borderRadius: 4,
             cursor: "pointer" }}>
             Re-seed demo
           </button>
@@ -90,7 +93,7 @@ export default function App() {
       <CameraPanel onAnalyzed={load} />
       <section style={{ display: "flex", gap: 12, marginBottom: 24, flexWrap: "wrap" }}>
         {(["ok", "watch", "urgent"] as const).map((lvl) => (
-          <div key={lvl} style={{ flex: 1, minWidth: 160, background: "#181f33",
+          <div key={lvl} style={{ flex: 1, minWidth: 160, background: "var(--surface)",
             padding: 12, borderRadius: 6, borderLeft: `4px solid ${LEVEL_COLOR[lvl]}` }}>
             <div style={{ fontSize: 12, opacity: 0.7, textTransform: "uppercase" }}>{lvl}</div>
             <div style={{ fontSize: 28, fontWeight: 600 }}>{report.level_counts[lvl]}</div>
@@ -103,12 +106,12 @@ export default function App() {
         <ZoneGrid scores={report.scores} />
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "320px 1fr", gap: 16 }}>
-          <div style={{ background: "#181f33", borderRadius: 6, padding: 8, maxHeight: 600, overflowY: "auto" }}>
+          <div style={{ background: "var(--surface)", borderRadius: 6, padding: 8, maxHeight: 600, overflowY: "auto" }}>
             {report.scores.map((s) => (
               <button key={s.zone_id} onClick={() => setSelected(s.zone_id)}
                 style={{ display: "block", width: "100%", textAlign: "left", padding: "8px 12px",
-                  margin: "2px 0", background: selected === s.zone_id ? "#26304a" : "transparent",
-                  color: "#e4e8f0", border: 0, borderLeft: `4px solid ${LEVEL_COLOR[s.alert_level]}`,
+                  margin: "2px 0", background: selected === s.zone_id ? "var(--border)" : "transparent",
+                  color: "var(--text)", border: 0, borderLeft: `4px solid ${LEVEL_COLOR[s.alert_level]}`,
                   borderRadius: 4, cursor: "pointer", fontSize: 13 }}>
                 <div style={{ fontWeight: 600 }}>{s.zone_id}</div>
                 <div style={{ fontSize: 11, opacity: 0.75 }}>
@@ -117,7 +120,7 @@ export default function App() {
               </button>
             ))}
           </div>
-          <div style={{ background: "#181f33", borderRadius: 6, padding: 16, minHeight: 300 }}>
+          <div style={{ background: "var(--surface)", borderRadius: 6, padding: 16, minHeight: 300 }}>
             {detail ? (<>
               <h2 style={{ marginTop: 0, fontSize: 18 }}>
                 {detail.zone_id}{" "}

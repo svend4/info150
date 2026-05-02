@@ -18,7 +18,7 @@ function ChannelBar({ label, value }: { label: string; value: number }) {
         <span style={{ opacity: 0.75 }}>{label}</span>
         <span style={{ fontVariantNumeric: "tabular-nums" }}>{value.toFixed(2)}</span>
       </div>
-      <div style={{ height: 4, background: "#2a3346", borderRadius: 2, overflow: "hidden" }}>
+      <div style={{ height: 4, background: "var(--border)", borderRadius: 2, overflow: "hidden" }}>
         <div style={{ width: `${pct}%`, background: color, height: "100%" }} />
       </div>
     </div>
@@ -37,7 +37,7 @@ export default function ZoneGrid({ scores }: { scores: Score[] }) {
     }}>
       {scores.map((s) => (
         <div key={s.zone_id} style={{
-          background: "#181f33",
+          background: "var(--surface)",
           border: `1px solid ${LEVEL_COLOR[s.alert_level]}`,
           borderLeft: `4px solid ${LEVEL_COLOR[s.alert_level]}`,
           borderRadius: 6, padding: 12,

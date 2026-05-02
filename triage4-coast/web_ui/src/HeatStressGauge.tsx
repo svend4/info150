@@ -61,14 +61,14 @@ export default function HeatStressGauge({ scores }: { scores: Score[] }) {
   const pulse = value >= 0.7;
 
   return (
-    <div style={{ background: "#0e1422", borderRadius: 6, padding: 8 }}>
+    <div style={{ background: "var(--bg)", borderRadius: 6, padding: 8 }}>
       <div style={{ fontSize: 11, opacity: 0.7, marginBottom: 4 }}>
         heat-stress index — sun × density × time
       </div>
       <svg width={SIZE} height={SIZE}>
         {/* Gauge backdrop arc */}
         <path d={arcPath(startDeg, endDeg)}
-          stroke="#26304a" strokeWidth={STROKE} fill="none"
+          stroke="var(--border)" strokeWidth={STROKE} fill="none"
           strokeLinecap="round" />
         {/* Coloured zones */}
         <path d={arcPath(startDeg, startDeg + span * 0.4)}
@@ -102,7 +102,7 @@ export default function HeatStressGauge({ scores }: { scores: Score[] }) {
           {value.toFixed(2)}
         </text>
         <text x={CENTER} y={CENTER + R + 4}
-          textAnchor="middle" fontSize="11" fill="#dde7df"
+          textAnchor="middle" fontSize="11" fill="var(--text)"
           letterSpacing="1">
           {status.label}
         </text>
