@@ -10,7 +10,8 @@ const BACKEND_PATHS = [
   "/pens",         // + /pens/{id}
   "/alerts",
   "/demo",         // + /demo/reload
-  "/export.html",
+  "/export.html",,
+  "/camera"
 ];
 
 const proxy: Record<string, { target: string; changeOrigin: boolean }> = {};

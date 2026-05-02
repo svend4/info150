@@ -5,7 +5,8 @@ const BACKEND_TARGET =
   process.env.TRIAGE4_WILD_API_TARGET || "http://127.0.0.1:8000";
 
 const BACKEND_PATHS = [
-  "/health", "/report", "/observations", "/alerts", "/demo", "/export.html",
+  "/health", "/report", "/observations", "/alerts", "/demo", "/export.html",,
+  "/camera"
 ];
 
 const proxy: Record<string, { target: string; changeOrigin: boolean }> = {};
