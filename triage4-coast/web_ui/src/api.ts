@@ -27,6 +27,10 @@ export type CoastCameraBody = {
   in_water_motion: number;
   sun_intensity: number;
   lost_child_flag: boolean;
+  fall_event_flag?: boolean;
+  stationary_person_signal?: number;
+  flow_anomaly_signal?: number;
+  slip_risk_signal?: number;
 };
 
 export type HistoryPoint = { ts: number; value: number };

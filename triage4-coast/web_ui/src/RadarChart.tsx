@@ -12,6 +12,10 @@ const AXES = [
   { key: "drowning_safety", label: "drowning" },
   { key: "sun_safety", label: "sun" },
   { key: "lost_child_safety", label: "child" },
+  { key: "fall_event_safety", label: "fall" },
+  { key: "stationary_person_safety", label: "stat" },
+  { key: "flow_anomaly_safety", label: "flow" },
+  { key: "slip_risk_safety", label: "slip" },
 ] as const;
 
 function point(angle: number, r: number): [number, number] {

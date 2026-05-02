@@ -41,6 +41,10 @@ _HISTORY_CHANNELS = (
     "drowning_safety",
     "sun_safety",
     "lost_child_safety",
+    "fall_event_safety",
+    "stationary_person_safety",
+    "flow_anomaly_safety",
+    "slip_risk_safety",
     "overall",
 )
 
@@ -375,6 +379,10 @@ class CameraRunRequest(BaseModel):
     in_water_motion: float = Field(0.0, ge=0.0, le=1.0)
     sun_intensity: float = Field(0.0, ge=0.0, le=1.0)
     lost_child_flag: bool = False
+    fall_event_flag: bool = False
+    stationary_person_signal: float = Field(0.0, ge=0.0, le=1.0)
+    flow_anomaly_signal: float = Field(0.0, ge=0.0, le=1.0)
+    slip_risk_signal: float = Field(0.0, ge=0.0, le=1.0)
 
 
 @app.post("/camera/run")
@@ -388,6 +396,10 @@ def camera_run(req: CameraRunRequest) -> dict[str, Any]:
         in_water_motion=req.in_water_motion,
         sun_intensity=req.sun_intensity,
         lost_child_flag=req.lost_child_flag,
+        fall_event_flag=req.fall_event_flag,
+        stationary_person_signal=req.stationary_person_signal,
+        flow_anomaly_signal=req.flow_anomaly_signal,
+        slip_risk_signal=req.slip_risk_signal,
     )
     _zones = [cam_zone]
     _report = _engine.review(coast_id="WEBCAM_COAST", zones=_zones)

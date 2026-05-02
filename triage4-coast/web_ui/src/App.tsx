@@ -131,6 +131,10 @@ export default function App() {
               <Bar value={detail.drowning_safety} label="Drowning-risk safety" />
               <Bar value={detail.sun_safety} label="Sun" />
               <Bar value={detail.lost_child_safety} label="Lost-child" />
+              <Bar value={detail.fall_event_safety} label="Fall-event" />
+              <Bar value={detail.stationary_person_safety} label="Stationary-person" />
+              <Bar value={detail.flow_anomaly_safety} label="Flow-anomaly" />
+              <Bar value={detail.slip_risk_safety} label="Slip-risk" />
               <h3 style={{ fontSize: 14, marginTop: 16 }}>History (overall, last 1 h)</h3>
               <HistoryChart zoneId={detail.zone_id} channel="overall" hours={1} />
               <h3 style={{ fontSize: 14, marginTop: 16 }}>Alerts ({detail.alerts.length})</h3>

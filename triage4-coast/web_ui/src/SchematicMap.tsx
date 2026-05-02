@@ -84,17 +84,23 @@ export default function SchematicMap({
                 fill="#fff" fontWeight="600">
                 {s.alert_level.toUpperCase()} · {s.overall.toFixed(2)}
               </text>
-              {/* Mini channel bars (4 thin lines) */}
+              {/* Mini channel bars (8 thin lines) */}
               {[s.density_safety, s.drowning_safety, s.sun_safety,
-                s.lost_child_safety].map((v, j) => (
-                <rect key={j}
-                  x={x + 8 + j * ((tileW - 24) / 4 + 4)}
-                  y={114 + (1 - v) * 18}
-                  width={(tileW - 32) / 4}
-                  height={2 + v * 18}
-                  fill={v < 0.45 ? "#e74c3c"
-                    : v < 0.65 ? "#e6a23c" : "#27ae60"} />
-              ))}
+                s.lost_child_safety, s.fall_event_safety,
+                s.stationary_person_safety, s.flow_anomaly_safety,
+                s.slip_risk_safety].map((v, j) => {
+                const barCount = 8;
+                const barW = (tileW - 24) / barCount;
+                return (
+                  <rect key={j}
+                    x={x + 8 + j * barW}
+                    y={114 + (1 - v) * 18}
+                    width={Math.max(1, barW - 1)}
+                    height={2 + v * 18}
+                    fill={v < 0.45 ? "#e74c3c"
+                      : v < 0.65 ? "#e6a23c" : "#27ae60"} />
+                );
+              })}
             </g>
           );
         })}

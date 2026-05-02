@@ -29,6 +29,16 @@ class CoastSafetyBands:
     sun_watch: float = 0.55
     sun_urgent: float = 0.40
 
+    # Stage-2B channel bands.
+    stationary_watch: float = 0.65
+    stationary_urgent: float = 0.40
+
+    flow_anomaly_watch: float = 0.65
+    flow_anomaly_urgent: float = 0.40
+
+    slip_risk_watch: float = 0.65
+    slip_risk_urgent: float = 0.40
+
 
 _BEACH = CoastSafetyBands()
 _PROMENADE = CoastSafetyBands(

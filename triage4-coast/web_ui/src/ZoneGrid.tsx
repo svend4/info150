@@ -63,6 +63,10 @@ export default function ZoneGrid({ scores }: { scores: Score[] }) {
             <ChannelBar label="drowning" value={s.drowning_safety} />
             <ChannelBar label="sun" value={s.sun_safety} />
             <ChannelBar label="lost-child" value={s.lost_child_safety} />
+            <ChannelBar label="fall" value={s.fall_event_safety} />
+            <ChannelBar label="stationary" value={s.stationary_person_safety} />
+            <ChannelBar label="flow" value={s.flow_anomaly_safety} />
+            <ChannelBar label="slip" value={s.slip_risk_safety} />
           </div>
           <HistoryChart zoneId={s.zone_id} channel="overall" hours={1} />
         </div>

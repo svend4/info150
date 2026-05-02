@@ -49,6 +49,15 @@ class CoastZoneObservation:
     sun_intensity: float
     # Operator-set or future detector — child without companion.
     lost_child_flag: bool = False
+    # Stage-2B channels — adapted from other siblings.
+    # fall_event_flag: a fall was observed (binary, urgent).
+    fall_event_flag: bool = False
+    # stationary_person_signal: 1.0 = "person motionless too long, concerning".
+    stationary_person_signal: float = 0.0
+    # flow_anomaly_signal: 1.0 = "sudden change in crowd flow pattern".
+    flow_anomaly_signal: float = 0.0
+    # slip_risk_signal: 1.0 = "very slippery surface (wet, oil, etc.)".
+    slip_risk_signal: float = 0.0
 
     def __post_init__(self) -> None:
         if not self.zone_id:
@@ -66,6 +75,9 @@ class CoastZoneObservation:
             ("density_pressure", self.density_pressure),
             ("in_water_motion", self.in_water_motion),
             ("sun_intensity", self.sun_intensity),
+            ("stationary_person_signal", self.stationary_person_signal),
+            ("flow_anomaly_signal", self.flow_anomaly_signal),
+            ("slip_risk_signal", self.slip_risk_signal),
         ):
             if not 0.0 <= val <= 1.0:
                 raise ValueError(f"{name} must be in [0, 1], got {val}")
@@ -91,6 +103,12 @@ class CoastScore:
     sun_safety: float
     lost_child_safety: float
     overall: float
+    # Stage-2B channels — default to 1.0 (= safe) so existing
+    # CoastScore() callers still construct valid records.
+    fall_event_safety: float = 1.0
+    stationary_person_safety: float = 1.0
+    flow_anomaly_safety: float = 1.0
+    slip_risk_safety: float = 1.0
 
     def __post_init__(self) -> None:
         if self.alert_level not in VALID_ALERT_LEVELS:
@@ -103,6 +121,10 @@ class CoastScore:
             ("drowning_safety", self.drowning_safety),
             ("sun_safety", self.sun_safety),
             ("lost_child_safety", self.lost_child_safety),
+            ("fall_event_safety", self.fall_event_safety),
+            ("stationary_person_safety", self.stationary_person_safety),
+            ("flow_anomaly_safety", self.flow_anomaly_safety),
+            ("slip_risk_safety", self.slip_risk_safety),
             ("overall", self.overall),
         ):
             if not 0.0 <= v <= 1.0:
