@@ -49,12 +49,20 @@ class CoastSafetyEngine:
         drowning_safety = self._drowning_safety(obs)
         sun_safety = self._sun_safety(obs)
         lost_child_safety = 0.0 if obs.lost_child_flag else 1.0
+        fall_event_safety = 0.0 if obs.fall_event_flag else 1.0
+        stationary_person_safety = max(0.0, 1.0 - obs.stationary_person_signal)
+        flow_anomaly_safety = max(0.0, 1.0 - obs.flow_anomaly_signal)
+        slip_risk_safety = max(0.0, 1.0 - obs.slip_risk_signal)
 
         overall = (
-            0.35 * drowning_safety
-            + 0.25 * density_safety
-            + 0.25 * sun_safety
-            + 0.15 * lost_child_safety
+            0.25 * drowning_safety
+            + 0.20 * density_safety
+            + 0.15 * sun_safety
+            + 0.10 * lost_child_safety
+            + 0.10 * fall_event_safety
+            + 0.07 * stationary_person_safety
+            + 0.07 * flow_anomaly_safety
+            + 0.06 * slip_risk_safety
         )
         overall = max(0.0, min(1.0, overall))
 
@@ -117,6 +125,71 @@ class CoastSafetyEngine:
                 ),
             ))
 
+        # --- Stage-2B channels --------------------------------------
+        if obs.fall_event_flag:
+            level = "urgent"
+            alerts.append(CoastOpsAlert(
+                zone_id=obs.zone_id, kind="fall_event", level="urgent",
+                text="Fall event reported - send a responder to check.",
+            ))
+
+        if stationary_person_safety < bands.stationary_urgent:
+            level = "urgent"
+            alerts.append(CoastOpsAlert(
+                zone_id=obs.zone_id, kind="stationary_person", level="urgent",
+                text=(
+                    f"Person motionless signal {obs.stationary_person_signal:.2f} - "
+                    "visual welfare check requested."
+                ),
+            ))
+        elif stationary_person_safety < bands.stationary_watch:
+            level = _max_level(level, "watch")
+            alerts.append(CoastOpsAlert(
+                zone_id=obs.zone_id, kind="stationary_person", level="watch",
+                text=(
+                    f"Stationary-person signal {obs.stationary_person_signal:.2f} "
+                    "- keep watch on the area."
+                ),
+            ))
+
+        if flow_anomaly_safety < bands.flow_anomaly_urgent:
+            level = "urgent"
+            alerts.append(CoastOpsAlert(
+                zone_id=obs.zone_id, kind="flow_anomaly", level="urgent",
+                text=(
+                    f"Sudden flow change {obs.flow_anomaly_signal:.2f} - "
+                    "scan for a cause (incident, panic, rip current)."
+                ),
+            ))
+        elif flow_anomaly_safety < bands.flow_anomaly_watch:
+            level = _max_level(level, "watch")
+            alerts.append(CoastOpsAlert(
+                zone_id=obs.zone_id, kind="flow_anomaly", level="watch",
+                text=(
+                    f"Flow pattern shifting {obs.flow_anomaly_signal:.2f} "
+                    "- worth a glance."
+                ),
+            ))
+
+        if slip_risk_safety < bands.slip_risk_urgent:
+            level = "urgent"
+            alerts.append(CoastOpsAlert(
+                zone_id=obs.zone_id, kind="slip_risk", level="urgent",
+                text=(
+                    f"High slip risk {obs.slip_risk_signal:.2f} - "
+                    "request a wet-surface mitigation pass."
+                ),
+            ))
+        elif slip_risk_safety < bands.slip_risk_watch:
+            level = _max_level(level, "watch")
+            alerts.append(CoastOpsAlert(
+                zone_id=obs.zone_id, kind="slip_risk", level="watch",
+                text=(
+                    f"Surface slippery {obs.slip_risk_signal:.2f} - "
+                    "post a sign / clear the puddle."
+                ),
+            ))
+
         score = CoastScore(
             zone_id=obs.zone_id,
             zone_kind=obs.zone_kind,
@@ -125,6 +198,10 @@ class CoastSafetyEngine:
             drowning_safety=round(drowning_safety, 3),
             sun_safety=round(sun_safety, 3),
             lost_child_safety=round(lost_child_safety, 3),
+            fall_event_safety=round(fall_event_safety, 3),
+            stationary_person_safety=round(stationary_person_safety, 3),
+            flow_anomaly_safety=round(flow_anomaly_safety, 3),
+            slip_risk_safety=round(slip_risk_safety, 3),
             overall=round(overall, 3),
         )
         return score, alerts

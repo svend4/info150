@@ -15,6 +15,10 @@ AlertKind = Literal[
     "drowning",
     "sun",
     "lost_child",
+    "fall_event",
+    "stationary_person",
+    "flow_anomaly",
+    "slip_risk",
     "calibration",
 ]
 
@@ -33,6 +37,10 @@ VALID_ALERT_KINDS: tuple[AlertKind, ...] = (
     "drowning",
     "sun",
     "lost_child",
+    "fall_event",
+    "stationary_person",
+    "flow_anomaly",
+    "slip_risk",
     "calibration",
 )
 VALID_ZONE_KINDS: tuple[ZoneKind, ...] = (

@@ -31,7 +31,7 @@ export default function SchematicMap({
 
   return (
     <div style={{
-      background: "#0e1422", borderRadius: 6, padding: 8, marginBottom: 16,
+      background: "var(--bg)", borderRadius: 6, padding: 8, marginBottom: 16,
     }}>
       <div style={{ fontSize: 11, opacity: 0.7, marginBottom: 4 }}>
         coast schematic — click a zone for details
@@ -39,9 +39,9 @@ export default function SchematicMap({
       <svg width="100%" viewBox={`0 0 ${W} ${H}`}
         style={{ display: "block" }}>
         {/* Sea band at the bottom */}
-        <rect x="0" y={H - 24} width={W} height="24" fill="#13243a" />
+        <rect x="0" y={H - 24} width={W} height="24" fill="var(--sea-bg)" />
         {/* Land band at top */}
-        <rect x="0" y="0" width={W} height={H - 24} fill="#1a1f2e" />
+        <rect x="0" y="0" width={W} height={H - 24} fill="var(--surface)" />
         {scores.map((s, i) => {
           const x = margin + i * (tileW + gap);
           const isSelected = selected === s.zone_id;
@@ -62,18 +62,18 @@ export default function SchematicMap({
                 </rect>
               )}
               <rect x={x} y="24" width={tileW} height={H - 56}
-                fill={isSelected ? "#222a3e" : "#181f33"}
+                fill={isSelected ? "var(--surface-2)" : "var(--surface)"}
                 stroke={color} strokeWidth={isSelected ? 3 : 2} rx="4" />
               {/* Glyph */}
               <text x={x + tileW / 2} y="56"
                 textAnchor="middle" fontSize="22"
-                fill="#dde7df">
+                fill="var(--text)">
                 {ZONE_KIND_GLYPH[s.zone_kind] || "•"}
               </text>
               {/* Zone id */}
               <text x={x + tileW / 2} y="80"
                 textAnchor="middle" fontSize="11"
-                fill="#dde7df" fontFamily="monospace">
+                fill="var(--text)" fontFamily="monospace">
                 {s.zone_id.slice(0, 18)}
               </text>
               {/* Level pill */}
@@ -84,17 +84,23 @@ export default function SchematicMap({
                 fill="#fff" fontWeight="600">
                 {s.alert_level.toUpperCase()} · {s.overall.toFixed(2)}
               </text>
-              {/* Mini channel bars (4 thin lines) */}
+              {/* Mini channel bars (8 thin lines) */}
               {[s.density_safety, s.drowning_safety, s.sun_safety,
-                s.lost_child_safety].map((v, j) => (
-                <rect key={j}
-                  x={x + 8 + j * ((tileW - 24) / 4 + 4)}
-                  y={114 + (1 - v) * 18}
-                  width={(tileW - 32) / 4}
-                  height={2 + v * 18}
-                  fill={v < 0.45 ? "#e74c3c"
-                    : v < 0.65 ? "#e6a23c" : "#27ae60"} />
-              ))}
+                s.lost_child_safety, s.fall_event_safety,
+                s.stationary_person_safety, s.flow_anomaly_safety,
+                s.slip_risk_safety].map((v, j) => {
+                const barCount = 8;
+                const barW = (tileW - 24) / barCount;
+                return (
+                  <rect key={j}
+                    x={x + 8 + j * barW}
+                    y={114 + (1 - v) * 18}
+                    width={Math.max(1, barW - 1)}
+                    height={2 + v * 18}
+                    fill={v < 0.45 ? "#e74c3c"
+                      : v < 0.65 ? "#e6a23c" : "#27ae60"} />
+                );
+              })}
             </g>
           );
         })}

@@ -64,7 +64,7 @@ export default function StackedTrend({
 
   return (
     <div style={{
-      background: "#0e1422", borderRadius: 6, padding: 8, marginBottom: 16,
+      background: "var(--bg)", borderRadius: 6, padding: 8, marginBottom: 16,
     }}>
       <div style={{ fontSize: 11, opacity: 0.7, marginBottom: 4 }}>
         zones-by-level over last {hours}h ({bucketMinutes}-min buckets)
@@ -85,9 +85,9 @@ export default function StackedTrend({
               <line x1={PAD.left} x2={W - PAD.right}
                 y1={PAD.top + innerH * (1 - p)}
                 y2={PAD.top + innerH * (1 - p)}
-                stroke="#26304a" strokeWidth="0.5" />
+                stroke="var(--border)" strokeWidth="0.5" />
               <text x={PAD.left - 4} y={PAD.top + innerH * (1 - p) + 3}
-                textAnchor="end" fontSize="9" fill="#7a829a">
+                textAnchor="end" fontSize="9" fill="var(--text-muted)">
                 {Math.round(maxTotal * p)}
               </text>
             </g>
@@ -100,11 +100,11 @@ export default function StackedTrend({
           <path d={areaPath((s) => s.cumOk, () => 0)}
             fill={COLORS.ok} fillOpacity="0.85" />
           {/* x-axis labels — first / last */}
-          <text x={PAD.left} y={H - 6} fontSize="9" fill="#7a829a">
+          <text x={PAD.left} y={H - 6} fontSize="9" fill="var(--text-muted)">
             -{hours}h
           </text>
           <text x={W - PAD.right} y={H - 6}
-            textAnchor="end" fontSize="9" fill="#7a829a">
+            textAnchor="end" fontSize="9" fill="var(--text-muted)">
             now
           </text>
           {/* Legend */}
@@ -112,7 +112,7 @@ export default function StackedTrend({
             {(["urgent", "watch", "ok"] as const).map((k, i) => (
               <g key={k} transform={`translate(${i * 70}, 0)`}>
                 <rect width="10" height="10" fill={COLORS[k]} />
-                <text x="14" y="9" fontSize="10" fill="#dde7df">{k}</text>
+                <text x="14" y="9" fontSize="10" fill="var(--text)">{k}</text>
               </g>
             ))}
           </g>

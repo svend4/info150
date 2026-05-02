@@ -1,6 +1,8 @@
 export type AlertLevel = "ok" | "watch" | "urgent";
 export type ZoneKind = "beach" | "promenade" | "water" | "pier";
-export type AlertKind = "density" | "drowning" | "sun" | "lost_child" | "calibration";
+export type AlertKind = "density" | "drowning" | "sun" | "lost_child"
+  | "fall_event" | "stationary_person" | "flow_anomaly" | "slip_risk"
+  | "calibration";
 
 export interface Health {
   service: string; version: string;
@@ -14,6 +16,10 @@ export interface Score {
   drowning_safety: number;
   sun_safety: number;
   lost_child_safety: number;
+  fall_event_safety: number;
+  stationary_person_safety: number;
+  flow_anomaly_safety: number;
+  slip_risk_safety: number;
   overall: number;
   alert_level: AlertLevel;
 }

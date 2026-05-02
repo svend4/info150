@@ -17,6 +17,10 @@ def generate_zone_observation(
     in_water_motion: float = 0.0,
     sun_intensity: float = 0.0,
     lost_child_flag: bool = False,
+    fall_event_flag: bool = False,
+    stationary_person_signal: float = 0.0,
+    flow_anomaly_signal: float = 0.0,
+    slip_risk_signal: float = 0.0,
     seed: int = 0,  # API parity; engine is deterministic
 ) -> CoastZoneObservation:
     """Build one synthetic CoastZoneObservation."""
@@ -30,6 +34,10 @@ def generate_zone_observation(
         in_water_motion=in_water_motion,
         sun_intensity=sun_intensity,
         lost_child_flag=lost_child_flag,
+        fall_event_flag=fall_event_flag,
+        stationary_person_signal=stationary_person_signal,
+        flow_anomaly_signal=flow_anomaly_signal,
+        slip_risk_signal=slip_risk_signal,
     )
 
 

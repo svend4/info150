@@ -11,12 +11,12 @@ import { api, type GroupState, type TourGroup } from "./api";
 const STATE_COLOR: Record<GroupState, string> = {
   active: "#27ae60",
   alert: "#e74c3c",
-  complete: "#5c6080",
+  complete: "var(--text-disabled)",
 };
 const STATE_BG: Record<GroupState, string> = {
-  active: "#1a3022",
-  alert: "#3a1a1a",
-  complete: "#22293f",
+  active: "var(--success-bg)",
+  alert: "var(--danger-bg)",
+  complete: "var(--surface-2)",
 };
 
 function fmtAge(secAgo: number): string {
@@ -104,7 +104,7 @@ export default function GroupPanel({ zoneIds }: { zoneIds: string[] }) {
 
   return (
     <div style={{
-      background: "#0e1422", borderRadius: 6, padding: 12,
+      background: "var(--bg)", borderRadius: 6, padding: 12,
     }}>
       <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8 }}>
         Tour groups
@@ -112,7 +112,7 @@ export default function GroupPanel({ zoneIds }: { zoneIds: string[] }) {
       <div style={{ display: "grid",
         gridTemplateColumns: "260px 1fr", gap: 12 }}>
         {/* Registration form */}
-        <div style={{ background: "#181f33", borderRadius: 4, padding: 10 }}>
+        <div style={{ background: "var(--surface)", borderRadius: 4, padding: 10 }}>
           <div style={{ fontSize: 12, opacity: 0.75, marginBottom: 6 }}>
             register new group
           </div>
@@ -138,7 +138,7 @@ export default function GroupPanel({ zoneIds }: { zoneIds: string[] }) {
           <button onClick={register} disabled={!name.trim()}
             style={{
               ...buttonStyle, marginTop: 8,
-              background: name.trim() ? "#3a8443" : "#444",
+              background: name.trim() ? "var(--success-strong)" : "var(--text-disabled)",
               cursor: name.trim() ? "pointer" : "not-allowed",
             }}>
             + Register
@@ -186,7 +186,7 @@ export default function GroupPanel({ zoneIds }: { zoneIds: string[] }) {
                 </div>
                 {/* Headcount progress */}
                 <div style={{
-                  height: 4, background: "#22293f", borderRadius: 2,
+                  height: 4, background: "var(--surface-2)", borderRadius: 2,
                   marginTop: 6, overflow: "hidden",
                 }}>
                   <div style={{
@@ -212,19 +212,19 @@ export default function GroupPanel({ zoneIds }: { zoneIds: string[] }) {
                       style={{ ...inputStyle, width: 60 }} />
                     <button onClick={() => checkin(g)}
                       style={{ ...buttonStyle,
-                        background: "#5c7cfa", cursor: "pointer" }}>
+                        background: "var(--primary)", cursor: "pointer" }}>
                       Check in
                     </button>
                     <button onClick={() => complete(g)}
                       style={{ ...buttonStyle,
-                        background: "#22293f", cursor: "pointer",
+                        background: "var(--surface-2)", cursor: "pointer",
                         border: "1px solid #5c7cfa" }}>
                       ✓ Complete
                     </button>
                     <button onClick={() => remove(g)}
                       style={{ ...buttonStyle,
                         background: "transparent",
-                        color: "#ff8c8c", cursor: "pointer",
+                        color: "var(--danger-text)", cursor: "pointer",
                         border: "1px solid #7d3a3a", marginLeft: "auto" }}>
                       Remove
                     </button>
@@ -236,7 +236,7 @@ export default function GroupPanel({ zoneIds }: { zoneIds: string[] }) {
         </div>
       </div>
       {error && (
-        <div style={{ marginTop: 8, fontSize: 11, color: "#ff8c8c" }}>
+        <div style={{ marginTop: 8, fontSize: 11, color: "var(--danger-text)" }}>
           {error}
         </div>
       )}
@@ -245,8 +245,8 @@ export default function GroupPanel({ zoneIds }: { zoneIds: string[] }) {
 }
 
 const inputStyle: React.CSSProperties = {
-  width: "100%", padding: 6, background: "#22293f",
-  color: "#dde7df", border: "1px solid #5c7cfa", borderRadius: 4,
+  width: "100%", padding: 6, background: "var(--surface-2)",
+  color: "var(--text)", border: "1px solid #5c7cfa", borderRadius: 4,
   fontFamily: "inherit", fontSize: 12, boxSizing: "border-box",
 };
 

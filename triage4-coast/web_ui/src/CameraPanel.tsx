@@ -46,6 +46,10 @@ export default function CameraPanel({ onAnalyzed }: { onAnalyzed: () => void }) 
   const [zoneId, setZoneId] = useState<string>("WEBCAM_ZONE");
   const [inWater, setInWater] = useState<number>(0.0);
   const [lostChild, setLostChild] = useState<boolean>(false);
+  const [fallEvent, setFallEvent] = useState<boolean>(false);
+  const [stationary, setStationary] = useState<number>(0.0);
+  const [flowAnom, setFlowAnom] = useState<number>(0.0);
+  const [slipRisk, setSlipRisk] = useState<number>(0.0);
 
   useEffect(() => {
     (async () => {
@@ -137,6 +141,10 @@ export default function CameraPanel({ onAnalyzed }: { onAnalyzed: () => void }) 
         in_water_motion: inWater,
         sun_intensity: sun,
         lost_child_flag: lostChild,
+        fall_event_flag: fallEvent,
+        stationary_person_signal: stationary,
+        flow_anomaly_signal: flowAnom,
+        slip_risk_signal: slipRisk,
       });
       setStatus(`done. zone=${zoneId} (${zoneKind}) density=${density.toFixed(2)} sun=${sun.toFixed(2)}`);
       onAnalyzed();
@@ -149,10 +157,10 @@ export default function CameraPanel({ onAnalyzed }: { onAnalyzed: () => void }) 
 
   return (
     <section style={{
-      background: "#1a1f30", borderRadius: 6, padding: 16, marginBottom: 16,
+      background: "var(--surface)", borderRadius: 6, padding: 16, marginBottom: 16,
       borderLeft: "4px solid #5c7cfa",
     }}>
-      <div style={{ background: "#3a2438", color: "#ffe0c0", padding: "6px 10px",
+      <div style={{ background: "var(--privacy-bg)", color: "var(--privacy-text)", padding: "6px 10px",
         borderRadius: 4, fontSize: 11, marginBottom: 8, border: "1px solid #c4604c" }}>
         ⚠ <b>PUBLIC SPACE SURVEILLANCE:</b> coast cameras observe a public space.
         GDPR / local privacy law typically requires visible signage. The browser
@@ -175,9 +183,9 @@ export default function CameraPanel({ onAnalyzed }: { onAnalyzed: () => void }) 
         </label>
         {!streaming
           ? <button onClick={start} style={btnStyle}>Start camera</button>
-          : <button onClick={stop} style={{ ...btnStyle, background: "#7d3a3a" }}>Stop</button>}
+          : <button onClick={stop} style={{ ...btnStyle, background: "var(--danger-strong)" }}>Stop</button>}
         <button onClick={captureAndRun} disabled={!streaming || running}
-          style={{ ...btnStyle, background: streaming && !running ? "#5c7cfa" : "#444",
+          style={{ ...btnStyle, background: streaming && !running ? "var(--primary)" : "var(--text-disabled)",
             cursor: streaming && !running ? "pointer" : "not-allowed" }}>
           {running ? "Running…" : "Capture & analyze"}
         </button>
@@ -190,20 +198,29 @@ export default function CameraPanel({ onAnalyzed }: { onAnalyzed: () => void }) 
           <Stat label="Live density (motion+variance)" v={liveDensity} />
           <Stat label="Live sun intensity (luminance)" v={liveSun} />
           <SliderRow label="In-water motion (manual)" value={inWater} onChange={setInWater} />
+          <SliderRow label="Stationary person signal" value={stationary} onChange={setStationary} />
+          <SliderRow label="Flow anomaly signal" value={flowAnom} onChange={setFlowAnom} />
+          <SliderRow label="Slip risk signal" value={slipRisk} onChange={setSlipRisk} />
           <label style={{ fontSize: 12 }}>
             <input type="checkbox" checked={lostChild}
               onChange={(e) => setLostChild(e.target.checked)} />
             &nbsp;Lost-child flag
           </label>
+          <label style={{ fontSize: 12 }}>
+            <input type="checkbox" checked={fallEvent}
+              onChange={(e) => setFallEvent(e.target.checked)} />
+            &nbsp;Fall event observed
+          </label>
           <div style={{ fontSize: 11, opacity: 0.6 }}>
-            Camera infers <b>density</b> + <b>sun</b>. In-water activity needs a
-            water-region detector → manual slider. Lost-child is a manual ops flag.
+            Camera infers <b>density</b> + <b>sun</b>. Other signals are operator
+            overrides for channels that need specialized detectors (pose, IR,
+            multi-frame stationary tracking).
           </div>
         </div>
       </div>
       <canvas ref={canvasRef} style={{ display: "none" }} />
       {status && <div style={{ marginTop: 8, fontSize: 12, opacity: 0.85 }}>{status}</div>}
-      {error && <div style={{ marginTop: 8, fontSize: 12, color: "#ff8c8c" }}>{error}</div>}
+      {error && <div style={{ marginTop: 8, fontSize: 12, color: "var(--danger-text)" }}>{error}</div>}
     </section>
   );
 }
@@ -215,9 +232,9 @@ function Stat({ label, v }: { label: string; v: number }) {
         <span style={{ opacity: 0.75 }}>{label}</span>
         <span>{v.toFixed(3)}</span>
       </div>
-      <div style={{ height: 6, background: "#262d44", borderRadius: 3, overflow: "hidden" }}>
+      <div style={{ height: 6, background: "var(--surface-2)", borderRadius: 3, overflow: "hidden" }}>
         <div style={{ width: `${Math.min(100, v * 100)}%`, height: "100%",
-          background: v > 0.7 ? "#e74c3c" : v > 0.3 ? "#e6a23c" : "#5c7cfa" }} />
+          background: v > 0.7 ? "#e74c3c" : v > 0.3 ? "#e6a23c" : "var(--primary)" }} />
       </div>
     </div>
   );
@@ -239,15 +256,15 @@ function SliderRow({ label, value, onChange }: {
 }
 
 const inputColors = {
-  background: "#262d44",
-  color: "#dde7df",
+  background: "var(--surface-2)",
+  color: "var(--text)",
   border: "1px solid #5c7cfa",
   borderRadius: 4,
 };
 const selectStyle = { padding: 6, ...inputColors };
 const btnStyle = {
   padding: "6px 14px",
-  background: "#5c7cfa",
+  background: "var(--primary)",
   color: "white",
   border: 0,
   borderRadius: 4,

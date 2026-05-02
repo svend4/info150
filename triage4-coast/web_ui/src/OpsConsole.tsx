@@ -16,6 +16,7 @@ import RadarChart from "./RadarChart";
 import SchematicMap from "./SchematicMap";
 import StackedTrend from "./StackedTrend";
 import TimeStripChart from "./TimeStripChart";
+import WeatherStrip from "./WeatherStrip";
 import type { Score } from "./types";
 
 export default function OpsConsole({ scores }: { scores: Score[] }) {
@@ -27,6 +28,8 @@ export default function OpsConsole({ scores }: { scores: Score[] }) {
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+      <WeatherStrip />
+
       <SchematicMap
         scores={scores}
         selected={selectedId}

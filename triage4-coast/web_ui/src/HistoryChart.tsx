@@ -37,14 +37,22 @@ export default function HistoryChart({
     if (!canvas) return;
     const ctx = canvas.getContext("2d");
     if (!ctx) return;
+    // Canvas does NOT resolve CSS variables — read computed styles
+    // off the document root so the chart re-themes correctly.
+    const css = getComputedStyle(document.documentElement);
+    const C = {
+      border: css.getPropertyValue("--border").trim() || "#26304a",
+      primary: css.getPropertyValue("--primary").trim() || "#5c7cfa",
+      text: css.getPropertyValue("--text").trim() || "#dde7df",
+    };
     ctx.clearRect(0, 0, W, H);
 
     // Frame
-    ctx.strokeStyle = "#26304a";
+    ctx.strokeStyle = C.border;
     ctx.strokeRect(0.5, 0.5, W - 1, H - 1);
     // Reference lines at 0.3 / 0.7
     ctx.setLineDash([2, 4]);
-    ctx.strokeStyle = "#26304a";
+    ctx.strokeStyle = C.border;
     for (const v of [0.3, 0.7]) {
       const y = H - PAD - (H - 2 * PAD) * v;
       ctx.beginPath();
@@ -55,7 +63,7 @@ export default function HistoryChart({
     ctx.setLineDash([]);
 
     if (points.length === 0) {
-      ctx.fillStyle = "#5c7cfa";
+      ctx.fillStyle = C.primary;
       ctx.font = "11px system-ui";
       ctx.fillText("(no samples yet)", PAD + 2, H / 2 + 4);
       return;
@@ -71,7 +79,7 @@ export default function HistoryChart({
       return { x, y, v: p.value };
     });
 
-    ctx.strokeStyle = "#5c7cfa";
+    ctx.strokeStyle = C.primary;
     ctx.lineWidth = 1.5;
     ctx.beginPath();
     xy.forEach((pt, i) => {
@@ -81,7 +89,7 @@ export default function HistoryChart({
 
     // Last value label
     const last = xy[xy.length - 1];
-    ctx.fillStyle = "#dde7df";
+    ctx.fillStyle = C.text;
     ctx.font = "11px system-ui";
     ctx.fillText(last.v.toFixed(2), W - 30, last.y - 4);
   }, [points]);
@@ -92,9 +100,9 @@ export default function HistoryChart({
         {channel} — last {hours}h ({points.length} samples)
       </div>
       <canvas ref={canvasRef} width={W} height={H}
-        style={{ background: "#0e1422", borderRadius: 4 }} />
+        style={{ background: "var(--bg)", borderRadius: 4 }} />
       {error && (
-        <div style={{ fontSize: 11, color: "#ff8c8c" }}>{error}</div>
+        <div style={{ fontSize: 11, color: "var(--danger-text)" }}>{error}</div>
       )}
     </div>
   );

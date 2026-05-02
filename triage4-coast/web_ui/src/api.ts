@@ -27,6 +27,10 @@ export type CoastCameraBody = {
   in_water_motion: number;
   sun_intensity: number;
   lost_child_flag: boolean;
+  fall_event_flag?: boolean;
+  stationary_person_signal?: number;
+  flow_anomaly_signal?: number;
+  slip_risk_signal?: number;
 };
 
 export type HistoryPoint = { ts: number; value: number };
@@ -171,4 +175,29 @@ export const api = {
         if (!r.ok) throw new Error(`DELETE failed: ${r.status}`);
         return r.json();
       }),
+  weatherLatest: () =>
+    get<{ snapshot: WeatherSnapshot | null }>("/coast/weather"),
+  weatherRefresh: (lat: number, lon: number, autoBroadcast = true) =>
+    postJson<{
+      snapshot: WeatherSnapshot;
+      triggers: { kind: string; message: string; reason: string }[];
+      actuated_count: number;
+      provider: string;
+    }>("/coast/weather/refresh", {
+      lat, lon, auto_broadcast: autoBroadcast,
+    }),
+};
+
+export type WeatherSnapshot = {
+  ts_unix: number;
+  air_temp_c: number | null;
+  wind_speed_mps: number | null;
+  wind_dir_deg: number | null;
+  uv_index: number | null;
+  cloud_cover: number | null;
+  lightning_strikes_5min: number;
+  forecast_summary: string;
+  provider: string;
+  location_lat: number | null;
+  location_lon: number | null;
 };
