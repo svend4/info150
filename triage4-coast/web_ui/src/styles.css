@@ -1,0 +1,4 @@
+html, body, #root { height: 100%; }
+body { margin: 0; }
+button:hover { filter: brightness(1.15); }
+code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }
