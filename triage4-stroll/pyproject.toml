@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "triage4-stroll"
+version = "0.1.0"
+description = "Day-walk wellness assistant — pace/fatigue/hydration/sun cues for casual walks, sibling of triage4"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+authors = [
+  { name = "svend4" }
+]
+# NOTE — intentionally narrow dependency surface. Keeps install size
+# small and makes the wellness-vs-clinical separation explicit: no
+# fastapi, no pydantic, no uvicorn. This is a library that produces
+# coaching cues from observations; the UI is separate.
+dependencies = [
+  "numpy>=1.26",
+  "scipy>=1.11"
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0"
+]
+# Web UI surface — opt-in.
+ui = [
+  "fastapi>=0.115",
+  "uvicorn>=0.30",
+  "httpx>=0.27"
+]
+# Camera input surface — opt-in. Pulls in OpenCV for real frame
+# capture (USB webcam / RTSP / video file). Without this extra the
+# perception layer's LoopbackFrameSource + SyntheticFrameSource still
+# work — useful for tests + demos without a camera.
+camera = [
+  "opencv-python>=4.8"
+]
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages.find]
+include = ["triage4_stroll*"]
