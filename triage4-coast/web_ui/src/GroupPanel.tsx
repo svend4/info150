@@ -217,15 +217,17 @@ export default function GroupPanel({ zoneIds }: { zoneIds: string[] }) {
                     </button>
                     <button onClick={() => complete(g)}
                       style={{ ...buttonStyle,
-                        background: "var(--surface-2)", cursor: "pointer",
-                        border: "1px solid #5c7cfa" }}>
+                        background: "var(--surface-2)",
+                        color: "var(--text)",
+                        cursor: "pointer",
+                        border: "1px solid var(--primary)" }}>
                       ✓ Complete
                     </button>
                     <button onClick={() => remove(g)}
                       style={{ ...buttonStyle,
                         background: "transparent",
                         color: "var(--danger-text)", cursor: "pointer",
-                        border: "1px solid #7d3a3a", marginLeft: "auto" }}>
+                        border: "1px solid var(--danger-strong)", marginLeft: "auto" }}>
                       Remove
                     </button>
                   </div>
@@ -246,7 +248,7 @@ export default function GroupPanel({ zoneIds }: { zoneIds: string[] }) {
 
 const inputStyle: React.CSSProperties = {
   width: "100%", padding: 6, background: "var(--surface-2)",
-  color: "var(--text)", border: "1px solid #5c7cfa", borderRadius: 4,
+  color: "var(--text)", border: "1px solid var(--primary)", borderRadius: 4,
   fontFamily: "inherit", fontSize: 12, boxSizing: "border-box",
 };
 

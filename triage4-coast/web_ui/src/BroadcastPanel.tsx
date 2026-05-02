@@ -72,7 +72,8 @@ export default function BroadcastPanel({
             style={{
               padding: "10px 14px",
               background: open === k.kind ? "var(--primary)" : "var(--surface)",
-              color: "var(--text)", border: "1px solid #5c7cfa",
+              color: open === k.kind ? "#fff" : "var(--text)",
+              border: "1px solid var(--primary)",
               borderRadius: 4, cursor: "pointer", fontSize: 13,
             }}>
             {k.icon} {k.label}
@@ -89,14 +90,14 @@ export default function BroadcastPanel({
             marginBottom: 8 }}>
             <select value={zoneId} onChange={(e) => setZoneId(e.target.value)}
               style={{ padding: 6, background: "var(--surface-2)", color: "var(--text)",
-                border: "1px solid #5c7cfa", borderRadius: 4 }}>
+                border: "1px solid var(--primary)", borderRadius: 4 }}>
               <option value="">all zones</option>
               {zoneIds.map((z) => <option key={z} value={z}>{z}</option>)}
             </select>
             <input placeholder="operator id (optional)"
               value={operatorId} onChange={(e) => setOperatorId(e.target.value)}
               style={{ padding: 6, width: 180, background: "var(--surface-2)",
-                color: "var(--text)", border: "1px solid #5c7cfa", borderRadius: 4 }} />
+                color: "var(--text)", border: "1px solid var(--primary)", borderRadius: 4 }} />
           </div>
           <textarea placeholder={
             KINDS.find((k) => k.kind === open)?.defaultMsg || "Message"
@@ -104,7 +105,7 @@ export default function BroadcastPanel({
             value={message} onChange={(e) => setMessage(e.target.value)}
             rows={2}
             style={{ width: "100%", padding: 6, background: "var(--surface-2)",
-              color: "var(--text)", border: "1px solid #5c7cfa", borderRadius: 4,
+              color: "var(--text)", border: "1px solid var(--primary)", borderRadius: 4,
               fontFamily: "inherit", fontSize: 13, boxSizing: "border-box" }} />
           <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
             <button onClick={() => send(open)}
@@ -114,7 +115,7 @@ export default function BroadcastPanel({
             </button>
             <button onClick={() => setOpen(null)}
               style={{ padding: "6px 14px", background: "var(--surface-2)",
-                color: "var(--text)", border: "1px solid #444",
+                color: "var(--text)", border: "1px solid var(--border)",
                 borderRadius: 4, cursor: "pointer" }}>
               Cancel
             </button>

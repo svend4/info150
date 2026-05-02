@@ -63,7 +63,7 @@ export default function IncidentTimeline({ refreshMs = 10_000 }: { refreshMs?: n
           {entries.map((e, i) => (
             <div key={i} style={{
               padding: 8, background: "var(--surface)", borderRadius: 4,
-              borderLeft: "3px solid #5c7cfa",
+              borderLeft: "3px solid var(--primary)",
             }}>
               <div style={{
                 display: "flex", justifyContent: "space-between",

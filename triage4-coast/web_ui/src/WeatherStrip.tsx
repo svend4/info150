@@ -145,7 +145,7 @@ function Stat({ icon, label, value, valueColor = "var(--text)" }: {
 
 const inputStyle: React.CSSProperties = {
   padding: 4, background: "var(--surface-2)", color: "var(--text)",
-  border: "1px solid #5c7cfa", borderRadius: 4, fontSize: 11,
+  border: "1px solid var(--primary)", borderRadius: 4, fontSize: 11,
 };
 const btnStyle: React.CSSProperties = {
   padding: "4px 10px", background: "var(--primary)", color: "#fff",
