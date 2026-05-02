@@ -8,9 +8,10 @@ from typing import Any
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
+from pydantic import BaseModel, Field
 
 from ..core.models import ReserveReport
-from ..sim.synthetic_reserve import demo_observations
+from ..sim.synthetic_reserve import demo_observations, generate_observation
 from ..wildlife_health.monitoring_engine import WildlifeHealthEngine
 
 app = FastAPI(title="triage4-wild API", version="0.1.0")
@@ -103,6 +104,50 @@ def demo_reload() -> dict[str, Any]:
     _seed()
     return {"reloaded": True, "observation_count": len(_report.scores),
             "alert_count": len(_report.alerts)}
+
+
+class CameraRunRequest(BaseModel):
+    """Camera-driven trail-cam observation.
+
+    Browser-side mean motion → presence/activity. Wildlife-specific
+    health channels (limb asymmetry, thermal hotspot, body condition)
+    need pose / IR-camera detectors a single visible-light webcam
+    cannot give → manual sliders.
+    """
+
+    obs_token: str = Field("WEBCAM_OBS", min_length=1, max_length=64)
+    species: str = "elephant"
+    species_confidence: float = Field(0.85, ge=0.0, le=1.0)
+    presence_rate: float = Field(0.0, ge=0.0, le=1.0)
+    limb_asymmetry: float = Field(0.0, ge=0.0, le=1.0)
+    thermal_hotspot: float = Field(0.0, ge=0.0, le=1.0)
+    postural_down_fraction: float = Field(0.0, ge=0.0, le=1.0)
+    body_condition: float = Field(0.85, ge=0.0, le=1.0)
+
+
+@app.post("/camera/run")
+def camera_run(req: CameraRunRequest) -> dict[str, Any]:
+    """Replace the dashboard with one camera-derived ranger observation."""
+    global _observations, _report
+    obs = generate_observation(
+        obs_token=req.obs_token,
+        species=req.species,  # type: ignore[arg-type]
+        species_confidence=req.species_confidence,
+        limb_asymmetry=req.limb_asymmetry,
+        thermal_hotspot=req.thermal_hotspot,
+        postural_down_fraction=req.postural_down_fraction,
+        body_condition=req.body_condition,
+        seed=42,
+    )
+    _observations = [obs]
+    aggregate = ReserveReport(reserve_id="WEBCAM_RESERVE")
+    single = _engine.review(obs, reserve_id="WEBCAM_RESERVE")
+    aggregate.scores.extend(single.scores)
+    aggregate.alerts.extend(single.alerts)
+    _report = aggregate
+    return {"obs_token": req.obs_token, "species": req.species,
+            "presence_rate": req.presence_rate,
+            "score_count": len(_report.scores), "alert_count": len(_report.alerts)}
 
 
 @app.get("/export.html", response_class=HTMLResponse)

@@ -14,9 +14,11 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 
+from pydantic import BaseModel, Field
+
 from ..bird_health.monitoring_engine import AvianHealthEngine
 from ..core.models import StationReport
-from ..sim.synthetic_station import demo_observations
+from ..sim.synthetic_station import demo_observations, generate_observation
 
 app = FastAPI(title="triage4-bird API", version="0.1.0")
 
@@ -108,6 +110,46 @@ def demo_reload() -> dict[str, Any]:
     _seed()
     return {"reloaded": True, "observation_count": len(_report.scores),
             "alert_count": len(_report.alerts)}
+
+
+class CameraRunRequest(BaseModel):
+    """Camera-driven bird-station observation. Mean motion → presence
+    proxy; species-specific health channels (wingbeat, thermal,
+    dead-bird count) need pose / IR detectors → manual sliders.
+    """
+
+    obs_token: str = Field("WEBCAM_OBS", min_length=1, max_length=64)
+    station_id: str = Field("WEBCAM_STATION", min_length=1, max_length=64)
+    presence_rate: float = Field(0.0, ge=0.0, le=1.0)
+    expected_species_present_fraction: float = Field(1.0, ge=0.0, le=1.0)
+    distress_fraction: float = Field(0.0, ge=0.0, le=1.0)
+    wingbeat_anomaly: float = Field(0.0, ge=0.0, le=1.0)
+    thermal_elevation: float = Field(0.0, ge=0.0, le=10.0)
+    dead_bird_count: int = Field(0, ge=0, le=20)
+
+
+@app.post("/camera/run")
+def camera_run(req: CameraRunRequest) -> dict[str, Any]:
+    """Replace the dashboard with a camera-derived single-observation review."""
+    global _observations, _report
+    obs = generate_observation(
+        obs_token=req.obs_token,
+        station_id=req.station_id,
+        expected_species_present_fraction=req.expected_species_present_fraction,
+        distress_fraction=req.distress_fraction,
+        wingbeat_anomaly=req.wingbeat_anomaly,
+        thermal_elevation=req.thermal_elevation,
+        dead_bird_count=req.dead_bird_count,
+        seed=42,
+    )
+    _observations = [obs]
+    aggregate = StationReport(station_id=req.station_id)
+    single = _engine.review(obs)
+    aggregate.scores.extend(single.scores)
+    aggregate.alerts.extend(single.alerts)
+    _report = aggregate
+    return {"obs_token": req.obs_token, "presence_rate": req.presence_rate,
+            "score_count": len(_report.scores), "alert_count": len(_report.alerts)}
 
 
 @app.get("/export.html", response_class=HTMLResponse)

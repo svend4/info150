@@ -14,6 +14,7 @@ from typing import Any
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
+from pydantic import BaseModel, Field
 
 from ..core.enums import ExerciseKind
 from ..form_check.rapid_form_engine import RapidFormEngine
@@ -113,6 +114,39 @@ def demo_reload() -> dict[str, Any]:
     _seed()
     return {"reloaded": True, "rep_count": _briefing.session.rep_count,
             "cue_count": len(_briefing.cues)}
+
+
+class CameraRunRequest(BaseModel):
+    """Camera-driven session request.
+
+    The browser computes ``asymmetry_severity`` from a captured webcam
+    stream (left-vs-right luminance imbalance) and posts the scalar
+    here. The server uses it as the asymmetry parameter for a fresh
+    synthetic session and runs the engine.
+    """
+
+    asymmetry_severity: float = Field(0.35, ge=0.0, le=1.0)
+    rep_count: int = Field(5, ge=1, le=20)
+    exercise: ExerciseKind = "squat"
+
+
+@app.post("/camera/run")
+def camera_run(req: CameraRunRequest) -> dict[str, Any]:
+    """Build a fresh briefing using the camera-derived asymmetry."""
+    global _briefing
+    session = demo_session(
+        req.exercise,
+        rep_count=req.rep_count,
+        asymmetry_severity=req.asymmetry_severity,
+    )
+    _briefing = _engine.review(session)
+    return {
+        "asymmetry_severity": req.asymmetry_severity,
+        "exercise": req.exercise,
+        "rep_count": _briefing.session.rep_count,
+        "session_overall": _briefing.session_overall,
+        "cue_count": len(_briefing.cues),
+    }
 
 
 @app.get("/export.html", response_class=HTMLResponse)

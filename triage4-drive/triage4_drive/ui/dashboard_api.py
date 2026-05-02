@@ -13,10 +13,11 @@ from typing import Any
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
+from pydantic import BaseModel, Field
 
 from ..core.models import DrivingSession
 from ..driver_monitor.monitoring_engine import DriverMonitoringEngine
-from ..sim.synthetic_cab import demo_session
+from ..sim.synthetic_cab import demo_session, generate_observation
 
 app = FastAPI(title="triage4-drive API", version="0.1.0")
 
@@ -113,6 +114,44 @@ def demo_reload() -> dict[str, Any]:
     _seed()
     return {"reloaded": True, "window_count": _report.window_count,
             "alert_count": len(_report.alerts)}
+
+
+
+
+
+class CameraRunRequest(BaseModel):
+    """Camera-driven driver-monitor window. Low motion → drowsiness;
+    erratic motion variance → distraction. Incapacitation needs slumped-
+    pose detection → manual slider.
+    """
+
+    session_id: str = Field("WEBCAM_SESSION", min_length=1, max_length=64)
+    drowsiness: float = Field(0.0, ge=0.0, le=1.0)
+    distraction: float = Field(0.0, ge=0.0, le=1.0)
+    incapacitation: float = Field(0.0, ge=0.0, le=1.0)
+
+
+@app.post("/camera/run")
+def camera_run(req: CameraRunRequest) -> dict[str, Any]:
+    """Replace the dashboard with a single camera-derived driving window."""
+    global _windows, _report
+    obs = generate_observation(
+        session_id=req.session_id,
+        drowsiness=req.drowsiness,
+        distraction=req.distraction,
+        incapacitation=req.incapacitation,
+        seed=42,
+    )
+    obs_list = [obs]
+    aggregate = DrivingSession(session_id=req.session_id)
+    for w in obs_list:
+        score, alerts = _engine.review(w)
+        aggregate.scores.append(score)
+        aggregate.alerts.extend(alerts)
+    _windows = obs_list
+    _report = aggregate
+    return {"session_id": req.session_id, "drowsiness": req.drowsiness,
+            "score_count": len(_report.scores), "alert_count": len(_report.alerts)}
 
 
 @app.get("/export.html", response_class=HTMLResponse)

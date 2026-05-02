@@ -7,11 +7,21 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse, PlainTextResponse
+from pydantic import BaseModel, Field
 
 from triage4.autonomy.active_sensing import ActiveSensingPlanner
 from triage4.autonomy.human_handoff import HumanHandoffService
 from triage4.autonomy.task_allocator import TaskAllocator
-from triage4.core.models import CasualtyNode
+from triage4.core.models import CasualtyNode, CasualtySignature, GeoPose
+from triage4.perception.body_regions import BodyRegionPolygonizer
+from triage4.signatures.bleeding_signature import BleedingSignatureExtractor
+from triage4.signatures.breathing_signature import BreathingSignatureExtractor
+from triage4.signatures.perfusion_signature import PerfusionSignatureExtractor
+from triage4.sim.casualty_profiles import (
+    bleeding_inputs,
+    breath_signal,
+    perfusion_series,
+)
 from triage4.evaluation.counterfactual import score_counterfactuals
 from triage4.evaluation.gate2_rapid_triage import evaluate_gate2
 from triage4.graph.casualty_graph import CasualtyGraph
@@ -725,6 +735,110 @@ def casualty_marker(casualty_id: str) -> dict:
         "qr_payload": qr,
         "envelope_bytes": len(envelope),
         "qr_chars": len(qr),
+    }
+
+
+# ---------------------------------------------------------------------------
+# Camera input — Phase 10 stationary-camera integration
+# ---------------------------------------------------------------------------
+
+
+class CameraRunRequest(BaseModel):
+    """Camera-driven casualty submission.
+
+    A stationary scene camera (or operator's webcam) detects a person
+    in the frame; the browser computes mean inter-frame motion (a
+    respiration / movement proxy) and frame variance (scene complexity
+    proxy) and posts them here together with the operator's chosen
+    START priority hint and an approximate scene location.
+
+    The endpoint builds a full :class:`CasualtySignature` from canned
+    profile inputs (matching ``seed_demo_data``'s pattern), echoes the
+    camera signals back into ``raw_features`` for transparency, and
+    upserts a fresh :class:`CasualtyNode` into the live graph. The
+    triage engine then assigns a priority and the rest of the
+    dashboard (mission, forecast, scorecard, …) refreshes inline.
+
+    STRONG PRIVACY: scene-camera footage is PHI-equivalent. This
+    endpoint accepts only scalar summaries — no images, no audio.
+    """
+
+    casualty_id: str = Field("WEBCAM_C", min_length=1, max_length=64)
+    priority_hint: str = Field("delayed")
+    location_x: float = Field(50.0, ge=-1000.0, le=1000.0)
+    location_y: float = Field(50.0, ge=-1000.0, le=1000.0)
+    scene_activity: float = Field(0.0, ge=0.0, le=1.0)
+    scene_complexity: float = Field(0.0, ge=0.0, le=1.0)
+    platform_source: str = Field("webcam", min_length=1, max_length=64)
+
+
+_VALID_PRIORITY_HINTS = ("immediate", "delayed", "minimal")
+_camera_polygonizer = BodyRegionPolygonizer()
+_camera_breath = BreathingSignatureExtractor()
+_camera_bleed = BleedingSignatureExtractor()
+_camera_perfusion = PerfusionSignatureExtractor()
+
+
+@app.post("/camera/run")
+def camera_run(req: CameraRunRequest) -> dict:
+    """Add (or replace) a camera-derived casualty in the live graph."""
+    if req.priority_hint not in _VALID_PRIORITY_HINTS:
+        raise HTTPException(
+            status_code=400,
+            detail=f"priority_hint must be one of {_VALID_PRIORITY_HINTS}",
+        )
+
+    breathing = _camera_breath.extract(breath_signal(req.priority_hint))
+    vr, td, ph = bleeding_inputs(req.priority_hint)
+    bleeding = _camera_bleed.extract(vr, td, ph)
+    perfusion = _camera_perfusion.extract(perfusion_series(req.priority_hint))
+    body_regions = _camera_polygonizer.build_from_center(
+        req.location_x, req.location_y,
+    )
+
+    sig = CasualtySignature(
+        breathing_curve=breathing["breathing_curve"],
+        chest_motion_fd=breathing["chest_motion_fd"],
+        perfusion_drop_score=perfusion["perfusion_drop_score"],
+        bleeding_visual_score=bleeding["bleeding_visual_score"],
+        visibility_score=round(0.6 + 0.35 * req.scene_complexity, 2),
+        body_region_polygons=body_regions,
+        raw_features={
+            "respiration_proxy": breathing["respiration_proxy"],
+            "breathing_quality": breathing["quality_score"],
+            "bleeding_confidence": bleeding["confidence"],
+            "pulse_proxy": perfusion["pulse_proxy"],
+            "camera_scene_activity": req.scene_activity,
+            "camera_scene_complexity": req.scene_complexity,
+        },
+    )
+
+    priority, conf, _ = triage_engine.infer_priority(sig)
+    import time as _time
+    now = _time.time()
+    node = CasualtyNode(
+        id=req.casualty_id,
+        location=GeoPose(x=req.location_x, y=req.location_y),
+        platform_source=req.platform_source,
+        confidence=round(max(conf, 0.50), 2),
+        status="assessed",
+        signatures=sig,
+        hypotheses=triage_engine.build_hypotheses(sig),
+        triage_priority=priority,
+        first_seen_ts=now,
+        last_seen_ts=now,
+    )
+    graph.upsert(node)
+    graph.link(req.platform_source, "observed", req.casualty_id)
+    skeletal_graphs[req.casualty_id] = _seed_skeletal_graph(node)
+    return {
+        "casualty_id": req.casualty_id,
+        "priority_hint": req.priority_hint,
+        "assigned_priority": priority,
+        "confidence": round(conf, 2),
+        "scene_activity": req.scene_activity,
+        "scene_complexity": req.scene_complexity,
+        "node_count": len(graph.nodes),
     }
 
 

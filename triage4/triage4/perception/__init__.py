@@ -5,6 +5,9 @@ from .frame_source import (
     LoopbackFrameSource,
     SyntheticFrameSource,
     build_opencv_frame_source,
+    enumerate_cameras,
+    format_camera_table,
+    run_camera_preview,
 )
 from .person_detector import PersonDetector
 from .pose_estimator import PoseEstimator
@@ -27,4 +30,7 @@ __all__ = [
     "SyntheticFrameSource",
     "build_opencv_frame_source",
     "build_ultralytics_detector",
+    "enumerate_cameras",
+    "format_camera_table",
+    "run_camera_preview",
 ]

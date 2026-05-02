@@ -6,6 +6,7 @@
 import { fetchSensingRanked } from "../api/endpoints";
 import ConfidenceBar from "../components/casualties/ConfidenceBar";
 import Tooltip from "../components/common/Tooltip";
+import CameraPanel from "../components/sensing/CameraPanel";
 import { usePolling } from "../hooks/usePolling";
 import { formatScore } from "../util/format";
 
@@ -41,6 +42,8 @@ export default function SensingPage() {
           refresh
         </button>
       </header>
+
+      <CameraPanel onAnalyzed={refresh} />
 
       {loading && !data && (
         <div style={{ color: "var(--text-2)", fontStyle: "italic" }}>

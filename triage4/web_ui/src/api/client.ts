@@ -65,4 +65,13 @@ export function getText(path: string, signal?: AbortSignal): Promise<string> {
   return request<string>(path, { signal });
 }
 
+export function postJson<T>(path: string, body: unknown, signal?: AbortSignal): Promise<T> {
+  return request<T>(path, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(body),
+    signal,
+  });
+}
+
 export { API_BASE };

@@ -25,8 +25,10 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 
+from pydantic import BaseModel, Field
+
 from ..pool_watch.monitoring_engine import PoolWatchEngine
-from ..sim.synthetic_pool import demo_pool
+from ..sim.synthetic_pool import demo_pool, generate_observation
 
 app = FastAPI(title="triage4-aqua API", version="0.1.0")
 
@@ -119,6 +121,40 @@ def demo_reload() -> dict[str, Any]:
         "swimmer_count": len(_report.scores),
         "alert_count": len(_report.alerts),
     }
+
+
+
+
+
+class CameraRunRequest(BaseModel):
+    """Camera-driven pool-watch observation. Mean motion → distress
+    proxy (operator-tunable). Submersion / absence still need bottom-
+    cam or RFID input → manual fields.
+    """
+
+    swimmer_token: str = Field("WEBCAM_SWIMMER", min_length=1, max_length=64)
+    distress_level: float = Field(0.0, ge=0.0, le=1.0)
+    submersion_s: float = Field(0.0, ge=0.0, le=600.0)
+    idr_severity: float = Field(0.0, ge=0.0, le=1.0)
+    absence_s: float = Field(0.0, ge=0.0, le=600.0)
+
+
+@app.post("/camera/run")
+def camera_run(req: CameraRunRequest) -> dict[str, Any]:
+    """Replace the dashboard with a single camera-derived swimmer observation."""
+    global _observations, _report
+    obs = generate_observation(
+        swimmer_token=req.swimmer_token,
+        distress_level=req.distress_level,
+        submersion_s=req.submersion_s,
+        idr_severity=req.idr_severity,
+        absence_s=req.absence_s,
+        seed=42,
+    )
+    _observations = [obs]
+    _report = _engine.review(pool_id="WEBCAM_POOL", observations=_observations)
+    return {"swimmer_token": req.swimmer_token, "distress_level": req.distress_level,
+            "score_count": len(_report.scores), "alert_count": len(_report.alerts)}
 
 
 @app.get("/export.html", response_class=HTMLResponse)

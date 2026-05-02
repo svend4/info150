@@ -25,7 +25,34 @@ import type {
   TwinPosterior,
   UncertaintyReport,
 } from "../types";
-import { getJson, getText } from "./client";
+import { getJson, getText, postJson } from "./client";
+
+export type CameraRunBody = {
+  casualty_id: string;
+  priority_hint: "immediate" | "delayed" | "minimal";
+  location_x: number;
+  location_y: number;
+  scene_activity: number;
+  scene_complexity: number;
+  platform_source: string;
+};
+
+export type CameraRunResult = {
+  casualty_id: string;
+  priority_hint: string;
+  assigned_priority: string;
+  confidence: number;
+  scene_activity: number;
+  scene_complexity: number;
+  node_count: number;
+};
+
+export function postCameraRun(
+  body: CameraRunBody,
+  signal?: AbortSignal,
+): Promise<CameraRunResult> {
+  return postJson<CameraRunResult>("/camera/run", body, signal);
+}
 
 export function fetchHealth(signal?: AbortSignal): Promise<HealthStatus> {
   return getJson<HealthStatus>("/health", signal);

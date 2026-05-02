@@ -33,9 +33,10 @@ from typing import Any
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
+from pydantic import BaseModel, Field
 
 from ..core.enums import VALID_TAGS
-from ..sim.synthetic_incident import demo_incident
+from ..sim.synthetic_incident import demo_incident, generate_casualty
 from ..triage_protocol.protocol_engine import StartProtocolEngine
 
 app = FastAPI(title="triage4-rescue API", version="0.1.0")
@@ -153,6 +154,41 @@ def demo_reload() -> dict[str, Any]:
         "incident_id": _report.incident_id,
         "casualty_count": _report.casualty_count,
     }
+
+
+
+
+
+class CameraRunRequest(BaseModel):
+    """Camera-driven mass-casualty triage. Operator selects a profile
+    (RESPIRATING / AMBULATORY / UNRESPONSIVE / DECEASED). Motion +
+    variance are echoed back as scene context — START tags are clinical
+    decisions, not camera output.
+
+    STRONG PRIVACY: PHI-equivalent footage. Developer-test only.
+    """
+
+    casualty_id: str = Field("WEBCAM_CASUALTY", min_length=1, max_length=64)
+    profile: str = "AMBULATORY"
+    scene_activity: float = Field(0.0, ge=0.0, le=1.0)
+    scene_complexity: float = Field(0.0, ge=0.0, le=1.0)
+
+
+@app.post("/camera/run")
+def camera_run(req: CameraRunRequest) -> dict[str, Any]:
+    """Replace the dashboard with a single camera-derived casualty."""
+    global _casualties, _report
+    obs = generate_casualty(
+        casualty_id=req.casualty_id,
+        profile=req.profile,  # type: ignore[arg-type]
+        seed=42,
+    )
+    _casualties = [obs]
+    _report = _engine.review(incident_id="WEBCAM_INCIDENT", casualties=_casualties)
+    return {"casualty_id": req.casualty_id, "profile": req.profile,
+            "scene_activity": req.scene_activity,
+            "scene_complexity": req.scene_complexity,
+            "tag_count": len(_report.assessments)}
 
 
 @app.get("/export.html", response_class=HTMLResponse)

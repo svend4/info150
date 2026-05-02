@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "./api";
+import CameraPanel from "./CameraPanel";
 import type { Report, RiskBand, SessionDetail } from "./types";
 
 const BAND_COLOR: Record<RiskBand, string> = {
@@ -58,6 +59,7 @@ export default function App() {
           Re-seed demo
         </button>
       </header>
+      <CameraPanel onAnalyzed={load} />
       <section style={{ display: "flex", gap: 12, marginBottom: 24, flexWrap: "wrap" }}>
         {(["steady", "monitor", "hold"] as const).map((b) => (
           <div key={b} style={{ flex: 1, minWidth: 160, background: "#181d33",

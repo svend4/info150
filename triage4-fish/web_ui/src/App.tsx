@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "./api";
+import CameraPanel from "./CameraPanel";
 import type { FarmAlert, FarmReport, PenScore } from "./types";
 
 const LEVEL_COLOR: Record<string, string> = {
@@ -114,6 +115,7 @@ export default function App() {
           Re-seed demo
         </button>
       </header>
+      <CameraPanel onAnalyzed={load} />
 
       <section
         style={{

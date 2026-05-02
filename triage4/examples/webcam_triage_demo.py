@@ -41,6 +41,9 @@ from triage4.perception import (  # noqa: E402
     SyntheticFrameSource,
     build_opencv_frame_source,
     build_ultralytics_detector,
+    enumerate_cameras,
+    format_camera_table,
+    run_camera_preview,
 )
 from triage4.triage_reasoning.vitals_estimation import VitalsEstimator  # noqa: E402
 
@@ -60,22 +63,23 @@ def _build_frame_source(args: argparse.Namespace):
             width=64, height=48, seed=0,
         ), "synthetic"
 
-    if args.source is not None:
-        print(f"[source] attempting webcam source {args.source!r}")
-        try:
-            return build_opencv_frame_source(args.source), "webcam"
-        except FrameSourceUnavailable as exc:
-            print(f"[source] webcam unavailable ({exc}); falling back to synthetic")
-
-    # Auto-fallback path — try webcam 0 briefly, otherwise synthetic.
+    raw = args.source if args.source is not None else 0
+    # cv2.VideoCapture treats "0" (str) and 0 (int) differently
+    # on Windows. Convert numeric strings → int up-front.
     try:
-        return build_opencv_frame_source(0), "webcam"
+        source = int(raw)
+    except (TypeError, ValueError):
+        source = raw
+
+    try:
+        return build_opencv_frame_source(source), "webcam"
     except FrameSourceUnavailable as exc:
-        print(f"[source] auto-detect failed ({exc}); using synthetic")
+        print(f"[source] webcam unavailable ({exc}); using synthetic")
+
     return SyntheticFrameSource(
         pattern="pulse", n_frames=args.frames, fs_hz=args.fps, hr_hz=1.2,
         width=64, height=48, seed=0,
-    ), "synthetic"
+    ), "synthetic-fallback"
 
 
 def _build_detector():
@@ -94,7 +98,35 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--synthetic", action="store_true", help="force synthetic source")
     parser.add_argument("--frames", type=int, default=90, help="frames to collect")
     parser.add_argument("--fps", type=float, default=30.0, help="expected fps")
+    parser.add_argument("--list-cameras", action="store_true",
+                        help="probe local cameras and exit (no engine run)")
+    parser.add_argument("--preview", action="store_true",
+                        help="open live preview window before capture (SPACE: continue, Q: quit)")
     args = parser.parse_args(argv)
+
+    if args.list_cameras:
+        try:
+            rows = enumerate_cameras(max_index=10)
+        except FrameSourceUnavailable as exc:
+            print(f"[error] {exc}")
+            return 2
+        print(format_camera_table(rows))
+        return 0
+
+    if args.preview and not args.synthetic:
+        raw = args.source if args.source is not None else 0
+        try:
+            preview_source = int(raw)
+        except (TypeError, ValueError):
+            preview_source = raw
+        try:
+            decision = run_camera_preview(preview_source)
+        except FrameSourceUnavailable as exc:
+            print(f"[preview] unavailable ({exc}); continuing without preview")
+            decision = "continue"
+        if decision == "quit":
+            print("[preview] user cancelled — exiting")
+            return 0
 
     source, source_kind = _build_frame_source(args)
     detector, detector_kind = _build_detector()

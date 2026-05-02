@@ -12,9 +12,10 @@ from typing import Any
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
+from pydantic import BaseModel, Field
 
 from ..pet_triage.triage_engine import PetTriageEngine
-from ..sim.synthetic_submission import demo_submissions
+from ..sim.synthetic_submission import demo_submissions, generate_observation
 
 app = FastAPI(title="triage4-pet API", version="0.1.0")
 
@@ -102,6 +103,49 @@ def submission_by_token(token: str) -> dict[str, Any]:
 def demo_reload() -> dict[str, Any]:
     _seed()
     return {"reloaded": True, "submission_count": len(_reports)}
+
+
+class CameraRunRequest(BaseModel):
+    """Camera-driven pet submission.
+
+    Owner-camera input. Browser-side mean motion → activity proxy;
+    *low* activity is treated as a pain/lethargy signal. Other channels
+    (gait asymmetry, respiratory, cardiac, pain count) need pose/audio
+    detectors a webcam alone cannot provide → manual sliders.
+    """
+
+    pet_token: str = Field("WEBCAM_PET", min_length=1, max_length=64)
+    species: str = "dog"
+    age_years: float = Field(5.0, ge=0.0, le=30.0)
+    activity_proxy: float = Field(0.0, ge=0.0, le=1.0)
+    gait_asymmetry: float = Field(0.0, ge=0.0, le=1.0)
+    respiratory_elevation: float = Field(0.0, ge=0.0, le=1.0)
+    cardiac_elevation: float = Field(0.0, ge=0.0, le=1.0)
+    pain_behavior_count: int = Field(0, ge=0, le=10)
+
+
+@app.post("/camera/run")
+def camera_run(req: CameraRunRequest) -> dict[str, Any]:
+    """Replace the dashboard with a single camera-derived submission."""
+    global _submissions, _reports
+    obs = generate_observation(
+        pet_token=req.pet_token,
+        species=req.species,  # type: ignore[arg-type]
+        age_years=req.age_years,
+        gait_asymmetry=req.gait_asymmetry,
+        respiratory_elevation=req.respiratory_elevation,
+        cardiac_elevation=req.cardiac_elevation,
+        pain_behavior_count=req.pain_behavior_count,
+        seed=42,
+    )
+    _submissions = [obs]
+    _reports = [_engine.review(obs)]
+    return {
+        "pet_token": req.pet_token,
+        "activity_proxy": req.activity_proxy,
+        "submission_count": len(_reports),
+        "recommendation": _reports[0].assessment.recommendation,
+    }
 
 
 @app.get("/export.html", response_class=HTMLResponse)

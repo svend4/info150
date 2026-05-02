@@ -31,8 +31,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 
 from ..core.models import PenReport
+from pydantic import BaseModel, Field
+
 from ..pen_health.monitoring_engine import AquacultureHealthEngine
-from ..sim.synthetic_pen import demo_observations
+from ..sim.synthetic_pen import demo_observations, generate_observation
 
 app = FastAPI(title="triage4-fish API", version="0.1.0")
 
@@ -154,6 +156,52 @@ def demo_reload() -> dict[str, Any]:
         "pen_count": len(_report.scores),
         "alert_count": len(_report.alerts),
     }
+
+
+
+
+
+class CameraRunRequest(BaseModel):
+    """Camera-driven pen observation. Mean motion → school disruption;
+    contrast variance → water clarity. Sea-lice, mortality count, DO
+    drop, temp anomaly need their own sensors → sliders.
+    """
+
+    pen_id: str = Field("WEBCAM_PEN", min_length=1, max_length=64)
+    species: str = "salmon"
+    school_disruption: float = Field(0.0, ge=0.0, le=1.0)
+    turbidity_safety: float = Field(0.5, ge=0.0, le=1.0)
+    gill_anomaly: float = Field(0.0, ge=0.0, le=1.0)
+    sea_lice_burden: float = Field(0.0, ge=0.0, le=1.0)
+    mortality_count: int = Field(0, ge=0, le=100)
+    do_drop: float = Field(0.0, ge=0.0, le=1.0)
+    temp_anomaly: float = Field(0.0, ge=0.0, le=1.0)
+
+
+@app.post("/camera/run")
+def camera_run(req: CameraRunRequest) -> dict[str, Any]:
+    """Replace the dashboard with a single camera-derived pen observation."""
+    global _observations, _report
+    obs = generate_observation(
+        pen_id=req.pen_id,
+        species=req.species,  # type: ignore[arg-type]
+        school_disruption=req.school_disruption,
+        gill_anomaly=req.gill_anomaly,
+        sea_lice_burden=req.sea_lice_burden,
+        mortality_count=req.mortality_count,
+        do_drop=req.do_drop,
+        temp_anomaly=req.temp_anomaly,
+        seed=42,
+    )
+    _observations = [obs]
+    aggregate = PenReport(farm_id="WEBCAM_FARM")
+    single = _engine.review(obs, farm_id="WEBCAM_FARM")
+    aggregate.scores.extend(single.scores)
+    aggregate.alerts.extend(single.alerts)
+    _report = aggregate
+    return {"pen_id": req.pen_id, "school_disruption": req.school_disruption,
+            "turbidity_safety": req.turbidity_safety,
+            "score_count": len(_report.scores), "alert_count": len(_report.alerts)}
 
 
 @app.get("/export.html", response_class=HTMLResponse)

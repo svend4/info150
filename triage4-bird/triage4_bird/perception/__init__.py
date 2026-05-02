@@ -21,6 +21,9 @@ from .frame_source import (
     LoopbackFrameSource,
     SyntheticFrameSource,
     build_opencv_frame_source,
+    enumerate_cameras,
+    format_camera_table,
+    run_camera_preview,
 )
 
 __all__ = [
@@ -29,4 +32,7 @@ __all__ = [
     "LoopbackFrameSource",
     "SyntheticFrameSource",
     "build_opencv_frame_source",
+    "enumerate_cameras",
+    "format_camera_table",
+    "run_camera_preview",
 ]
