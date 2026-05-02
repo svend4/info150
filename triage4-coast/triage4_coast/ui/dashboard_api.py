@@ -14,7 +14,14 @@ from pydantic import BaseModel, Field
 from ..coast_safety.coast_safety_engine import CoastSafetyEngine
 from ..core.enums import ZoneKind
 from ..sim.synthetic_coast import demo_coast, generate_zone_observation
-from . import aggregates, broadcast, camera_health, groups, history
+from . import (
+    aggregates,
+    broadcast,
+    camera_health,
+    groups,
+    history,
+    weather,
+)
 
 app = FastAPI(title="triage4-coast API", version="0.1.0")
 
@@ -321,6 +328,62 @@ def groups_remove(group_id: str) -> dict[str, Any]:
     except KeyError:
         raise HTTPException(404, f"unknown group {group_id!r}")
     return {"removed": True, "group_id": group_id}
+
+
+def _snapshot_to_dict(s: weather.WeatherSnapshot) -> dict[str, Any]:
+    return {
+        "ts_unix": s.ts_unix,
+        "air_temp_c": s.air_temp_c,
+        "wind_speed_mps": s.wind_speed_mps,
+        "wind_dir_deg": s.wind_dir_deg,
+        "uv_index": s.uv_index,
+        "cloud_cover": s.cloud_cover,
+        "lightning_strikes_5min": s.lightning_strikes_5min,
+        "forecast_summary": s.forecast_summary,
+        "provider": s.provider,
+        "location_lat": s.location_lat,
+        "location_lon": s.location_lon,
+    }
+
+
+@app.get("/coast/weather")
+def coast_weather() -> dict[str, Any]:
+    """Return the most-recent cached snapshot, or null if never refreshed."""
+    s = weather.latest()
+    return {"snapshot": _snapshot_to_dict(s) if s is not None else None}
+
+
+class WeatherRefreshRequest(BaseModel):
+    """Pull fresh weather and (optionally) auto-actuate triggers."""
+
+    lat: float = Field(0.0, ge=-90.0, le=90.0)
+    lon: float = Field(0.0, ge=-180.0, le=180.0)
+    auto_broadcast: bool = True
+
+
+@app.post("/coast/weather/refresh")
+def coast_weather_refresh(req: WeatherRefreshRequest) -> dict[str, Any]:
+    """Pull from the configured provider, cache, optionally actuate."""
+    provider = weather.default_provider()
+    try:
+        snap = provider.fetch(lat=req.lat, lon=req.lon)
+    except weather.WeatherProviderUnavailable as exc:
+        raise HTTPException(503, str(exc))
+    weather.cache_latest(snap)
+    triggers = weather.evaluate(snap)
+    actuated_count = 0
+    if req.auto_broadcast and triggers:
+        entries = weather.actuate(triggers)
+        actuated_count = len(entries)
+    return {
+        "snapshot": _snapshot_to_dict(snap),
+        "triggers": [
+            {"kind": t.kind, "message": t.message, "reason": t.reason}
+            for t in triggers
+        ],
+        "actuated_count": actuated_count,
+        "provider": provider.name(),
+    }
 
 
 @app.get("/broadcast/log")
