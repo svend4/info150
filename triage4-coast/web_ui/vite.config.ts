@@ -6,7 +6,7 @@ const BACKEND_TARGET =
 
 const BACKEND_PATHS = [
   "/health", "/report", "/zones", "/alerts", "/demo", "/export.html",
-  "/camera", "/cameras", "/coast", "/broadcast",
+  "/camera", "/cameras", "/coast", "/broadcast", "/groups",
 ];
 
 const proxy: Record<string, { target: string; changeOrigin: boolean }> = {};

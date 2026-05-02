@@ -9,6 +9,7 @@
 
 import { useState } from "react";
 import BroadcastPanel from "./BroadcastPanel";
+import GroupPanel from "./GroupPanel";
 import HeatStressGauge from "./HeatStressGauge";
 import IncidentTimeline from "./IncidentTimeline";
 import RadarChart from "./RadarChart";
@@ -42,6 +43,8 @@ export default function OpsConsole({ scores }: { scores: Score[] }) {
       <TimeStripChart zoneIds={zoneIds} hours={24} />
 
       <StackedTrend hours={4} bucketMinutes={5} />
+
+      <GroupPanel zoneIds={zoneIds} />
 
       <IncidentTimeline />
     </div>

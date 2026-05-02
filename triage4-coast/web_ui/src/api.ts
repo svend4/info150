@@ -83,6 +83,43 @@ export type BroadcastSendBody = {
   operator_id?: string | null;
 };
 
+export type GroupState = "active" | "complete" | "alert";
+
+export type GroupCheckin = {
+  ts_unix: number;
+  count: number;
+  zone_id: string | null;
+  note: string | null;
+};
+
+export type TourGroup = {
+  group_id: string;
+  name: string;
+  expected_count: number;
+  meeting_zone_id: string | null;
+  operator_id: string | null;
+  started_ts_unix: number;
+  last_checkin_ts_unix: number;
+  last_known_count: number;
+  last_known_zone_id: string | null;
+  state: GroupState;
+  history: GroupCheckin[];
+};
+
+export type GroupRegisterBody = {
+  name: string;
+  expected_count: number;
+  meeting_zone_id?: string | null;
+  operator_id?: string | null;
+  initial_count?: number | null;
+};
+
+export type GroupCheckinBody = {
+  count: number;
+  zone_id?: string | null;
+  note?: string | null;
+};
+
 export const api = {
   health: () => get<Health>("/health"),
   report: () => get<Report>("/report"),
@@ -117,4 +154,21 @@ export const api = {
     ),
   broadcastLog: (limit = 50) =>
     get<BroadcastLogResponse>(`/broadcast/log?limit=${limit}`),
+  groupsList: () => get<{ groups: TourGroup[] }>("/groups"),
+  groupRegister: (body: GroupRegisterBody) =>
+    postJson<TourGroup>("/groups", body),
+  groupGet: (id: string) =>
+    get<TourGroup>(`/groups/${encodeURIComponent(id)}`),
+  groupCheckin: (id: string, body: GroupCheckinBody) =>
+    postJson<TourGroup>(
+      `/groups/${encodeURIComponent(id)}/checkin`, body,
+    ),
+  groupComplete: (id: string) =>
+    postJson<TourGroup>(`/groups/${encodeURIComponent(id)}/complete`, {}),
+  groupRemove: (id: string) =>
+    fetch(`/groups/${encodeURIComponent(id)}`, { method: "DELETE" })
+      .then((r) => {
+        if (!r.ok) throw new Error(`DELETE failed: ${r.status}`);
+        return r.json();
+      }),
 };
