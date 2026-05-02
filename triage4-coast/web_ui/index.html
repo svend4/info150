@@ -4,8 +4,23 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>triage4-coast dashboard</title>
+    <script>
+      // Avoid flash-of-wrong-theme: apply the saved theme before React
+      // mounts. ThemeToggle.tsx reads the same value on mount.
+      (function () {
+        try {
+          var t = localStorage.getItem("theme");
+          if (t !== "light" && t !== "dark") {
+            t = window.matchMedia &&
+                window.matchMedia("(prefers-color-scheme: light)").matches
+              ? "light" : "dark";
+          }
+          document.documentElement.dataset.theme = t;
+        } catch (e) { /* private mode etc. */ }
+      })();
+    </script>
   </head>
-  <body style="margin:0;background:#101426;color:#e4e8f0;font-family:system-ui,Segoe UI,sans-serif;">
+  <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
