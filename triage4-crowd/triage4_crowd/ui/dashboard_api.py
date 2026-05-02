@@ -8,8 +8,10 @@ from typing import Any
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
+from pydantic import BaseModel, Field
 
-from ..sim.synthetic_venue import demo_venue
+from ..core.enums import ZoneKind
+from ..sim.synthetic_venue import demo_venue, generate_zone_observation
 from ..venue_monitor.monitoring_engine import VenueMonitorEngine
 
 app = FastAPI(title="triage4-crowd API", version="0.1.0")
@@ -92,6 +94,50 @@ def demo_reload() -> dict[str, Any]:
     _seed()
     return {"reloaded": True, "zone_count": len(_report.scores),
             "alert_count": len(_report.alerts)}
+
+
+class CameraRunRequest(BaseModel):
+    """Camera-driven zone request.
+
+    The browser computes ``flow_compaction`` (inter-frame motion proxy)
+    and ``density_pressure`` (frame-variance proxy) from a captured
+    webcam stream. Pressure and medical-rate cannot be inferred from a
+    single 2D camera, so the user sets them via UI sliders. The server
+    builds one synthetic zone with these parameters, runs the engine,
+    and replaces the in-memory report.
+    """
+
+    zone_id: str = Field("WEBCAM_ZONE", min_length=1, max_length=64)
+    zone_kind: ZoneKind = "standing"
+    flow_compaction: float = Field(0.0, ge=0.0, le=1.0)
+    density_pressure: float = Field(0.0, ge=0.0, le=1.0)
+    pressure_level: float = Field(0.0, ge=0.0, le=1.0)
+    medical_rate: float = Field(0.0, ge=0.0, le=1.0)
+
+
+@app.post("/camera/run")
+def camera_run(req: CameraRunRequest) -> dict[str, Any]:
+    """Build a fresh single-zone report from camera-derived signals."""
+    global _zones, _report
+    cam_zone = generate_zone_observation(
+        zone_id=req.zone_id,
+        zone_kind=req.zone_kind,
+        density_pressure=req.density_pressure,
+        flow_compaction=req.flow_compaction,
+        pressure_level=req.pressure_level,
+        medical_rate=req.medical_rate,
+        seed=42,
+    )
+    _zones = [cam_zone]
+    _report = _engine.review(venue_id="WEBCAM_VENUE", zones=_zones)
+    return {
+        "zone_id": req.zone_id,
+        "zone_kind": req.zone_kind,
+        "flow_compaction": req.flow_compaction,
+        "density_pressure": req.density_pressure,
+        "zone_count": len(_report.scores),
+        "alert_count": len(_report.alerts),
+    }
 
 
 @app.get("/export.html", response_class=HTMLResponse)
