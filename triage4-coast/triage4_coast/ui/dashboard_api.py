@@ -14,7 +14,7 @@ from pydantic import BaseModel, Field
 from ..coast_safety.coast_safety_engine import CoastSafetyEngine
 from ..core.enums import ZoneKind
 from ..sim.synthetic_coast import demo_coast, generate_zone_observation
-from . import camera_health, history
+from . import aggregates, broadcast, camera_health, groups, history
 
 app = FastAPI(title="triage4-coast API", version="0.1.0")
 
@@ -153,6 +153,190 @@ def zone_history(
 def cameras_health() -> dict[str, Any]:
     """Return health snapshots for all known cameras."""
     return {"cameras": [asdict(h) for h in camera_health.snapshot()]}
+
+
+@app.get("/coast/aggregates")
+def coast_aggregates(hours: int = 4, bucket_minutes: int = 5) -> dict[str, Any]:
+    """Bucketized ok/watch/urgent counts across all zones over time."""
+    if hours <= 0 or hours > 24 * 30:
+        raise HTTPException(400, "hours must be in (0, 720]")
+    if bucket_minutes <= 0 or bucket_minutes > 1440:
+        raise HTTPException(400, "bucket_minutes must be in (0, 1440]")
+    zone_ids = [s.zone_id for s in _report.scores]
+    rows = aggregates.coast_level_counts_over_time(
+        zone_ids=zone_ids, hours=hours, bucket_minutes=bucket_minutes,
+    )
+    return {
+        "hours": hours,
+        "bucket_minutes": bucket_minutes,
+        "buckets": rows,
+    }
+
+
+@app.get("/zones/{zone_id}/hourly")
+def zone_hourly(
+    zone_id: str, channel: str = "overall", hours: int = 24,
+) -> dict[str, Any]:
+    """Hourly mean of one zone+channel."""
+    try:
+        rows = aggregates.hourly_zone_density(
+            zone_id=zone_id, channel=channel, hours=hours,
+        )
+    except ValueError as exc:
+        raise HTTPException(400, str(exc))
+    return {"zone_id": zone_id, "channel": channel, "hours": hours,
+            "buckets": rows}
+
+
+class BroadcastRequest(BaseModel):
+    """Operator-initiated broadcast — placeholder for real PA/push.
+
+    The endpoint records the action in an audit log; downstream
+    integration (PA system, SMS, mobile push) is left to deployment.
+    """
+
+    kind: str = Field(..., min_length=1, max_length=64)
+    message: str = Field(..., min_length=1, max_length=500)
+    zone_id: str | None = None
+    operator_id: str | None = Field(None, max_length=64)
+
+
+@app.post("/broadcast")
+def broadcast_send(req: BroadcastRequest) -> dict[str, Any]:
+    """Record a broadcast in the audit log; return the entry."""
+    try:
+        entry = broadcast.record(
+            kind=req.kind,
+            message=req.message,
+            zone_id=req.zone_id,
+            operator_id=req.operator_id,
+        )
+    except ValueError as exc:
+        raise HTTPException(400, str(exc))
+    return {"recorded": True, "entry": {
+        "ts_unix": entry.ts_unix,
+        "kind": entry.kind,
+        "message": entry.message,
+        "zone_id": entry.zone_id,
+        "operator_id": entry.operator_id,
+    }}
+
+
+def _group_to_dict(g: groups.TourGroup) -> dict[str, Any]:
+    return {
+        "group_id": g.group_id,
+        "name": g.name,
+        "expected_count": g.expected_count,
+        "meeting_zone_id": g.meeting_zone_id,
+        "operator_id": g.operator_id,
+        "started_ts_unix": g.started_ts_unix,
+        "last_checkin_ts_unix": g.last_checkin_ts_unix,
+        "last_known_count": g.last_known_count,
+        "last_known_zone_id": g.last_known_zone_id,
+        "state": g.state,
+        "history": [
+            {"ts_unix": c.ts_unix, "count": c.count,
+             "zone_id": c.zone_id, "note": c.note}
+            for c in g.history
+        ],
+    }
+
+
+class GroupRegisterRequest(BaseModel):
+    name: str = Field(..., min_length=1, max_length=64)
+    expected_count: int = Field(..., gt=0, le=200)
+    meeting_zone_id: str | None = None
+    operator_id: str | None = Field(None, max_length=64)
+    initial_count: int | None = None
+
+
+@app.post("/groups")
+def groups_register(req: GroupRegisterRequest) -> dict[str, Any]:
+    try:
+        g = groups.register(
+            name=req.name,
+            expected_count=req.expected_count,
+            meeting_zone_id=req.meeting_zone_id,
+            operator_id=req.operator_id,
+            initial_count=req.initial_count,
+        )
+    except ValueError as exc:
+        raise HTTPException(400, str(exc))
+    return _group_to_dict(g)
+
+
+@app.get("/groups")
+def groups_list() -> dict[str, Any]:
+    return {"groups": [_group_to_dict(g) for g in groups.list_all()]}
+
+
+@app.get("/groups/{group_id}")
+def groups_get(group_id: str) -> dict[str, Any]:
+    try:
+        g = groups.get(group_id)
+    except KeyError:
+        raise HTTPException(404, f"unknown group {group_id!r}")
+    return _group_to_dict(g)
+
+
+class GroupCheckinRequest(BaseModel):
+    count: int = Field(..., ge=0, le=200)
+    zone_id: str | None = None
+    note: str | None = Field(None, max_length=300)
+
+
+@app.post("/groups/{group_id}/checkin")
+def groups_checkin(group_id: str, req: GroupCheckinRequest) -> dict[str, Any]:
+    try:
+        g = groups.checkin(
+            group_id=group_id,
+            count=req.count,
+            zone_id=req.zone_id,
+            note=req.note,
+        )
+    except KeyError:
+        raise HTTPException(404, f"unknown group {group_id!r}")
+    except ValueError as exc:
+        raise HTTPException(400, str(exc))
+    return _group_to_dict(g)
+
+
+@app.post("/groups/{group_id}/complete")
+def groups_complete(group_id: str) -> dict[str, Any]:
+    try:
+        g = groups.complete(group_id)
+    except KeyError:
+        raise HTTPException(404, f"unknown group {group_id!r}")
+    return _group_to_dict(g)
+
+
+@app.delete("/groups/{group_id}")
+def groups_remove(group_id: str) -> dict[str, Any]:
+    try:
+        groups.remove(group_id)
+    except KeyError:
+        raise HTTPException(404, f"unknown group {group_id!r}")
+    return {"removed": True, "group_id": group_id}
+
+
+@app.get("/broadcast/log")
+def broadcast_log(limit: int = 50) -> dict[str, Any]:
+    """Most-recent broadcasts (newest first)."""
+    if limit <= 0 or limit > 500:
+        raise HTTPException(400, "limit must be in (0, 500]")
+    entries = broadcast.recent(limit=limit)
+    return {
+        "kinds": list(broadcast.VALID_KINDS),
+        "entries": [
+            {
+                "ts_unix": e.ts_unix,
+                "kind": e.kind,
+                "message": e.message,
+                "zone_id": e.zone_id,
+                "operator_id": e.operator_id,
+            } for e in entries
+        ],
+    }
 
 
 class CameraReportRequest(BaseModel):

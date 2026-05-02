@@ -47,6 +47,79 @@ export type CameraHealthRow = {
   last_error: string | null;
 };
 
+export type AggregateBucket = {
+  ts_unix: number;
+  ok: number;
+  watch: number;
+  urgent: number;
+};
+export type AggregatesResponse = {
+  hours: number;
+  bucket_minutes: number;
+  buckets: AggregateBucket[];
+};
+
+export type HourlyBucket = { hour_ago: number; mean_value: number; n_samples: number };
+export type HourlyResponse = {
+  zone_id: string; channel: string; hours: number;
+  buckets: HourlyBucket[];
+};
+
+export type BroadcastEntry = {
+  ts_unix: number;
+  kind: string;
+  message: string;
+  zone_id: string | null;
+  operator_id: string | null;
+};
+export type BroadcastLogResponse = {
+  kinds: string[];
+  entries: BroadcastEntry[];
+};
+export type BroadcastSendBody = {
+  kind: string;
+  message: string;
+  zone_id?: string | null;
+  operator_id?: string | null;
+};
+
+export type GroupState = "active" | "complete" | "alert";
+
+export type GroupCheckin = {
+  ts_unix: number;
+  count: number;
+  zone_id: string | null;
+  note: string | null;
+};
+
+export type TourGroup = {
+  group_id: string;
+  name: string;
+  expected_count: number;
+  meeting_zone_id: string | null;
+  operator_id: string | null;
+  started_ts_unix: number;
+  last_checkin_ts_unix: number;
+  last_known_count: number;
+  last_known_zone_id: string | null;
+  state: GroupState;
+  history: GroupCheckin[];
+};
+
+export type GroupRegisterBody = {
+  name: string;
+  expected_count: number;
+  meeting_zone_id?: string | null;
+  operator_id?: string | null;
+  initial_count?: number | null;
+};
+
+export type GroupCheckinBody = {
+  count: number;
+  zone_id?: string | null;
+  note?: string | null;
+};
+
 export const api = {
   health: () => get<Health>("/health"),
   report: () => get<Report>("/report"),
@@ -66,4 +139,36 @@ export const api = {
     postJson<{ acknowledged: boolean }>(
       "/cameras/report", { source, ok, error: error ?? null },
     ),
+  coastAggregates: (hours = 4, bucketMinutes = 5) =>
+    get<AggregatesResponse>(
+      `/coast/aggregates?hours=${hours}&bucket_minutes=${bucketMinutes}`,
+    ),
+  zoneHourly: (zoneId: string, channel = "overall", hours = 24) =>
+    get<HourlyResponse>(
+      `/zones/${encodeURIComponent(zoneId)}/hourly`
+        + `?channel=${channel}&hours=${hours}`,
+    ),
+  broadcastSend: (body: BroadcastSendBody) =>
+    postJson<{ recorded: boolean; entry: BroadcastEntry }>(
+      "/broadcast", body,
+    ),
+  broadcastLog: (limit = 50) =>
+    get<BroadcastLogResponse>(`/broadcast/log?limit=${limit}`),
+  groupsList: () => get<{ groups: TourGroup[] }>("/groups"),
+  groupRegister: (body: GroupRegisterBody) =>
+    postJson<TourGroup>("/groups", body),
+  groupGet: (id: string) =>
+    get<TourGroup>(`/groups/${encodeURIComponent(id)}`),
+  groupCheckin: (id: string, body: GroupCheckinBody) =>
+    postJson<TourGroup>(
+      `/groups/${encodeURIComponent(id)}/checkin`, body,
+    ),
+  groupComplete: (id: string) =>
+    postJson<TourGroup>(`/groups/${encodeURIComponent(id)}/complete`, {}),
+  groupRemove: (id: string) =>
+    fetch(`/groups/${encodeURIComponent(id)}`, { method: "DELETE" })
+      .then((r) => {
+        if (!r.ok) throw new Error(`DELETE failed: ${r.status}`);
+        return r.json();
+      }),
 };

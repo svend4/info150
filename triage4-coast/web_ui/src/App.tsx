@@ -3,10 +3,20 @@ import { api } from "./api";
 import CameraHealthBar from "./CameraHealthBar";
 import CameraPanel from "./CameraPanel";
 import HistoryChart from "./HistoryChart";
+import OpsConsole from "./OpsConsole";
 import ZoneGrid from "./ZoneGrid";
 import type { Alert, AlertLevel, Report, Score } from "./types";
 
-type ViewMode = "list" | "grid";
+type ViewMode = "list" | "grid" | "ops";
+
+const VIEW_LABELS: Record<ViewMode, string> = {
+  list: "list/detail",
+  grid: "grid",
+  ops: "ops console",
+};
+const NEXT_VIEW: Record<ViewMode, ViewMode> = {
+  list: "grid", grid: "ops", ops: "list",
+};
 
 const LEVEL_COLOR: Record<AlertLevel, string> = {
   ok: "#27ae60", watch: "#e6a23c", urgent: "#e74c3c",
@@ -63,11 +73,11 @@ export default function App() {
           coast <code>{report.coast_id}</code> · {report.zone_count} zones · {report.alerts.length} alerts
         </span>
         <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
-          <button onClick={() => setView(view === "list" ? "grid" : "list")}
+          <button onClick={() => setView(NEXT_VIEW[view])}
             style={{ padding: "6px 14px",
               background: "#22293f", color: "#dde7df", border: "1px solid #5c7cfa",
               borderRadius: 4, cursor: "pointer", fontSize: 13 }}>
-            view: {view === "list" ? "list/detail" : "grid"} ↔
+            view: {VIEW_LABELS[view]} ↔
           </button>
           <button onClick={reload} style={{ padding: "6px 14px",
             background: "#1f5fbf", color: "white", border: 0, borderRadius: 4,
@@ -87,7 +97,9 @@ export default function App() {
           </div>
         ))}
       </section>
-      {view === "grid" ? (
+      {view === "ops" ? (
+        <OpsConsole scores={report.scores} />
+      ) : view === "grid" ? (
         <ZoneGrid scores={report.scores} />
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "320px 1fr", gap: 16 }}>
