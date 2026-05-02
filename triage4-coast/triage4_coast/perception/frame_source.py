@@ -320,6 +320,135 @@ class _OpenCVFrameSource:  # pragma: no cover
 
 
 # ---------------------------------------------------------------------------
+# Robust wrapper — auto-reconnect for flaky RTSP feeds
+# ---------------------------------------------------------------------------
+
+
+class RobustFrameSource:
+    """Wrap any source factory in retry-on-failure.
+
+    Used for RTSP / HTTP cameras where the connection can drop and
+    needs to be re-opened. The wrapper preserves the ``FrameSource``
+    Protocol but adds:
+
+    - ``backoff_s`` — initial sleep before retry
+    - ``max_backoff_s`` — cap
+    - ``max_retries`` — None = forever, integer = give up after N
+
+    Each failed ``read()`` increments ``frames_dropped`` and triggers
+    a reconnect on the next call.
+    """
+
+    def __init__(
+        self,
+        factory,
+        *,
+        backoff_s: float = 1.0,
+        max_backoff_s: float = 30.0,
+        max_retries: int | None = None,
+    ) -> None:
+        self._factory = factory
+        self._inner = None
+        self._backoff_s = float(backoff_s)
+        self._max_backoff_s = float(max_backoff_s)
+        self._max_retries = max_retries
+        self._closed = False
+        self.frames_seen = 0
+        self.frames_dropped = 0
+
+    def _open(self) -> None:
+        if self._closed:
+            return
+        attempt = 0
+        sleep_s = self._backoff_s
+        while True:
+            if self._max_retries is not None and attempt >= self._max_retries:
+                raise FrameSourceUnavailable(
+                    f"max_retries={self._max_retries} exhausted"
+                )
+            try:
+                self._inner = self._factory()
+                return
+            except FrameSourceUnavailable:
+                attempt += 1
+                time.sleep(min(sleep_s, self._max_backoff_s))
+                sleep_s = min(sleep_s * 2.0, self._max_backoff_s)
+
+    def read(self):
+        if self._closed:
+            return None
+        if self._inner is None:
+            self._open()
+        if self._inner is None:
+            return None
+        frame = self._inner.read()
+        if frame is None:
+            self.frames_dropped += 1
+            try:
+                self._inner.close()
+            except Exception:
+                pass
+            self._inner = None
+            return None
+        self.frames_seen += 1
+        return frame
+
+    def close(self) -> None:
+        self._closed = True
+        if self._inner is not None:
+            try:
+                self._inner.close()
+            except Exception:
+                pass
+            self._inner = None
+
+    def __enter__(self) -> "RobustFrameSource":
+        return self
+
+    def __exit__(self, *exc_info) -> None:
+        self.close()
+
+
+# ---------------------------------------------------------------------------
+# Panorama slicing — one fisheye/360° feed → N virtual zones
+# ---------------------------------------------------------------------------
+
+
+def slice_panorama(frame: np.ndarray, n_zones: int) -> list[np.ndarray]:
+    """Split a single panorama frame into ``n_zones`` vertical slices.
+
+    Naive equal-width slicing — works directly on equirectangular or
+    already-undistorted panoramas. For raw fisheye, the caller should
+    apply ``cv2.fisheye.undistortImage`` first.
+
+    Returns ``[slice_0, slice_1, ..., slice_{n-1}]`` from left to
+    right. Each slice is a contiguous view into the source array
+    (zero-copy when possible).
+    """
+    if not isinstance(frame, np.ndarray):
+        raise TypeError("frame must be a numpy array")
+    if frame.ndim != 3 or frame.shape[2] != 3:
+        raise ValueError(
+            f"frame must be (H, W, 3), got shape {frame.shape}"
+        )
+    if n_zones < 1:
+        raise ValueError(f"n_zones must be >= 1, got {n_zones}")
+    h, w = frame.shape[:2]
+    if w < n_zones:
+        raise ValueError(
+            f"frame width {w} smaller than n_zones {n_zones}"
+        )
+    slice_w = w // n_zones
+    slices: list[np.ndarray] = []
+    for i in range(n_zones):
+        x0 = i * slice_w
+        # Last slice gets the remainder so total width is preserved.
+        x1 = w if i == n_zones - 1 else x0 + slice_w
+        slices.append(frame[:, x0:x1, :])
+    return slices
+
+
+# ---------------------------------------------------------------------------
 # UX helpers — discovery + preview
 # ---------------------------------------------------------------------------
 

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import time
 from dataclasses import asdict
 from typing import Any
 
@@ -13,6 +14,7 @@ from pydantic import BaseModel, Field
 from ..coast_safety.coast_safety_engine import CoastSafetyEngine
 from ..core.enums import ZoneKind
 from ..sim.synthetic_coast import demo_coast, generate_zone_observation
+from . import camera_health, history
 
 app = FastAPI(title="triage4-coast API", version="0.1.0")
 
@@ -34,10 +36,34 @@ _zones = demo_coast()
 _report = _engine.review(coast_id=_COAST_ID, zones=_zones)
 
 
+_HISTORY_CHANNELS = (
+    "density_safety",
+    "drowning_safety",
+    "sun_safety",
+    "lost_child_safety",
+    "overall",
+)
+
+
+def _record_history(report: Any) -> None:
+    """Append every zone's channel scores to the history store."""
+    ts = time.time()
+    for s in report.scores:
+        history.record_scores(
+            zone_id=s.zone_id,
+            channels={ch: getattr(s, ch) for ch in _HISTORY_CHANNELS},
+            ts_unix=ts,
+        )
+
+
+_record_history(_report)
+
+
 def _seed() -> None:
     global _zones, _report
     _zones = demo_coast()
     _report = _engine.review(coast_id=_COAST_ID, zones=_zones)
+    _record_history(_report)
 
 
 def _level_counts() -> dict[str, int]:
@@ -96,6 +122,59 @@ def demo_reload() -> dict[str, Any]:
             "alert_count": len(_report.alerts)}
 
 
+@app.get("/zones/{zone_id}/history")
+def zone_history(
+    zone_id: str,
+    channel: str = "overall",
+    hours: float = 24.0,
+    limit: int = 1000,
+) -> dict[str, Any]:
+    """Return ``[(ts, value), ...]`` for one zone+channel."""
+    if channel not in _HISTORY_CHANNELS:
+        raise HTTPException(
+            400,
+            f"channel must be one of {_HISTORY_CHANNELS}, got {channel!r}",
+        )
+    if hours <= 0 or hours > 24 * 30:
+        raise HTTPException(400, "hours must be in (0, 720]")
+    since = time.time() - hours * 3600.0
+    rows = history.fetch_history(
+        zone_id=zone_id, channel=channel, since_unix=since, limit=limit,
+    )
+    return {
+        "zone_id": zone_id,
+        "channel": channel,
+        "hours": hours,
+        "points": [{"ts": ts, "value": v} for ts, v in rows],
+    }
+
+
+@app.get("/cameras/health")
+def cameras_health() -> dict[str, Any]:
+    """Return health snapshots for all known cameras."""
+    return {"cameras": [asdict(h) for h in camera_health.snapshot()]}
+
+
+class CameraReportRequest(BaseModel):
+    """Lightweight ping from any client that pulled a frame from a
+    named source. The client posts after each successful read so the
+    backend can track FPS / drops without owning the stream itself.
+    """
+
+    source: str = Field(..., min_length=1, max_length=200)
+    ok: bool = True
+    error: str | None = None
+
+
+@app.post("/cameras/report")
+def cameras_report(req: CameraReportRequest) -> dict[str, Any]:
+    if req.ok:
+        camera_health.record_frame(req.source)
+    else:
+        camera_health.record_drop(req.source, error=req.error or "")
+    return {"acknowledged": True}
+
+
 class CameraRunRequest(BaseModel):
     """Camera-driven coast-zone request.
 
@@ -128,6 +207,7 @@ def camera_run(req: CameraRunRequest) -> dict[str, Any]:
     )
     _zones = [cam_zone]
     _report = _engine.review(coast_id="WEBCAM_COAST", zones=_zones)
+    _record_history(_report)
     return {
         "zone_id": req.zone_id,
         "zone_kind": req.zone_kind,

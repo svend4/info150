@@ -19,20 +19,24 @@ from .frame_source import (
     FrameSource,
     FrameSourceUnavailable,
     LoopbackFrameSource,
+    RobustFrameSource,
     SyntheticFrameSource,
     build_opencv_frame_source,
     enumerate_cameras,
     format_camera_table,
     run_camera_preview,
+    slice_panorama,
 )
 
 __all__ = [
     "FrameSource",
     "FrameSourceUnavailable",
     "LoopbackFrameSource",
+    "RobustFrameSource",
     "SyntheticFrameSource",
     "build_opencv_frame_source",
     "enumerate_cameras",
     "format_camera_table",
     "run_camera_preview",
+    "slice_panorama",
 ]

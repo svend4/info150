@@ -1,7 +1,12 @@
 import { useEffect, useState } from "react";
 import { api } from "./api";
+import CameraHealthBar from "./CameraHealthBar";
 import CameraPanel from "./CameraPanel";
+import HistoryChart from "./HistoryChart";
+import ZoneGrid from "./ZoneGrid";
 import type { Alert, AlertLevel, Report, Score } from "./types";
+
+type ViewMode = "list" | "grid";
 
 const LEVEL_COLOR: Record<AlertLevel, string> = {
   ok: "#27ae60", watch: "#e6a23c", urgent: "#e74c3c",
@@ -27,6 +32,7 @@ export default function App() {
   const [selected, setSelected] = useState<string | null>(null);
   const [detail, setDetail] = useState<(Score & { alerts: Alert[] }) | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [view, setView] = useState<ViewMode>("list");
 
   const load = async () => {
     try { setError(null); const d = await api.report(); setReport(d);
@@ -56,11 +62,21 @@ export default function App() {
         <span style={{ opacity: 0.7 }}>
           coast <code>{report.coast_id}</code> · {report.zone_count} zones · {report.alerts.length} alerts
         </span>
-        <button onClick={reload} style={{ marginLeft: "auto", padding: "6px 14px",
-          background: "#1f5fbf", color: "white", border: 0, borderRadius: 4, cursor: "pointer" }}>
-          Re-seed demo
-        </button>
+        <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
+          <button onClick={() => setView(view === "list" ? "grid" : "list")}
+            style={{ padding: "6px 14px",
+              background: "#22293f", color: "#dde7df", border: "1px solid #5c7cfa",
+              borderRadius: 4, cursor: "pointer", fontSize: 13 }}>
+            view: {view === "list" ? "list/detail" : "grid"} ↔
+          </button>
+          <button onClick={reload} style={{ padding: "6px 14px",
+            background: "#1f5fbf", color: "white", border: 0, borderRadius: 4,
+            cursor: "pointer" }}>
+            Re-seed demo
+          </button>
+        </div>
       </header>
+      <CameraHealthBar />
       <CameraPanel onAnalyzed={load} />
       <section style={{ display: "flex", gap: 12, marginBottom: 24, flexWrap: "wrap" }}>
         {(["ok", "watch", "urgent"] as const).map((lvl) => (
@@ -71,50 +87,56 @@ export default function App() {
           </div>
         ))}
       </section>
-      <div style={{ display: "grid", gridTemplateColumns: "320px 1fr", gap: 16 }}>
-        <div style={{ background: "#181f33", borderRadius: 6, padding: 8, maxHeight: 600, overflowY: "auto" }}>
-          {report.scores.map((s) => (
-            <button key={s.zone_id} onClick={() => setSelected(s.zone_id)}
-              style={{ display: "block", width: "100%", textAlign: "left", padding: "8px 12px",
-                margin: "2px 0", background: selected === s.zone_id ? "#26304a" : "transparent",
-                color: "#e4e8f0", border: 0, borderLeft: `4px solid ${LEVEL_COLOR[s.alert_level]}`,
-                borderRadius: 4, cursor: "pointer", fontSize: 13 }}>
-              <div style={{ fontWeight: 600 }}>{s.zone_id}</div>
-              <div style={{ fontSize: 11, opacity: 0.75 }}>
-                {s.alert_level} · overall {s.overall.toFixed(2)}
-              </div>
-            </button>
-          ))}
+      {view === "grid" ? (
+        <ZoneGrid scores={report.scores} />
+      ) : (
+        <div style={{ display: "grid", gridTemplateColumns: "320px 1fr", gap: 16 }}>
+          <div style={{ background: "#181f33", borderRadius: 6, padding: 8, maxHeight: 600, overflowY: "auto" }}>
+            {report.scores.map((s) => (
+              <button key={s.zone_id} onClick={() => setSelected(s.zone_id)}
+                style={{ display: "block", width: "100%", textAlign: "left", padding: "8px 12px",
+                  margin: "2px 0", background: selected === s.zone_id ? "#26304a" : "transparent",
+                  color: "#e4e8f0", border: 0, borderLeft: `4px solid ${LEVEL_COLOR[s.alert_level]}`,
+                  borderRadius: 4, cursor: "pointer", fontSize: 13 }}>
+                <div style={{ fontWeight: 600 }}>{s.zone_id}</div>
+                <div style={{ fontSize: 11, opacity: 0.75 }}>
+                  {s.alert_level} · overall {s.overall.toFixed(2)}
+                </div>
+              </button>
+            ))}
+          </div>
+          <div style={{ background: "#181f33", borderRadius: 6, padding: 16, minHeight: 300 }}>
+            {detail ? (<>
+              <h2 style={{ marginTop: 0, fontSize: 18 }}>
+                {detail.zone_id}{" "}
+                <span style={{ fontSize: 12, padding: "2px 8px", borderRadius: 3,
+                  background: LEVEL_COLOR[detail.alert_level], marginLeft: 8 }}>
+                  {detail.alert_level}
+                </span>
+              </h2>
+              <h3 style={{ fontSize: 14, marginTop: 16 }}>Channels</h3>
+              <Bar value={detail.density_safety} label="Density" />
+              <Bar value={detail.drowning_safety} label="Drowning-risk safety" />
+              <Bar value={detail.sun_safety} label="Sun" />
+              <Bar value={detail.lost_child_safety} label="Lost-child" />
+              <h3 style={{ fontSize: 14, marginTop: 16 }}>History (overall, last 1 h)</h3>
+              <HistoryChart zoneId={detail.zone_id} channel="overall" hours={1} />
+              <h3 style={{ fontSize: 14, marginTop: 16 }}>Alerts ({detail.alerts.length})</h3>
+              {detail.alerts.length === 0 ? <p style={{ opacity: 0.6 }}><i>none</i></p> : (
+                <ul style={{ paddingLeft: 18 }}>
+                  {detail.alerts.map((a, i) => (
+                    <li key={i}>
+                      <span style={{ color: LEVEL_COLOR[a.level], fontWeight: 600,
+                        textTransform: "uppercase", marginRight: 6 }}>{a.level}</span>
+                      <code>{a.kind}</code> {a.text}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </>) : <p style={{ opacity: 0.6 }}>Select a zone to see channels + alerts.</p>}
+          </div>
         </div>
-        <div style={{ background: "#181f33", borderRadius: 6, padding: 16, minHeight: 300 }}>
-          {detail ? (<>
-            <h2 style={{ marginTop: 0, fontSize: 18 }}>
-              {detail.zone_id}{" "}
-              <span style={{ fontSize: 12, padding: "2px 8px", borderRadius: 3,
-                background: LEVEL_COLOR[detail.alert_level], marginLeft: 8 }}>
-                {detail.alert_level}
-              </span>
-            </h2>
-            <h3 style={{ fontSize: 14, marginTop: 16 }}>Channels</h3>
-            <Bar value={detail.density_safety} label="Density" />
-            <Bar value={detail.drowning_safety} label="Drowning-risk safety" />
-            <Bar value={detail.sun_safety} label="Sun" />
-            <Bar value={detail.lost_child_safety} label="Lost-child" />
-            <h3 style={{ fontSize: 14, marginTop: 16 }}>Alerts ({detail.alerts.length})</h3>
-            {detail.alerts.length === 0 ? <p style={{ opacity: 0.6 }}><i>none</i></p> : (
-              <ul style={{ paddingLeft: 18 }}>
-                {detail.alerts.map((a, i) => (
-                  <li key={i}>
-                    <span style={{ color: LEVEL_COLOR[a.level], fontWeight: 600,
-                      textTransform: "uppercase", marginRight: 6 }}>{a.level}</span>
-                    <code>{a.kind}</code> {a.text}
-                  </li>
-                ))}
-              </ul>
-            )}
-          </>) : <p style={{ opacity: 0.6 }}>Select a zone to see channels + alerts.</p>}
-        </div>
-      </div>
+      )}
       <footer style={{ marginTop: 32, fontSize: 12, opacity: 0.5 }}>
         triage4-coast · sibling-level dashboard · MIT license
       </footer>
