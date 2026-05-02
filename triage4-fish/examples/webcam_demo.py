@@ -37,6 +37,9 @@ from triage4_fish.perception import (  # noqa: E402
     FrameSourceUnavailable,
     SyntheticFrameSource,
     build_opencv_frame_source,
+    enumerate_cameras,
+    format_camera_table,
+    run_camera_preview,
 )
 from triage4_fish.sim.synthetic_pen import demo_observations  # noqa: E402
 
@@ -72,11 +75,43 @@ def _build_source(args: argparse.Namespace):
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--source", default=None)
-    parser.add_argument("--synthetic", action="store_true")
-    parser.add_argument("--frames", type=int, default=60)
-    parser.add_argument("--fps", type=float, default=30.0)
+    parser.add_argument("--source", default=None,
+                        help="OpenCV source: index (0,1,...), URL, or file path")
+    parser.add_argument("--synthetic", action="store_true",
+                        help="force synthetic source (skip camera entirely)")
+    parser.add_argument("--frames", type=int, default=60,
+                        help="frames to collect (default: 60)")
+    parser.add_argument("--fps", type=float, default=30.0,
+                        help="expected fps (default: 30)")
+    parser.add_argument("--list-cameras", action="store_true",
+                        help="probe local cameras and exit (no engine run)")
+    parser.add_argument("--preview", action="store_true",
+                        help="open live preview window before capture (SPACE: continue, Q: quit)")
     args = parser.parse_args(argv)
+
+    if args.list_cameras:
+        try:
+            rows = enumerate_cameras(max_index=10)
+        except FrameSourceUnavailable as exc:
+            print(f"[error] {exc}")
+            return 2
+        print(format_camera_table(rows))
+        return 0
+
+    if args.preview and not args.synthetic:
+        raw = args.source if args.source is not None else 0
+        try:
+            preview_source = int(raw)
+        except (TypeError, ValueError):
+            preview_source = raw
+        try:
+            decision = run_camera_preview(preview_source)
+        except FrameSourceUnavailable as exc:
+            print(f"[preview] unavailable ({exc}); continuing without preview")
+            decision = "continue"
+        if decision == "quit":
+            print("[preview] user cancelled — exiting")
+            return 0
 
     source, source_kind = _build_source(args)
     print(f"[config] source={source_kind}  frames={args.frames}  fps={args.fps}")

@@ -317,3 +317,127 @@ class _OpenCVFrameSource:  # pragma: no cover
 
     def __exit__(self, *exc_info) -> None:
         self.close()
+
+
+# ---------------------------------------------------------------------------
+# UX helpers — discovery + preview
+# ---------------------------------------------------------------------------
+
+
+def enumerate_cameras(  # pragma: no cover
+    max_index: int = 10,
+) -> list[dict[str, object]]:
+    """Probe local camera indices ``0..max_index-1`` and report which open.
+
+    For each probed index returns one dict::
+
+        {"index": 0, "opened": True, "width": 640, "height": 480, "fps": 30.0}
+        {"index": 5, "opened": False, "error": "cannot open"}
+
+    Used by the ``--list-cameras`` flag in webcam demos so users can
+    pick a working ``--source`` value before running the full demo.
+    Raises :class:`FrameSourceUnavailable` if ``cv2`` is not installed.
+    """
+    try:
+        import cv2
+    except ImportError as exc:
+        raise FrameSourceUnavailable(
+            "cv2 (opencv-python) is not installed. Install with "
+            "'pip install opencv-python'."
+        ) from exc
+
+    results: list[dict[str, object]] = []
+    for idx in range(int(max_index)):
+        cap = cv2.VideoCapture(idx)
+        try:
+            if not cap.isOpened():
+                results.append({"index": idx, "opened": False, "error": "cannot open"})
+                continue
+            ok, _frame = cap.read()
+            if not ok:
+                results.append({"index": idx, "opened": False, "error": "no frame"})
+                continue
+            results.append({
+                "index": idx,
+                "opened": True,
+                "width": int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)),
+                "height": int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)),
+                "fps": float(cap.get(cv2.CAP_PROP_FPS)),
+            })
+        finally:
+            cap.release()
+    return results
+
+
+def format_camera_table(rows: list[dict[str, object]]) -> str:
+    """Render :func:`enumerate_cameras` output as a human-readable table."""
+    lines = ["index  status     resolution    fps    note"]
+    lines.append("-" * 50)
+    for r in rows:
+        idx = r.get("index")
+        if r.get("opened"):
+            w, h, fps = r.get("width"), r.get("height"), r.get("fps")
+            lines.append(f"  {idx:<4} available  {w}x{h:<6}  {fps:<5.1f}  use --source {idx}")
+        else:
+            err = r.get("error", "")
+            lines.append(f"  {idx:<4} -          -             -      {err}")
+    return "\n".join(lines)
+
+
+def run_camera_preview(  # pragma: no cover
+    source: int | str = 0,
+    *,
+    window_title: str = "preview - SPACE: continue   Q/ESC: quit",
+    max_wait_s: float = 60.0,
+) -> str:
+    """Show a live-preview window before the demo collects frames.
+
+    Opens its own ``cv2.VideoCapture`` (separate from the demo's source)
+    for the duration of the preview, displays each frame in a window
+    with on-screen instructions, and waits for the user to press
+    ``SPACE`` (returns ``"continue"``) or ``Q`` / ``ESC`` (returns
+    ``"quit"``). Auto-quits after ``max_wait_s``.
+
+    Raises :class:`FrameSourceUnavailable` if ``cv2`` is missing or the
+    source cannot be opened. Display-unavailable failures (headless
+    build, no DISPLAY) bubble up as the underlying ``cv2.error``.
+    """
+    try:
+        import cv2
+    except ImportError as exc:
+        raise FrameSourceUnavailable(
+            "cv2 (opencv-python) is not installed."
+        ) from exc
+
+    cap = cv2.VideoCapture(source)
+    if not cap.isOpened():
+        raise FrameSourceUnavailable(
+            f"cv2.VideoCapture could not open source {source!r}."
+        )
+
+    deadline = time.time() + float(max_wait_s)
+    decision = "quit"
+    try:
+        while time.time() < deadline:
+            ok, bgr = cap.read()
+            if not ok:
+                continue
+            cv2.putText(
+                bgr, "SPACE: continue   Q/ESC: quit", (10, 30),
+                cv2.FONT_HERSHEY_SIMPLEX, 0.7, (0, 255, 0), 2,
+            )
+            cv2.imshow(window_title, bgr)
+            key = cv2.waitKey(1) & 0xFF
+            if key == ord(" "):
+                decision = "continue"
+                break
+            if key in (ord("q"), 27):  # 27 = ESC
+                decision = "quit"
+                break
+    finally:
+        cap.release()
+        try:
+            cv2.destroyWindow(window_title)
+        except Exception:
+            pass
+    return decision
