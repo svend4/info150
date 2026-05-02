@@ -8,9 +8,10 @@ from typing import Any
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
+from pydantic import BaseModel, Field
 
 from ..clinic_triage.triage_engine import ClinicalPreTriageEngine
-from ..sim.synthetic_self_report import demo_submissions
+from ..sim.synthetic_self_report import demo_submissions, generate_observation
 
 app = FastAPI(title="triage4-clinic API", version="0.1.0")
 
@@ -109,6 +110,45 @@ def alerts() -> list[dict[str, Any]]:
 def demo_reload() -> dict[str, Any]:
     _seed()
     return {"reloaded": True, "submission_count": len(_reports)}
+
+
+
+
+
+class CameraRunRequest(BaseModel):
+    """Camera-driven clinical pre-triage submission. Motion variance →
+    postural instability. HR / RR / cough / acoustic strain need
+    physiological sensors / mic → manual sliders.
+
+    STRONG PRIVACY: clinic camera input is PHI. Developer-test only.
+    """
+
+    patient_token: str = Field("WEBCAM_PATIENT", min_length=1, max_length=64)
+    postural_instability: float = Field(0.0, ge=0.0, le=1.0)
+    hr_elevation: float = Field(0.0, ge=0.0, le=1.0)
+    rr_elevation: float = Field(0.0, ge=0.0, le=1.0)
+    cough_frequency: float = Field(0.0, ge=0.0, le=1.0)
+    acoustic_strain: float = Field(0.0, ge=0.0, le=1.0)
+
+
+@app.post("/camera/run")
+def camera_run(req: CameraRunRequest) -> dict[str, Any]:
+    """Replace the dashboard with a single camera-derived patient submission."""
+    global _submissions, _reports
+    obs = generate_observation(
+        patient_token=req.patient_token,
+        hr_elevation=req.hr_elevation,
+        rr_elevation=req.rr_elevation,
+        cough_frequency=req.cough_frequency,
+        acoustic_strain=req.acoustic_strain,
+        postural_instability=req.postural_instability,
+        seed=42,
+    )
+    _submissions = [obs]
+    _reports = [_engine.review(obs)]
+    return {"patient_token": req.patient_token,
+            "postural_instability": req.postural_instability,
+            "submission_count": len(_reports)}
 
 
 @app.get("/export.html", response_class=HTMLResponse)

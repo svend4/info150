@@ -8,8 +8,9 @@ from typing import Any
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
+from pydantic import BaseModel, Field
 
-from ..sim.synthetic_shift import demo_shift
+from ..sim.synthetic_shift import demo_shift, generate_observation
 from ..site_monitor.monitoring_engine import SiteSafetyEngine
 
 app = FastAPI(title="triage4-site API", version="0.1.0")
@@ -92,6 +93,40 @@ def demo_reload() -> dict[str, Any]:
     _seed()
     return {"reloaded": True, "worker_count": len(_report.scores),
             "alert_count": len(_report.alerts)}
+
+
+
+
+
+class CameraRunRequest(BaseModel):
+    """Camera-driven worker observation. Low motion → fatigue (worker
+    inactive); luminance variance → site condition. PPE compliance,
+    unsafe lifting, heat stress need classifiers / sensors → sliders.
+    """
+
+    worker_token: str = Field("WEBCAM_WORKER", min_length=1, max_length=64)
+    fatigue: float = Field(0.0, ge=0.0, le=1.0)
+    ppe_compliance: float = Field(1.0, ge=0.0, le=1.0)
+    unsafe_lifting: float = Field(0.0, ge=0.0, le=1.0)
+    heat_stress: float = Field(0.0, ge=0.0, le=1.0)
+
+
+@app.post("/camera/run")
+def camera_run(req: CameraRunRequest) -> dict[str, Any]:
+    """Replace the dashboard with a single camera-derived worker."""
+    global _observations, _report
+    obs = generate_observation(
+        worker_token=req.worker_token,
+        ppe_compliance=req.ppe_compliance,
+        unsafe_lifting=req.unsafe_lifting,
+        heat_stress=req.heat_stress,
+        fatigue=req.fatigue,
+        seed=42,
+    )
+    _observations = [obs]
+    _report = _engine.review(site_id="WEBCAM_SITE", observations=_observations)
+    return {"worker_token": req.worker_token, "fatigue": req.fatigue,
+            "score_count": len(_report.scores), "alert_count": len(_report.alerts)}
 
 
 @app.get("/export.html", response_class=HTMLResponse)

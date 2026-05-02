@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "./api";
+import CameraPanel from "./CameraPanel";
 import type { Recommendation, Report, SubmissionDetail } from "./types";
 
 const REC_COLOR: Record<Recommendation, string> = {
@@ -61,6 +62,7 @@ export default function App() {
           Re-seed demo
         </button>
       </header>
+      <CameraPanel onAnalyzed={load} />
       <section style={{ display: "flex", gap: 12, marginBottom: 24, flexWrap: "wrap" }}>
         {(["can_wait", "routine_visit", "see_today"] as const).map((r) => (
           <div key={r} style={{ flex: 1, minWidth: 160, background: "#241830",

@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { api } from "./api";
+import CameraPanel from "./CameraPanel";
 import type { Alert, Report, Score, WelfareFlag } from "./types";
 
 const FLAG_COLOR: Record<WelfareFlag, string> = {
@@ -60,6 +61,7 @@ export default function App() {
           Re-seed demo
         </button>
       </header>
+      <CameraPanel onAnalyzed={load} />
       <section style={{ display: "flex", gap: 12, marginBottom: 24, flexWrap: "wrap" }}>
         {(["well", "concern", "urgent"] as const).map((f) => (
           <div key={f} style={{ flex: 1, minWidth: 160, background: "#16241b",

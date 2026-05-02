@@ -12,8 +12,9 @@ from typing import Any
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
+from pydantic import BaseModel, Field
 
-from ..sim.synthetic_herd import demo_herd
+from ..sim.synthetic_herd import demo_herd, generate_observation
 from ..welfare_check.welfare_engine import WelfareCheckEngine
 
 app = FastAPI(title="triage4-farm API", version="0.1.0")
@@ -97,6 +98,41 @@ def demo_reload() -> dict[str, Any]:
     _seed()
     return {"reloaded": True, "animal_count": len(_report.scores),
             "alert_count": len(_report.alerts)}
+
+
+
+
+
+class CameraRunRequest(BaseModel):
+    """Camera-driven welfare check on a single animal. Mean motion →
+    activity proxy. Lameness, respiratory elevation, thermal hotspot
+    need pose / IR sensors → manual sliders.
+    """
+
+    animal_id: str = Field("WEBCAM_ANIMAL", min_length=1, max_length=64)
+    species: str = "cow"
+    activity_proxy: float = Field(0.0, ge=0.0, le=1.0)
+    lameness_severity: float = Field(0.0, ge=0.0, le=1.0)
+    respiratory_elevation: float = Field(0.0, ge=0.0, le=1.0)
+    thermal_hotspot: float | None = None
+
+
+@app.post("/camera/run")
+def camera_run(req: CameraRunRequest) -> dict[str, Any]:
+    """Replace the dashboard with a single camera-derived animal."""
+    global _herd, _report
+    obs = generate_observation(
+        animal_id=req.animal_id,
+        species=req.species,  # type: ignore[arg-type]
+        lameness_severity=req.lameness_severity,
+        respiratory_elevation=req.respiratory_elevation,
+        thermal_hotspot=req.thermal_hotspot,
+        seed=42,
+    )
+    _herd = [obs]
+    _report = _engine.review(farm_id="WEBCAM_FARM", observations=_herd)
+    return {"animal_id": req.animal_id, "activity_proxy": req.activity_proxy,
+            "score_count": len(_report.scores), "alert_count": len(_report.alerts)}
 
 
 @app.get("/export.html", response_class=HTMLResponse)

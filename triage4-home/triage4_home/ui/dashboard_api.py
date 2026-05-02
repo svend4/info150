@@ -16,10 +16,11 @@ from typing import Any
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
+from pydantic import BaseModel, Field
 
 from ..core.models import HomeReport
 from ..home_monitor.monitoring_engine import HomeMonitoringEngine
-from ..sim.synthetic_day import demo_baseline, demo_day_series
+from ..sim.synthetic_day import demo_baseline, demo_day_series, generate_observation
 
 app = FastAPI(title="triage4-home API", version="0.1.0")
 
@@ -112,6 +113,47 @@ def demo_reload() -> dict[str, Any]:
     _seed()
     return {"reloaded": True, "window_count": _report.window_count,
             "alert_count": len(_report.alerts)}
+
+
+
+
+
+class CameraRunRequest(BaseModel):
+    """Camera-driven home-resident observation. Low motion → activity
+    deviation. Fall events need a dedicated detector → bool toggle.
+    Mobility decline tracked longitudinally → manual slider.
+
+    PRIVACY: in-home cameras are PII-adjacent. Developer-test only.
+    """
+
+    window_id: str = Field("WEBCAM_DAY", min_length=1, max_length=64)
+    activity_deviation: float = Field(0.0, ge=0.0, le=1.0)
+    mobility_decline: float = Field(0.0, ge=0.0, le=1.0)
+    fall_event: bool = False
+
+
+@app.post("/camera/run")
+def camera_run(req: CameraRunRequest) -> dict[str, Any]:
+    """Replace the dashboard with a single camera-derived home-day observation."""
+    global _windows, _report
+    obs = generate_observation(
+        window_id=req.window_id,
+        activity_deviation=req.activity_deviation,
+        mobility_decline=req.mobility_decline,
+        fall_event=req.fall_event,
+        seed=42,
+    )
+    obs_list = [obs]
+    baseline = demo_baseline()
+    aggregate = HomeReport(residence_id="WEBCAM_HOME")
+    for w in obs_list:
+        score, alerts = _engine.review(w, baseline=baseline)
+        aggregate.scores.append(score)
+        aggregate.alerts.extend(alerts)
+    _windows = obs_list
+    _report = aggregate
+    return {"window_id": req.window_id, "activity_deviation": req.activity_deviation,
+            "score_count": len(_report.scores), "alert_count": len(_report.alerts)}
 
 
 @app.get("/export.html", response_class=HTMLResponse)

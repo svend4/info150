@@ -8,8 +8,9 @@ from typing import Any
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
+from pydantic import BaseModel, Field
 
-from ..sim.synthetic_session import demo_baseline, demo_sessions
+from ..sim.synthetic_session import demo_baseline, demo_sessions, generate_observation
 from ..sport_engine.monitoring_engine import SportPerformanceEngine
 
 app = FastAPI(title="triage4-sport API", version="0.1.0")
@@ -103,6 +104,42 @@ def session_by_token(token: str) -> dict[str, Any]:
 def demo_reload() -> dict[str, Any]:
     _seed()
     return {"reloaded": True, "session_count": len(_reports)}
+
+
+
+
+
+class CameraRunRequest(BaseModel):
+    """Camera-driven athlete session. Mean motion → workload intensity.
+    Form asymmetry, recovery HR drop need pose detector / HR sensor →
+    sliders / numeric inputs.
+    """
+
+    athlete_token: str = Field("WEBCAM_ATH", min_length=1, max_length=64)
+    sport: str = "soccer"
+    workload_intensity: float = Field(0.45, ge=0.0, le=1.0)
+    form_asymmetry: float = Field(0.15, ge=0.0, le=1.0)
+    recovery_drop_bpm: float = Field(32.0, ge=0.0, le=200.0)
+
+
+@app.post("/camera/run")
+def camera_run(req: CameraRunRequest) -> dict[str, Any]:
+    """Replace the dashboard with a single camera-derived athlete session."""
+    global _sessions, _reports
+    obs = generate_observation(
+        athlete_token=req.athlete_token,
+        sport=req.sport,  # type: ignore[arg-type]
+        form_asymmetry=req.form_asymmetry,
+        workload_intensity=req.workload_intensity,
+        recovery_drop_bpm=req.recovery_drop_bpm,
+        seed=42,
+    )
+    sessions = [obs]
+    baseline = demo_baseline()
+    _sessions = sessions
+    _reports = [_engine.review(o, baseline=baseline) for o in sessions]
+    return {"athlete_token": req.athlete_token, "workload_intensity": req.workload_intensity,
+            "report_count": len(_reports)}
 
 
 @app.get("/export.html", response_class=HTMLResponse)
