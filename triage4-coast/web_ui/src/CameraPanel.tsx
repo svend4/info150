@@ -158,10 +158,10 @@ export default function CameraPanel({ onAnalyzed }: { onAnalyzed: () => void }) 
   return (
     <section style={{
       background: "var(--surface)", borderRadius: 6, padding: 16, marginBottom: 16,
-      borderLeft: "4px solid #5c7cfa",
+      borderLeft: "4px solid var(--primary)",
     }}>
       <div style={{ background: "var(--privacy-bg)", color: "var(--privacy-text)", padding: "6px 10px",
-        borderRadius: 4, fontSize: 11, marginBottom: 8, border: "1px solid #c4604c" }}>
+        borderRadius: 4, fontSize: 11, marginBottom: 8, border: "1px solid var(--danger-strong)" }}>
         ⚠ <b>PUBLIC SPACE SURVEILLANCE:</b> coast cameras observe a public space.
         GDPR / local privacy law typically requires visible signage. The browser
         sends only scalar summaries — no images leave the page.
@@ -258,7 +258,7 @@ function SliderRow({ label, value, onChange }: {
 const inputColors = {
   background: "var(--surface-2)",
   color: "var(--text)",
-  border: "1px solid #5c7cfa",
+  border: "1px solid var(--primary)",
   borderRadius: 4,
 };
 const selectStyle = { padding: 6, ...inputColors };
