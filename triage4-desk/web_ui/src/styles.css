@@ -1,0 +1,68 @@
+/* triage4-coast theming.
+ *
+ * Default = dark. Light mode activates when
+ *   <html data-theme="light">
+ * Toggled via the ThemeToggle component (writes to localStorage and
+ * the document root). Status colours (green / amber / red) are
+ * shared between themes — only surfaces / text / borders flip.
+ */
+
+:root {
+  --bg:               #0e1422;
+  --surface:          #181f33;
+  --surface-2:        #22293f;
+  --border:           #26304a;
+  --text:             #dde7df;
+  --text-muted:       #7a829a;
+  --text-disabled:    #5c6080;
+  --primary:          #5c7cfa;
+  --primary-strong:   #1f5fbf;
+  --danger-text:      #ff8c8c;
+  --success-bg:       #1a3022;
+  --danger-bg:        #3a1a1a;
+  --privacy-bg:       #3a2438;
+  --privacy-text:     #ffe0c0;
+  --sea-bg:           #13243a;
+  --success-strong:   #3a8443;
+  --danger-strong:    #7d3a3a;
+  /* Semantic — same in both themes. */
+  --success:          #27ae60;
+  --warn:             #e6a23c;
+  --danger:           #e74c3c;
+  --uv-mid:           #f4d03f;
+
+  color-scheme: dark;
+}
+
+:root[data-theme="light"] {
+  --bg:               #f4f7fa;
+  --surface:          #ffffff;
+  --surface-2:        #e6e9f3;
+  --border:           #c6cad8;
+  --text:             #1a1a2e;
+  --text-muted:       #5a6a8a;
+  --text-disabled:    #999fa8;
+  --primary:          #3b5bd0;
+  --primary-strong:   #1f5fbf;
+  --danger-text:      #c4364d;
+  --success-bg:       #d4f7d4;
+  --danger-bg:        #fdebec;
+  --privacy-bg:       #fff3e0;
+  --privacy-text:     #5a3a00;
+  --sea-bg:           #cfdde9;
+  --success-strong:   #2c7037;
+  --danger-strong:    #b04545;
+
+  color-scheme: light;
+}
+
+html, body, #root { height: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, sans-serif;
+  transition: background 120ms ease, color 120ms ease;
+}
+button:hover { filter: brightness(1.10); }
+code { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; }

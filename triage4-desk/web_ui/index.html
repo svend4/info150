@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>triage4-desk dashboard</title>
+    <script>
+      // Avoid flash-of-wrong-theme: apply the saved theme before React
+      // mounts. ThemeToggle.tsx reads the same value on mount.
+      (function () {
+        try {
+          var t = localStorage.getItem("theme");
+          if (t !== "light" && t !== "dark") {
+            t = window.matchMedia &&
+                window.matchMedia("(prefers-color-scheme: light)").matches
+              ? "light" : "dark";
+          }
+          document.documentElement.dataset.theme = t;
+        } catch (e) { /* private mode etc. */ }
+      })();
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
